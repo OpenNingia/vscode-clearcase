@@ -2,13 +2,26 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "publisher": "OpenNingia",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenNingia/vscode-clearcase.git"
+    },
+    "galleryBanner": {
+        "color": "#FF524C",
+        "theme": "light"
+    },
+    "icon": "images/icon.png",    
     "engines": {
         "vscode": "^1.5.0"
     },
     "categories": [
         "Other"
+    ],
+    "keywords": [
+        "scm", "clearcase", "keybindings"
     ],
     "activationEvents": [
         "onCommand:extension.ccExplorer",
@@ -50,27 +63,27 @@
 		"keybindings": [
 			{
 				"command": "extension.ccExplorer",
-				"key": "Win+Alt+E"
+				"key": "ctrl+s ctrl+e"
 			},
 			{
 				"command": "extension.ccCheckout",
-				"key": "Win+Alt+O"
+				"key": "ctrl+s ctrl+o"
 			},
 			{
 				"command": "extension.ccCheckin",
-				"key": "Win+Alt+I"
+				"key": "ctrl+s ctrl+i"
 			},
 			{
 				"command": "extension.ccVersionTree",
-				"key": "Win+Alt+V"
+				"key": "ctrl+s ctrl+v"
 			},
 			{
 				"command": "extension.ccComparePrevious",
-				"key": "Win+Alt+P"
+				"key": "ctrl+s ctrl+p"
 			},  
 			{
 				"command": "extension.ccUndoCheckout",
-				"key": "Win+Alt+U"
+				"key": "ctrl+s ctrl+u"
 			}                      
 		]        
     },
