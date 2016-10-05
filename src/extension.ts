@@ -73,6 +73,7 @@ function execOnSCMFile(path: string, func: (string) => void)
     exec('cleartool ls ' + path, (error, stdout, stderr) => {
     if (error) {
         console.error(`exec error: ${error}`);
+        vscode.window.showErrorMessage(`${path} is not a valid ClearCase object.`);
         return;
     }
     func(path);
