@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
@@ -11,9 +11,9 @@
     },
     "galleryBanner": {
         "color": "#FF524C",
-        "theme": "light"
+        "theme": "dark"
     },
-    "icon": "images/icon.png",    
+    "icon": "images/icon.png",
     "engines": {
         "vscode": "^1.5.0"
     },
@@ -21,15 +21,17 @@
         "Other"
     ],
     "keywords": [
-        "scm", "clearcase", "keybindings"
+        "scm",
+        "clearcase",
+        "keybindings"
     ],
     "activationEvents": [
         "onCommand:extension.ccExplorer",
-		"onCommand:extension.ccCheckout",
-		"onCommand:extension.ccCheckin",
-		"onCommand:extension.ccVersionTree",
-		"onCommand:extension.ccComparePrevious",
-		"onCommand:extension.ccUndoCheckout" 
+        "onCommand:extension.ccCheckout",
+        "onCommand:extension.ccCheckin",
+        "onCommand:extension.ccVersionTree",
+        "onCommand:extension.ccComparePrevious",
+        "onCommand:extension.ccUndoCheckout"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -57,46 +59,43 @@
             {
                 "command": "extension.ccUndoCheckout",
                 "title": "ClearCase: Undo Checkout"
-            }         
+            }
         ],
-
-		"keybindings": [
-			{
-				"command": "extension.ccExplorer",
-				"key": "ctrl+s ctrl+e"
-			},
-			{
-				"command": "extension.ccCheckout",
-				"key": "ctrl+s ctrl+o"
-			},
-			{
-				"command": "extension.ccCheckin",
-				"key": "ctrl+s ctrl+i"
-			},
-			{
-				"command": "extension.ccVersionTree",
-				"key": "ctrl+s ctrl+v"
-			},
-			{
-				"command": "extension.ccComparePrevious",
-				"key": "ctrl+s ctrl+p"
-			},  
-			{
-				"command": "extension.ccUndoCheckout",
-				"key": "ctrl+s ctrl+u"
-			}                      
-		]        
+        "keybindings": [
+            {
+                "command": "extension.ccExplorer",
+                "key": "ctrl+s ctrl+e"
+            },
+            {
+                "command": "extension.ccCheckout",
+                "key": "ctrl+s ctrl+o"
+            },
+            {
+                "command": "extension.ccCheckin",
+                "key": "ctrl+s ctrl+i"
+            },
+            {
+                "command": "extension.ccVersionTree",
+                "key": "ctrl+s ctrl+v"
+            },
+            {
+                "command": "extension.ccComparePrevious",
+                "key": "ctrl+s ctrl+p"
+            },
+            {
+                "command": "extension.ccUndoCheckout",
+                "key": "ctrl+s ctrl+u"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
         "compile": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install"
     },
-
     "dependencies": {
         "child_process": "^1.0.2"
     },
-
     "devDependencies": {
         "typescript": "^2.0.3",
         "vscode": "^1.0.0",
