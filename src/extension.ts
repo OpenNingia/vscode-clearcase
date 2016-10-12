@@ -3,6 +3,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import {exec, execSync} from 'child_process'
+import * as fs from 'fs';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -16,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
     let disposable = vscode.commands.registerCommand('extension.ccExplorer', () => {
-        // The code you place here will be executed every time your command is executed               
+        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, runClearCaseExplorer);
     });
@@ -24,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccCheckout', () => {
-        // The code you place here will be executed every time your command is executed               
+        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, checkoutFile);
     });
@@ -32,36 +33,47 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccCheckin', () => {
-        // The code you place here will be executed every time your command is executed               
+        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, checkinFile);
     });
 
-    context.subscriptions.push(disposable);    
+    context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccVersionTree', () => {
-        // The code you place here will be executed every time your command is executed               
+        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, versionTree);
     });
 
-    context.subscriptions.push(disposable);    
+    context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccComparePrevious', () => {
-        // The code you place here will be executed every time your command is executed               
+        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, diffWithPrevious);
     });
 
-    context.subscriptions.push(disposable);    
+    context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccUndoCheckout', () => {
-        // The code you place here will be executed every time your command is executed               
+        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, undoCheckoutFile);
     });
 
-    context.subscriptions.push(disposable);                    
+    context.subscriptions.push(disposable);
+
+    vscode.workspace.onWillSaveTextDocument((event) => {
+        try {
+            if ( event == null || event.document == null || event.document.isUntitled || event.reason != vscode.TextDocumentSaveReason.Manual )
+                return;
+            if ( isReadOnly(event.document) ) {
+                execOnSCMFile(event.document.fileName, checkoutFile);
+            }
+        } catch (error) { console.log("error " + error); }
+
+    }, null, context.subscriptions);
 }
 
 // this method is called when your extension is deactivated
@@ -83,25 +95,35 @@ function execOnSCMFile(path: string, func: (string) => void)
 }
 
 function runClearCaseExplorer(path: string) {
-    exec('clearexplorer ' + path);  
+    exec('clearexplorer ' + path);
 }
 
 function checkoutFile(path: string) {
-    exec('cleardlg /checkout ' + path);  
+    exec('cleardlg /checkout ' + path);
 }
 
 function undoCheckoutFile(path: string) {
-    exec('cleartool unco ' + path);  
+    exec('cleartool unco ' + path);
 }
 
 function checkinFile(path: string) {
-    exec('cleardlg /checkin ' + path);  
+    exec('cleardlg /checkin ' + path);
 }
 
 function versionTree(path: string) {
-    exec('cleartool lsvtree -graphical ' + path);  
+    exec('cleartool lsvtree -graphical ' + path);
 }
 
 function diffWithPrevious(path: string) {
-    exec('cleartool diff -graph -pred ' + path);  
+    exec('cleartool diff -graph -pred ' + path);
+}
+
+function isReadOnly(doc: vscode.TextDocument): boolean {
+    let filePath = doc.fileName;
+    try {
+        fs.accessSync(filePath, fs.constants.W_OK);
+        return false;
+    } catch (error) {
+        return true;
+    }
 }

@@ -15,7 +15,7 @@
     },
     "icon": "images/icon.png",
     "engines": {
-        "vscode": "^1.5.0"
+        "vscode": "^1.6.0"
     },
     "categories": [
         "Other"
@@ -26,12 +26,7 @@
         "keybindings"
     ],
     "activationEvents": [
-        "onCommand:extension.ccExplorer",
-        "onCommand:extension.ccCheckout",
-        "onCommand:extension.ccCheckin",
-        "onCommand:extension.ccVersionTree",
-        "onCommand:extension.ccComparePrevious",
-        "onCommand:extension.ccUndoCheckout"
+        "*"
     ],
     "main": "./out/src/extension",
     "contributes": {
