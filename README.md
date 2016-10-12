@@ -21,6 +21,7 @@ A valid ClearCase installation within the system's PATH.
 
 ## Release Notes
 
-Nothing here yet...
+### 1.3.0
+* Proposing Checkout when saving a file under version control
 
 **Enjoy!**
