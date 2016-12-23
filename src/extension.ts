@@ -17,7 +17,6 @@ export function activate(context: vscode.ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
     let disposable = vscode.commands.registerCommand('extension.ccExplorer', () => {
-        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, runClearCaseExplorer);
     });
@@ -25,7 +24,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccCheckout', () => {
-        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, checkoutFile);
     });
@@ -33,7 +31,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccCheckin', () => {
-        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, checkinFile);
     });
@@ -41,7 +38,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccVersionTree', () => {
-        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, versionTree);
     });
@@ -49,7 +45,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccComparePrevious', () => {
-        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, diffWithPrevious);
     });
@@ -57,9 +52,13 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccUndoCheckout', () => {
-        // The code you place here will be executed every time your command is executed
         var current_file = vscode.window.activeTextEditor.document.fileName;
         execOnSCMFile(current_file, undoCheckoutFile);
+    });
+
+    disposable = vscode.commands.registerCommand('extension.ccFindCheckouts', () => {
+        if ( vscode.workspace.rootPath )
+            findCheckouts(vscode.workspace.rootPath);
     });
 
     context.subscriptions.push(disposable);
@@ -116,6 +115,10 @@ function versionTree(path: string) {
 
 function diffWithPrevious(path: string) {
     exec('cleartool diff -graph -pred ' + path);
+}
+
+function findCheckouts(path: string) {
+    exec('clearfindco ' + path);
 }
 
 function isReadOnly(doc: vscode.TextDocument): boolean {

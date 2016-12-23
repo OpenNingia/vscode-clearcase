@@ -12,6 +12,7 @@ Clearcase commands exposed by this extensions:
     * Undo Checkout
     * Version Tree
     * Compare with previous version
+    * Find Checkouts
 
 All commands are relative to the current file.
 
@@ -20,6 +21,9 @@ All commands are relative to the current file.
 A valid ClearCase installation within the system's PATH.
 
 ## Release Notes
+
+### 1.4.0
+* Proposing Checkout when saving a file under version control
 
 ### 1.3.0
 * Proposing Checkout when saving a file under version control
