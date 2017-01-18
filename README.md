@@ -20,12 +20,10 @@ All commands are relative to the current file.
 
 A valid ClearCase installation within the system's PATH.
 
-## Release Notes
+## [Release notes](CHANGELOG.md)
 
 ### 1.4.0
-* Proposing Checkout when saving a file under version control
+* Added "Find Checkouts" command
 
-### 1.3.0
-* Proposing Checkout when saving a file under version control
-
-**Enjoy!**
+## License
+[MIT](LICENSE)
