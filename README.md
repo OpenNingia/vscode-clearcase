@@ -20,10 +20,5 @@ All commands are relative to the current file.
 
 A valid ClearCase installation within the system's PATH.
 
-## [Release notes](CHANGELOG.md)
-
-### 1.4.0
-* Added "Find Checkouts" command
-
 ## License
 [MIT](LICENSE)

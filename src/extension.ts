@@ -17,43 +17,37 @@ export function activate(context: vscode.ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
     let disposable = vscode.commands.registerCommand('extension.ccExplorer', () => {
-        var current_file = vscode.window.activeTextEditor.document.fileName;
-        execOnSCMFile(current_file, runClearCaseExplorer);
+        execOnSCMFile(vscode.window.activeTextEditor.document, runClearCaseExplorer);
     });
 
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccCheckout', () => {
-        var current_file = vscode.window.activeTextEditor.document.fileName;
-        execOnSCMFile(current_file, checkoutFile);
+        execOnSCMFile(vscode.window.activeTextEditor.document, checkoutFile);
     });
 
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccCheckin', () => {
-        var current_file = vscode.window.activeTextEditor.document.fileName;
-        execOnSCMFile(current_file, checkinFile);
+        execOnSCMFile(vscode.window.activeTextEditor.document, checkinFile);
     });
 
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccVersionTree', () => {
-        var current_file = vscode.window.activeTextEditor.document.fileName;
-        execOnSCMFile(current_file, versionTree);
+        execOnSCMFile(vscode.window.activeTextEditor.document, versionTree);
     });
 
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccComparePrevious', () => {
-        var current_file = vscode.window.activeTextEditor.document.fileName;
-        execOnSCMFile(current_file, diffWithPrevious);
+        execOnSCMFile(vscode.window.activeTextEditor.document, diffWithPrevious);
     });
 
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccUndoCheckout', () => {
-        var current_file = vscode.window.activeTextEditor.document.fileName;
-        execOnSCMFile(current_file, undoCheckoutFile);
+        execOnSCMFile(vscode.window.activeTextEditor.document, undoCheckoutFile);
     });
 
     disposable = vscode.commands.registerCommand('extension.ccFindCheckouts', () => {
@@ -68,7 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
             if ( event == null || event.document == null || event.document.isUntitled || event.reason != vscode.TextDocumentSaveReason.Manual )
                 return;
             if ( isReadOnly(event.document) ) {
-                execOnSCMFile(event.document.fileName, checkoutFile);
+                execOnSCMFile(event.document, checkoutAndSaveFile);
             }
         } catch (error) { console.log("error " + error); }
 
@@ -79,41 +73,60 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 }
 
-function execOnSCMFile(path: string, func: (string) => void)
+function execOnSCMFile(doc: vscode.TextDocument, func: (string) => void)
 {
+    var path = doc.fileName;
     exec('cleartool ls ' + path, (error, stdout, stderr) => {
     if (error) {
         console.error(`exec error: ${error}`);
         vscode.window.showErrorMessage(`${path} is not a valid ClearCase object.`);
         return;
     }
-    func(path);
+    func(doc);
     console.log(`stdout: ${stdout}`);
     console.log(`stderr: ${stderr}`);
     });
 }
 
-function runClearCaseExplorer(path: string) {
+function runClearCaseExplorer(doc: vscode.TextDocument) {
+    var path = doc.fileName;
     exec('clearexplorer ' + path);
 }
 
-function checkoutFile(path: string) {
+function checkoutFile(doc: vscode.TextDocument) {
+    var path = doc.fileName;
+    console.log(`checkout no save.`);
     exec('cleardlg /checkout ' + path);
 }
 
-function undoCheckoutFile(path: string) {
-    exec('cleartool unco ' + path);
+function checkoutAndSaveFile(doc: vscode.TextDocument) {
+    var path = doc.fileName;
+    exec('cleardlg /checkout ' + path, (error, stdout, stderr) => {
+        console.log(`checkout and save. ${error}`);
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
+        console.log(`saving file...`);
+        doc.save();
+    });
 }
 
-function checkinFile(path: string) {
+function undoCheckoutFile(doc: vscode.TextDocument) {
+    var path = doc.fileName;
+    exec('cleartool unco -rm ' + path);
+}
+
+function checkinFile(doc: vscode.TextDocument) {
+    var path = doc.fileName;
     exec('cleardlg /checkin ' + path);
 }
 
-function versionTree(path: string) {
+function versionTree(doc: vscode.TextDocument) {
+    var path = doc.fileName;
     exec('cleartool lsvtree -graphical ' + path);
 }
 
-function diffWithPrevious(path: string) {
+function diffWithPrevious(doc: vscode.TextDocument) {
+    var path = doc.fileName;
     exec('cleartool diff -graph -pred ' + path);
 }
 
