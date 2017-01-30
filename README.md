@@ -13,6 +13,9 @@ Clearcase commands exposed by this extensions:
     * Version Tree
     * Compare with previous version
     * Find Checkouts
+    * Find modified files
+    * Update snapshot
+    * Item Properties
 
 All commands are relative to the current file.
 
