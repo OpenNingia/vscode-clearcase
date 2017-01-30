@@ -50,9 +50,31 @@ export function activate(context: vscode.ExtensionContext) {
         execOnSCMFile(vscode.window.activeTextEditor.document, undoCheckoutFile);
     });
 
+    context.subscriptions.push(disposable);
+
     disposable = vscode.commands.registerCommand('extension.ccFindCheckouts', () => {
         if ( vscode.workspace.rootPath )
             findCheckouts(vscode.workspace.rootPath);
+    });
+
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('extension.ccFindModified', () => {
+        if ( vscode.workspace.rootPath )
+            findModified(vscode.workspace.rootPath);
+    });
+
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('extension.ccItemProperties', () => {
+        execOnSCMFile(vscode.window.activeTextEditor.document, itemProperties);
+    });
+
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('extension.ccUpdateDir', () => {
+        if ( vscode.workspace.rootPath )
+            updatePath(vscode.workspace.rootPath);
     });
 
     context.subscriptions.push(disposable);
@@ -132,6 +154,19 @@ function diffWithPrevious(doc: vscode.TextDocument) {
 
 function findCheckouts(path: string) {
     exec('clearfindco ' + path);
+}
+
+function findModified(path: string) {
+    exec("clearviewupdate -pname \"" + path + "\" -modified");
+}
+
+function updatePath(path: string) {
+    exec("clearviewupdate -pname \"" + path + "\"");
+}
+
+function itemProperties(doc: vscode.TextDocument) {
+    var path = doc.fileName;
+    exec("cleardescribe \"" + path + "\"");
 }
 
 function isReadOnly(doc: vscode.TextDocument): boolean {

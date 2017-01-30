@@ -58,6 +58,18 @@
             {
                 "command": "extension.ccFindCheckouts",
                 "title": "ClearCase: Find Checkouts"
+            },
+            {
+                "command": "extension.ccFindModified",
+                "title": "ClearCase: Find modified files"
+            },
+            {
+                "command": "extension.ccItemProperties",
+                "title": "ClearCase: Item Properties"
+            },
+            {
+                "command": "extension.ccUpdateDir",
+                "title": "ClearCase: Update"
             }
         ],
         "keybindings": [
