@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.5.1
+* Fixed an issue that prevents some commands to work on file path with whitespaces
+
 ### 1.5.0
 * Added "Find modified files" command
 * Added "Update" command
