@@ -2,7 +2,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import {exec, execSync} from 'child_process'
+import {exec} from 'child_process'
 import * as fs from 'fs';
 
 // this method is called when your extension is activated
@@ -98,7 +98,7 @@ export function deactivate() {
 function execOnSCMFile(doc: vscode.TextDocument, func: (string) => void)
 {
     var path = doc.fileName;
-    exec('cleartool ls ' + path, (error, stdout, stderr) => {
+    exec("cleartool ls \"" + path + "\"", (error, stdout, stderr) => {
     if (error) {
         console.error(`exec error: ${error}`);
         vscode.window.showErrorMessage(`${path} is not a valid ClearCase object.`);
@@ -112,18 +112,18 @@ function execOnSCMFile(doc: vscode.TextDocument, func: (string) => void)
 
 function runClearCaseExplorer(doc: vscode.TextDocument) {
     var path = doc.fileName;
-    exec('clearexplorer ' + path);
+    exec("clearexplorer \"" + path + "\"");
 }
 
 function checkoutFile(doc: vscode.TextDocument) {
     var path = doc.fileName;
     console.log(`checkout no save.`);
-    exec('cleardlg /checkout ' + path);
+    exec("cleardlg /checkout \"" + path + "\"");
 }
 
 function checkoutAndSaveFile(doc: vscode.TextDocument) {
     var path = doc.fileName;
-    exec('cleardlg /checkout ' + path, (error, stdout, stderr) => {
+    exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
         console.log(`checkout and save. ${error}`);
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
@@ -134,26 +134,26 @@ function checkoutAndSaveFile(doc: vscode.TextDocument) {
 
 function undoCheckoutFile(doc: vscode.TextDocument) {
     var path = doc.fileName;
-    exec('cleartool unco -rm ' + path);
+    exec("cleartool unco -rm \"" + path + "\"");
 }
 
 function checkinFile(doc: vscode.TextDocument) {
     var path = doc.fileName;
-    exec('cleardlg /checkin ' + path);
+    exec("cleardlg /checkin \"" + path + "\"");
 }
 
 function versionTree(doc: vscode.TextDocument) {
     var path = doc.fileName;
-    exec('cleartool lsvtree -graphical ' + path);
+    exec("cleartool lsvtree -graphical \"" + path + "\"");
 }
 
 function diffWithPrevious(doc: vscode.TextDocument) {
     var path = doc.fileName;
-    exec('cleartool diff -graph -pred ' + path);
+    exec("cleartool diff -graph -pred \"" + path + "\"");
 }
 
 function findCheckouts(path: string) {
-    exec('clearfindco ' + path);
+    exec("clearfindco \"" + path + "\"");
 }
 
 function findModified(path: string) {
