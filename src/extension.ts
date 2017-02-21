@@ -89,6 +89,11 @@ export function activate(context: vscode.ExtensionContext) {
         } catch (error) { console.log("error " + error); }
 
     }, null, context.subscriptions);
+    
+    let statusbarVersion = new StatusbarVersion(context);
+    statusbarVersion.bindEvent();
+
+    context.subscriptions.push(statusbarVersion);
 }
 
 // this method is called when your extension is deactivated
@@ -176,5 +181,78 @@ function isReadOnly(doc: vscode.TextDocument): boolean {
         return false;
     } catch (error) {
         return true;
+    }
+}
+
+class StatusbarVersion
+{
+    private m_statusbar: vscode.StatusBarItem;
+    private m_context: vscode.ExtensionContext;
+    public constructor(context: vscode.ExtensionContext)
+    {
+        try{
+            this.m_statusbar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+            this.m_context = context;
+        } catch (error)
+        {
+            console.log(error);
+        }
+    }
+
+    public bindEvent()
+    {
+        try{
+            vscode.workspace.onDidOpenTextDocument((event) => {
+                if( event != null )
+                {
+                    this.writeVersionToStatusbar(event);
+                }
+            }, null, this.m_context.subscriptions);
+
+            vscode.workspace.onDidSaveTextDocument((event) => {
+                if( event != null )
+                {
+                    this.writeVersionToStatusbar(event);
+                }
+            }, null, this.m_context.subscriptions);
+
+            vscode.workspace.onDidChangeTextDocument((event) => {
+                if( event != null && event.document )
+                {
+                    this.writeVersionToStatusbar(event.document);
+                }
+            }, null, this.m_context.subscriptions);
+        } catch(error)
+        {
+            console.log(error);
+        }
+    }
+
+    public writeVersionToStatusbar(doc: vscode.TextDocument)
+    {
+        try{
+            let l_retText = "";
+            exec( "cleartool ls -short " + doc.fileName, (error, stdout, stderr) => {
+                if( error )
+                {
+                    l_retText = "view local";
+                }
+                else
+                {
+                    l_retText = stdout.split("@@")[1];
+                    l_retText = l_retText.substring(1).trim();
+                    l_retText = "[" + l_retText.replace(/\\/g, "/") + "]";
+                }
+                this.m_statusbar.text = l_retText;
+                this.m_statusbar.show();
+            });
+        } catch (error){
+            return;
+        }
+    }
+
+    public dispose()
+    {
+        this.m_statusbar.dispose();
     }
 }
