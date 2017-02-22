@@ -128,7 +128,11 @@ function checkoutAndSaveFile(doc: vscode.TextDocument) {
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
         console.log(`saving file...`);
-        doc.save();
+        // only trigger save if checkout did work
+        // If not and the user canceled this dialog the save event is
+        // retriggered because of that save.
+        if( isReadOnly(doc) === false )
+            doc.save();
     });
 }
 
