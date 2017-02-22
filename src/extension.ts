@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 import {exec} from 'child_process'
 import * as fs from 'fs';
+import {dirname} from 'path';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -72,9 +73,24 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(disposable);
 
-    disposable = vscode.commands.registerCommand('extension.ccUpdateDir', () => {
+    disposable = vscode.commands.registerCommand('extension.ccUpdateView', () => {
         if ( vscode.workspace.rootPath )
-            updatePath(vscode.workspace.rootPath);
+            updateObject(vscode.workspace.rootPath);
+    });
+
+    disposable = vscode.commands.registerCommand('extension.ccUpdateDir', () => {
+        if ( vscode.window &&
+             vscode.window.activeTextEditor &&
+             vscode.window.activeTextEditor.document ) {
+            updateObject(dirname(vscode.window.activeTextEditor.document.fileName));
+        }
+    });
+
+    disposable = vscode.commands.registerCommand('extension.ccUpdateFile', () => {
+        if ( vscode.window &&
+             vscode.window.activeTextEditor &&
+             vscode.window.activeTextEditor.document )
+            updateObject(vscode.window.activeTextEditor.document.fileName);
     });
 
     context.subscriptions.push(disposable);
@@ -162,6 +178,21 @@ function findModified(path: string) {
 
 function updatePath(path: string) {
     exec("clearviewupdate -pname \"" + path + "\"");
+}
+
+function updateObject(path: string) {
+    try{
+        fs.accessSync(path, fs.constants.F_OK);
+        if( path && path !== "" )
+            exec("cleartool update \"" + path + "\"", (error, stdout, stderr) => {
+                console.log(stdout.replace(/[\n\r]/g, " "));
+                if( stdout !== "" ) {
+                    vscode.window.showInformationMessage("Update of " + path + " finished");
+                }
+            });
+    } catch(error){
+        return;
+    }
 }
 
 function itemProperties(doc: vscode.TextDocument) {

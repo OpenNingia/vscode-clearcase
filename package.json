@@ -68,8 +68,16 @@
                 "title": "ClearCase: Item Properties"
             },
             {
+                "command": "extension.ccUpdateView",
+                "title": "ClearCase: Update View"
+            },
+            {
                 "command": "extension.ccUpdateDir",
-                "title": "ClearCase: Update"
+                "title": "ClearCase: Update Directory"
+            },
+            {
+                "command": "extension.ccUpdateFile",
+                "title": "ClearCase: Update File"
             }
         ],
         "keybindings": [
