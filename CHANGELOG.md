@@ -1,5 +1,13 @@
 ## Release Notes
 
+### 1.6.0
+* Fixed an issue that would restart the checkout dialog after canceling the checkout process
+* Added Clearcase: Update command in tree view context menu
+* Added Clearcase: Update View ( that launch the Clearcase update view native GUI )
+* Added Clearcase: Update Directories ( that updates in background the parent directory of the active document )
+
+Special thanks to https://github.com/fr43nk for the contributions.
+
 ### 1.5.1
 * Fixed an issue that prevents some commands to work on file path with whitespaces
 
