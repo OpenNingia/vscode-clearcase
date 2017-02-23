@@ -109,7 +109,19 @@
                 "command": "extension.ccFindCheckouts",
                 "key": "ctrl+j ctrl+f"
             }
-        ]
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "extension.ccUpdateDir",
+                    "group": "cc"
+                },
+                {
+                    "command": "extension.ccUpdateFile",
+                    "group": "cc"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",

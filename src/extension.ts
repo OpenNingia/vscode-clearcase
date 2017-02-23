@@ -2,9 +2,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import {exec} from 'child_process'
+import { exec } from 'child_process'
 import * as fs from 'fs';
-import {dirname} from 'path';
+import { dirname } from 'path';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -54,14 +54,14 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccFindCheckouts', () => {
-        if ( vscode.workspace.rootPath )
+        if (vscode.workspace.rootPath)
             findCheckouts(vscode.workspace.rootPath);
     });
 
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccFindModified', () => {
-        if ( vscode.workspace.rootPath )
+        if (vscode.workspace.rootPath)
             findModified(vscode.workspace.rootPath);
     });
 
@@ -74,32 +74,36 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccUpdateView', () => {
-        if ( vscode.workspace.rootPath )
-            updateObject(vscode.workspace.rootPath);
+        updateObject(null, 2);
     });
 
-    disposable = vscode.commands.registerCommand('extension.ccUpdateDir', () => {
-        if ( vscode.window &&
-             vscode.window.activeTextEditor &&
-             vscode.window.activeTextEditor.document ) {
-            updateObject(dirname(vscode.window.activeTextEditor.document.fileName));
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('extension.ccUpdateDir', (filePath?: vscode.Uri) => {
+        if (vscode.window &&
+            vscode.window.activeTextEditor &&
+            vscode.window.activeTextEditor.document) {
+            updateObject(filePath, 0);
         }
     });
 
-    disposable = vscode.commands.registerCommand('extension.ccUpdateFile', () => {
-        if ( vscode.window &&
-             vscode.window.activeTextEditor &&
-             vscode.window.activeTextEditor.document )
-            updateObject(vscode.window.activeTextEditor.document.fileName);
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('extension.ccUpdateFile', (filePath?: vscode.Uri) => {
+        if (vscode.window &&
+            vscode.window.activeTextEditor &&
+            vscode.window.activeTextEditor.document) {
+            updateObject(filePath, 1);
+        }
     });
 
     context.subscriptions.push(disposable);
 
     vscode.workspace.onWillSaveTextDocument((event) => {
         try {
-            if ( event == null || event.document == null || event.document.isUntitled || event.reason != vscode.TextDocumentSaveReason.Manual )
+            if (event == null || event.document == null || event.document.isUntitled || event.reason != vscode.TextDocumentSaveReason.Manual)
                 return;
-            if ( isReadOnly(event.document) ) {
+            if (isReadOnly(event.document)) {
                 execOnSCMFile(event.document, checkoutAndSaveFile);
             }
         } catch (error) { console.log("error " + error); }
@@ -111,18 +115,17 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 }
 
-function execOnSCMFile(doc: vscode.TextDocument, func: (string) => void)
-{
+function execOnSCMFile(doc: vscode.TextDocument, func: (string) => void) {
     var path = doc.fileName;
     exec("cleartool ls \"" + path + "\"", (error, stdout, stderr) => {
-    if (error) {
-        console.error(`exec error: ${error}`);
-        vscode.window.showErrorMessage(`${path} is not a valid ClearCase object.`);
-        return;
-    }
-    func(doc);
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
+        if (error) {
+            console.error(`exec error: ${error}`);
+            vscode.window.showErrorMessage(`${path} is not a valid ClearCase object.`);
+            return;
+        }
+        func(doc);
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
     });
 }
 
@@ -176,22 +179,46 @@ function findModified(path: string) {
     exec("clearviewupdate -pname \"" + path + "\" -modified");
 }
 
-function updatePath(path: string) {
-    exec("clearviewupdate -pname \"" + path + "\"");
-}
+/**
+ * @param filePath Uri of the selected file object in the explorer
+ * @param updateType which one to update: 0=directory, 1=file, 2=complete view
+ */
+function updateObject(filePath: vscode.Uri, updateType:number) {
+    try {
+        let p = ((filePath === null || filePath === undefined || filePath.fsPath === null) ?
+                    vscode.window.activeTextEditor.document.fileName : filePath.fsPath);
+        let stat = fs.lstatSync(p);
+        let path = "";
+        if (stat.isDirectory()) {
+            path = p;
+        }
+        else if(stat.isFile())
+        {
+            path = (updateType===0 ? dirname(p) : p);
+        }
+        if (path !== "") {
+            path = "\"" + path + "\"";
+        }
+        let cmd = "cleartool update " + path;
+        if( updateType === 2 )
+        {
+           cmd = "cleartool update";
+        }
 
-function updateObject(path: string) {
-    try{
-        fs.accessSync(path, fs.constants.F_OK);
-        if( path && path !== "" )
-            exec("cleartool update \"" + path + "\"", (error, stdout, stderr) => {
-                console.log(stdout.replace(/[\n\r]/g, " "));
-                if( stdout !== "" ) {
-                    vscode.window.showInformationMessage("Update of " + path + " finished");
-                }
-            });
-    } catch(error){
-        return;
+        exec(cmd, (error, stdout, stderr) => {
+            if (stdout !== "") {
+                vscode.window.showInformationMessage("Update of " + path + " finished");
+            }
+            else if (stderr !== "") {
+                vscode.window.showErrorMessage(stderr);
+            }
+            else
+            {
+                vscode.window.showErrorMessage(error.message);
+            }
+        });
+    } catch (error) {
+        vscode.window.showErrorMessage(error.message);
     }
 }
 
