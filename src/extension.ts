@@ -74,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('extension.ccUpdateView', () => {
-        updateObject(null, 2);
+        updateView();
     });
 
     context.subscriptions.push(disposable);
@@ -179,9 +179,13 @@ function findModified(path: string) {
     exec("clearviewupdate -pname \"" + path + "\" -modified");
 }
 
+function updateView() {
+    exec("clearviewupdate");
+}
+
 /**
  * @param filePath Uri of the selected file object in the explorer
- * @param updateType which one to update: 0=directory, 1=file, 2=complete view
+ * @param updateType which one to update: 0=directory, 1=file
  */
 function updateObject(filePath: vscode.Uri, updateType:number) {
     try {
@@ -200,10 +204,6 @@ function updateObject(filePath: vscode.Uri, updateType:number) {
             path = "\"" + path + "\"";
         }
         let cmd = "cleartool update " + path;
-        if( updateType === 2 )
-        {
-           cmd = "cleartool update";
-        }
 
         exec(cmd, (error, stdout, stderr) => {
             if (stdout !== "") {
