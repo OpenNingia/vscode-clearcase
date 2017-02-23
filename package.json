@@ -68,7 +68,15 @@
                 "title": "ClearCase: Item Properties"
             },
             {
+                "command": "extension.ccUpdateView",
+                "title": "ClearCase: Update View"
+            },
+            {
                 "command": "extension.ccUpdateDir",
+                "title": "ClearCase: Update Directory"
+            },
+            {
+                "command": "extension.ccUpdateFile",
                 "title": "ClearCase: Update"
             }
         ],
@@ -101,7 +109,15 @@
                 "command": "extension.ccFindCheckouts",
                 "key": "ctrl+j ctrl+f"
             }
-        ]
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "extension.ccUpdateFile",
+                    "group": "cc"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
