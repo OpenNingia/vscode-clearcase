@@ -240,3 +240,4 @@ function isReadOnly(doc: vscode.TextDocument): boolean {
         return true;
     }
 }
+
