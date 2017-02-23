@@ -77,7 +77,7 @@
             },
             {
                 "command": "extension.ccUpdateFile",
-                "title": "ClearCase: Update File"
+                "title": "ClearCase: Update"
             }
         ],
         "keybindings": [
@@ -112,10 +112,6 @@
         ],
         "menus": {
             "explorer/context": [
-                {
-                    "command": "extension.ccUpdateDir",
-                    "group": "cc"
-                },
                 {
                     "command": "extension.ccUpdateFile",
                     "group": "cc"
