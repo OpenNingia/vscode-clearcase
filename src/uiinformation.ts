@@ -101,7 +101,7 @@ export class UIInformation
 
 	public queryVersionInformation(iFile:string)
 	{
-		exec("cleartool ls -short " + iFile, (error, stdout, stderr) => {
+		exec("cleartool ls -short \"" + iFile + "\"", (error, stdout, stderr) => {
 			if(error || stderr)
 			{
 				this.updateStatusbar("");
