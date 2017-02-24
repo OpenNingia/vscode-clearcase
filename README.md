@@ -19,6 +19,15 @@ Clearcase commands exposed by this extensions:
 
 All commands are relative to the current file.
 
+### GUI
+
+   * Auto show checkout dialog on save if file isn't checked out.
+   * Show version of current file in the status bar. This can be disabled via the user setting
+   
+     ```TypeScript
+     vscode-clearcase.showVersionInStatusbar = false
+     ```
+
 ## Requirements
 
 A valid ClearCase installation within the system's PATH.

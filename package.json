@@ -117,6 +117,16 @@
                     "group": "cc"
                 }
             ]
+        },
+        "configuration": {
+            "title": "Clearcase confguration",
+            "properties": {
+                "vscode-clearcase.showVersionInStatusbar": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Shows the current file clearcase version information."
+                }
+            }
         }
     },
     "scripts": {
