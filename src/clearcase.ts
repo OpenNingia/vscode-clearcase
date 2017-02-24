@@ -2,10 +2,11 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { exec } from 'child_process'
+import {exec} from 'child_process'
 import * as fs from 'fs';
-import { dirname } from 'path';
+import {dirname} from 'path';
 import {EventEmitter} from 'events'
+import ClearcaseAnnotateContentProvider from "./annotateContentProvider"
 
 export class ClearCase{
 
@@ -18,7 +19,7 @@ export class ClearCase{
         this.m_updateEvent = new EventEmitter();
     }
 
-    public bindEvents()
+    public bindCommands()
     {
         let disposable = vscode.commands.registerCommand('extension.ccExplorer', () => {
             this.execOnSCMFile(vscode.window.activeTextEditor.document, this.runClearCaseExplorer);
@@ -101,6 +102,22 @@ export class ClearCase{
         }, this);
 
         this.m_context.subscriptions.push(disposable);
+
+        disposable = vscode.commands.registerCommand('extension.ccAnnotate', (filePath?: vscode.Uri) => {
+            if (vscode.window &&
+                vscode.window.activeTextEditor &&
+                vscode.window.activeTextEditor.document) {
+                this.annotate(filePath || vscode.window.activeTextEditor.document.uri);
+            }
+        }, this);
+
+        this.m_context.subscriptions.push(disposable);
+
+        // register annotation content provider
+        this.m_context.subscriptions.push(
+            vscode.workspace.registerTextDocumentContentProvider(
+                ClearcaseAnnotateContentProvider.scheme, new ClearcaseAnnotateContentProvider(this.m_context, this)));
+
     }
 
     public onCommandExecuted(func : (string) => void)
@@ -108,7 +125,7 @@ export class ClearCase{
         this.m_updateEvent.on("changed", func);
     }
 
-    public bindCommands()
+    public bindEvents()
     {
         this.m_context.subscriptions.push(
             vscode.workspace.onWillSaveTextDocument((event) => {
@@ -248,6 +265,27 @@ export class ClearCase{
         exec("cleardescribe \"" + path + "\"");
     }
 
+    public annotate(fileUri: vscode.Uri) {
+        let annUri = fileUri.with( {scheme: ClearcaseAnnotateContentProvider.scheme});
+        vscode.workspace.openTextDocument(annUri).then(doc => {
+            vscode.window.showTextDocument(doc);
+        });
+    }
+
+    public async getAnnotatedFileContent(filePath: string): Promise<string> {
+        let param = "\"" + filePath + "\"";
+        let cmd = "cleartool annotate -out - -nhe -nco -long " + param;
+
+        return new Promise<string>(function(resolve,reject){
+            exec(cmd, (error, stdout, stderr) => {
+                    if ( error )
+                        reject(error);
+                    else
+                        resolve(stdout);
+                });
+        });
+    }
+
     // returns true if the given document is read-only
     public isReadOnly(doc: vscode.TextDocument): boolean {
         let filePath = doc.fileName;
@@ -259,5 +297,3 @@ export class ClearCase{
         }
     }
 }
-
-

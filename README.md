@@ -16,6 +16,7 @@ Clearcase commands exposed by this extensions:
     * Find modified files
     * Update snapshot
     * Item Properties
+    * Annotations
 
 All commands are relative to the current file.
 

@@ -78,6 +78,10 @@
             {
                 "command": "extension.ccUpdateFile",
                 "title": "ClearCase: Update"
+            },
+            {
+                "command": "extension.ccAnnotate",
+                "title": "ClearCase: Annotate"
             }
         ],
         "keybindings": [

@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.7.0
+* Added (optional) status bar information
+* Added Annotate command
+
 ### 1.6.0
 * Fixed an issue that would restart the checkout dialog after canceling the checkout process
 * Added Clearcase: Update command in tree view context menu
