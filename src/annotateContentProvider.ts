@@ -1,6 +1,6 @@
 
 'use strict';
-import {ExtensionContext, TextDocumentContentProvider, Uri, window} from 'vscode';
+import {ExtensionContext, TextDocumentContentProvider, Uri, window} from 'vscode'
 import {ClearCase} from './clearcase';
 import * as path from 'path';
 

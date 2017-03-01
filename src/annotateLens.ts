@@ -1,0 +1,12 @@
+'use strict';
+
+import * as vscode from 'vscode';
+import ClearcaseAnnotateContentProvider from './annotateContentProvider';
+
+export class ccAnnotateLens extends vscode.CodeLens
+{
+	constructor(public document: vscode.TextDocument, range: vscode.Range)
+	{
+		super(range);
+	}
+}
