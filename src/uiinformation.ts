@@ -6,12 +6,11 @@ import {exec} from 'child_process';
 export class UIInformation
 {
 	private m_statusbar: vscode.StatusBarItem;
-	private m_context: vscode.ExtensionContext;
 	private m_isActive: boolean;
 
-	public constructor(context: vscode.ExtensionContext)
+	public constructor(private m_context: vscode.ExtensionContext,
+										 private m_editor: vscode.TextEditor)
 	{
-		this.m_context = context;
 		this.m_isActive = true;
 		this.handleConfigState();
 	}
@@ -28,8 +27,7 @@ export class UIInformation
 			this.handleConfigState();
 		}, this, this.m_context.subscriptions);
 
-		if( vscode.window &&
-				vscode.window.activeTextEditor )
+		if( this.m_editor )
 		{
 			this.m_context.subscriptions.push(
 				vscode.workspace.onDidOpenTextDocument(
@@ -50,7 +48,8 @@ export class UIInformation
 	{
 		if( event && this.m_isActive )
 		{
-			this.queryVersionInformation(event.textEditor.document.fileName);
+			this.m_editor = event.textEditor;
+			this.queryVersionInformation(this.m_editor.document.fileName);
 		}
 	}
 
@@ -66,6 +65,7 @@ export class UIInformation
 	{
 		if( event && this.m_isActive )
 		{
+			this.m_editor = event;
 			this.queryVersionInformation(event.document.fileName);
 		}
 	}
@@ -90,12 +90,9 @@ export class UIInformation
 
 	public initialQuery()
 	{
-		if( this.m_isActive &&
-				vscode.window &&
-				vscode.window.activeTextEditor && 
-				vscode.window.activeTextEditor.document )
+		if( this.m_isActive && this.m_editor && this.m_editor.document )
 		{
-			this.queryVersionInformation(vscode.window.activeTextEditor.document.fileName);
+			this.queryVersionInformation(this.m_editor.document.fileName);
 		}
 	}
 
