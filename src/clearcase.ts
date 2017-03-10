@@ -8,8 +8,9 @@ import * as fs from 'fs';
 import {dirname} from 'path';
 import {EventEmitter} from 'events'
 import ClearcaseAnnotateContentProvider from "./annotateContentProvider"
-import {CcCodeLensProvider} from "./annotateLensProvider";
-import {ccAnnotationController} from './annotateController'
+import {ccCodeLensProvider} from "./ccAnnotateLensProvider";
+import {ccAnnotationController} from './ccAnnotateController'
+import {ccConfigHandler} from './ccConfigHandler';
 
 export class ClearCase{
 
@@ -17,7 +18,8 @@ export class ClearCase{
     private m_context: ExtensionContext;
     private m_updateEvent: EventEmitter;
 
-    public constructor(context:ExtensionContext)
+    public constructor(context:ExtensionContext,
+                       private configHandler: ccConfigHandler)
     {
         this.m_context = context;
         this.m_updateEvent = new EventEmitter();
@@ -108,7 +110,10 @@ export class ClearCase{
 
         this.m_context.subscriptions.push(disposable);
 
-        let annoCtrl = new ccAnnotationController(this, window.activeTextEditor, this.m_context);
+        let annoCtrl = new ccAnnotationController(this,
+                                                  window.activeTextEditor,
+                                                  this.m_context,
+                                                  this.configHandler);
         this.m_context.subscriptions.push(annoCtrl);
 
         disposable = commands.registerCommand('extension.ccAnnotate', (filePath?: Uri) => {
@@ -128,7 +133,7 @@ export class ClearCase{
 
         this.m_context.subscriptions.push(
             languages.registerCodeLensProvider(
-                CcCodeLensProvider.selector, new CcCodeLensProvider(this.m_context)));
+                ccCodeLensProvider.selector, new ccCodeLensProvider(this.m_context)));
 
     }
 
@@ -319,8 +324,16 @@ export class ClearCase{
     }
 
     async annotate(fileUri: Uri, ctrl: ccAnnotationController): Promise<any> {
-        let content = await this.getAnnotatedFileContent(fileUri.fsPath);
-        ctrl.setAnnotationInText(content);
+        try
+        {
+            let content = await this.getAnnotatedFileContent(fileUri.fsPath);
+            ctrl.setAnnotationInText(content);
+        }
+        catch(error)
+        {
+            error = error.replace(/[\r\n]+/g, " ");
+            window.showErrorMessage(error);
+        }
         //let annUri = fileUri.with( {scheme: ClearcaseAnnotateContentProvider.scheme});
         //workspace.openTextDocument(annUri).then(doc => {
         //    window.showTextDocument(doc);
@@ -329,14 +342,17 @@ export class ClearCase{
 
     public async getAnnotatedFileContent(filePath: string): Promise<string> {
         let param = "\"" + filePath + "\"";
-        let cmd = "cleartool annotate -out - -nhe -nco -long " + param;
+        let cmd = "cleartool annotate -out - -nhe -long " + param;
 
         return new Promise<string>((resolve,reject) => {
             exec(cmd, {maxBuffer:10485760}, (error, stdout, stderr) => {
                     if ( error )
-                        reject(error);
+                        reject(error.message);
                     else
-                        resolve(stdout);
+                        if( stderr )
+                            reject(stderr);
+                        else
+                            resolve(stdout);
                 });
         });
     }

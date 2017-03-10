@@ -129,6 +129,16 @@
           "type": "boolean",
           "default": true,
           "description": "Shows the current file clearcase version information."
+        },
+        "vscode-clearcase.annotationColor": {
+          "type": "string",
+          "default": "rgba(220, 220, 220, 0.8)",
+          "description": "Text color of the annotation."
+        },
+        "vscode-clearcase.annotationBackgroundColor": {
+          "type": "string",
+          "default": "rgba(20, 20, 20, 0.8)",
+          "description": "Background color of the annotation."
         }
       }
     }

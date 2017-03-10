@@ -1,15 +1,9 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import {ccAnnotateLens} from './annotateLens';
+import {ccAnnotateLens} from './ccAnnotateLens';
 
-export type Commands = 'extension.ccAnnotate';
-
-export const Commands = {
-	ShowAnnotation: "extension.ccAnnotate" as Commands
-}
-
-export class CcCodeLensProvider implements vscode.CodeLensProvider
+export class ccCodeLensProvider implements vscode.CodeLensProvider
 {
 	static selector = {
 		scheme: "file"
@@ -42,7 +36,7 @@ export class CcCodeLensProvider implements vscode.CodeLensProvider
 	private ccAnnotationCommand(iLens: ccAnnotateLens, iToken: vscode.CancellationToken)
 	{
 		iLens.command = {
-			title: "Show annotations",
+			title: "Toggle annotations",
 			command: "extension.ccAnnotate",
 			arguments: [iLens.document.uri]
 		};
