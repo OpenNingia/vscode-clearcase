@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.8.0
+* Added editor context menu
+* The extension is now activated only when a clearcase view is detected
+
 ### 1.7.0
 * Added (optional) status bar information
 * Added Annotate command
