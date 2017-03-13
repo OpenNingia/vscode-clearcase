@@ -17,6 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
     // The commandId parameter must match the command field in package.json
 
     let cc = new ClearCase(context);
+    vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', cc.IsView);
+    cc.onWindowChanged(() => {
+        vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', cc.IsView);
+    }, cc);
     cc.bindEvents();
     cc.bindCommands();
 
