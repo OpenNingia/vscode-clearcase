@@ -2,7 +2,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import {exec} from 'child_process'
+import {exec, execSync} from 'child_process'
 import * as fs from 'fs';
 import {dirname} from 'path';
 import {EventEmitter} from 'events'
@@ -10,13 +10,22 @@ import ClearcaseAnnotateContentProvider from "./annotateContentProvider"
 
 export class ClearCase{
 
+    private m_isCCView: boolean;
     private m_context: vscode.ExtensionContext;
     private m_updateEvent: EventEmitter;
+    private m_windowChangedEvent: vscode.EventEmitter<void>;
 
     public constructor(context:vscode.ExtensionContext)
     {
         this.m_context = context;
         this.m_updateEvent = new EventEmitter();
+        this.m_windowChangedEvent = new vscode.EventEmitter<void>();
+        this.m_isCCView = this.getConfigspec();
+    }
+
+    public get IsView(): boolean
+    {
+        return this.m_isCCView;
     }
 
     public bindCommands()
@@ -125,6 +134,11 @@ export class ClearCase{
         this.m_updateEvent.on("changed", func);
     }
 
+    public get onWindowChanged(): vscode.Event<void>
+    {
+        return this.m_windowChangedEvent.event;
+    }
+
     public bindEvents()
     {
         this.m_context.subscriptions.push(
@@ -137,6 +151,16 @@ export class ClearCase{
                     }
                 } catch (error) { console.log("error " + error); }
         }, this, this.m_context.subscriptions));
+
+        this.m_context.subscriptions.push(
+            vscode.window.onDidChangeActiveTextEditor(this.checkIsView, this, this.m_context.subscriptions)
+        );
+    }
+
+    public async checkIsView()
+    {
+        this.m_isCCView = this.getConfigspec();
+        this.m_windowChangedEvent.fire();
     }
 
     public execOnSCMFile(doc: vscode.TextDocument, func: (string) => void) {
@@ -218,6 +242,27 @@ export class ClearCase{
 
     public updateView() {
         exec("clearviewupdate");
+    }
+
+    public getConfigspec(): boolean {
+        try{
+            let f = vscode.window.activeTextEditor;
+            let p = "";
+            if( f.document )
+            {
+                p = f.document.uri.fsPath;
+                if( vscode.workspace.rootPath !== undefined )
+                    execSync("cleartool catcs", {cwd:vscode.workspace.rootPath});
+                else
+                    execSync(`cleartool ls ${p}`);
+                return true;
+            }
+            return false;
+        }
+        catch(error)
+        {
+            return false;
+        }
     }
 
     /**
