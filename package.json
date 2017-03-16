@@ -139,6 +139,11 @@
           "type": "string",
           "default": "rgba(20, 20, 20, 0.8)",
           "description": "Background color of the annotation."
+        },
+        "vscode-clearcase.annotationFormatString": {
+          "type": "string",
+          "default": "%d %12u",
+          "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
         }
       }
     }

@@ -37,6 +37,8 @@ export class ccConfigHandler
 				this.m_configuration.AnnotationColor = config.get("annotationColor") as string;
 			if( config.has("annotationBackgroundColor") )
 				this.m_configuration.AnnotationBackground = config.get("annotationBackgroundColor") as string;
+			if( config.has("annotationFormatString") )
+				this.m_configuration.AnnotationFormatString = config.get("annotationFormatString") as string;
 			this.m_configChanged.fire();
 		}
 	}

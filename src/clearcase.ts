@@ -341,8 +341,10 @@ export class ClearCase{
     }
 
     public async getAnnotatedFileContent(filePath: string): Promise<string> {
+        let fmt = this.configHandler.configuration.AnnotationFormatString;
+        let sep = " | ";
         let param = "\"" + filePath + "\"";
-        let cmd = "cleartool annotate -out - -nhe -long " + param;
+        let cmd = "cleartool annotate -out - -nhe -fmt \"" + fmt + sep + "\" " + param;
 
         return new Promise<string>((resolve,reject) => {
             exec(cmd, {maxBuffer:10485760}, (error, stdout, stderr) => {
