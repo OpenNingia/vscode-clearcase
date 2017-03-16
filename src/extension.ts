@@ -19,10 +19,14 @@ export function activate(context: vscode.ExtensionContext) {
     let configHandler = new ccConfigHandler(context);
 
     let cc = new ClearCase(context, configHandler);
+    vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', cc.IsView);
+    cc.onWindowChanged(() => {
+        vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', cc.IsView);
+    }, cc);
     cc.bindEvents();
     cc.bindCommands();
 
-    let uiInfo = new UIInformation(context, configHandler);
+    let uiInfo = new UIInformation(context, configHandler, vscode.window.activeTextEditor);
     uiInfo.createStatusbarItem();
     uiInfo.bindEvents();
     uiInfo.initialQuery();

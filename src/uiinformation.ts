@@ -10,10 +10,9 @@ export class UIInformation
 	private m_isActive: boolean;
 
 	public constructor(private context: vscode.ExtensionContext,
-										 private configHandler: ccConfigHandler)
+					   private configHandler: ccConfigHandler,
+					   private m_editor: vscode.TextEditor)
 	{
-		this.configHandler = configHandler;
-		this.context = context;
 		this.m_isActive = true;
 		this.handleConfigState();
 	}
@@ -28,8 +27,7 @@ export class UIInformation
 		// configuration change event
 		this.configHandler.onDidChangeConfiguration(this.handleConfigState, this);
 
-		if( vscode.window &&
-				vscode.window.activeTextEditor )
+		if( this.m_editor )
 		{
 			this.context.subscriptions.push(
 				vscode.workspace.onDidOpenTextDocument(
@@ -50,7 +48,8 @@ export class UIInformation
 	{
 		if( event && this.m_isActive )
 		{
-			this.queryVersionInformation(event.textEditor.document.fileName);
+			this.m_editor = event.textEditor;
+			this.queryVersionInformation(this.m_editor.document.fileName);
 		}
 	}
 
@@ -66,6 +65,7 @@ export class UIInformation
 	{
 		if( event && this.m_isActive )
 		{
+			this.m_editor = event;
 			this.queryVersionInformation(event.document.fileName);
 		}
 	}
@@ -86,12 +86,9 @@ export class UIInformation
 
 	public initialQuery()
 	{
-		if( this.m_isActive &&
-				vscode.window &&
-				vscode.window.activeTextEditor && 
-				vscode.window.activeTextEditor.document )
+		if( this.m_isActive && this.m_editor && this.m_editor.document )
 		{
-			this.queryVersionInformation(vscode.window.activeTextEditor.document.fileName);
+			this.queryVersionInformation(this.m_editor.document.fileName);
 		}
 	}
 

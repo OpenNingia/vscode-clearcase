@@ -13,16 +13,23 @@ import {ccConfigHandler} from './ccConfigHandler';
 
 export class ClearCase{
 
-    private m_isClearcaseView: boolean;
+    private m_isCCView: boolean;
     private m_context: ExtensionContext;
     private m_updateEvent: EventEmitter;
+    private m_windowChangedEvent: vscode.EventEmitter<void>;
 
     public constructor(context:ExtensionContext,
                        private configHandler: ccConfigHandler)
     {
         this.m_context = context;
         this.m_updateEvent = new EventEmitter();
-        this.checkIsClearcaseView(window.activeTextEditor.document);
+        this.m_windowChangedEvent = new vscode.EventEmitter<void>();
+        this.m_isCCView = this.getConfigspec();
+    }
+
+    public get IsView(): boolean
+    {
+        return this.m_isCCView;
     }
 
     public bindCommands()
@@ -125,11 +132,6 @@ export class ClearCase{
 
         this.m_context.subscriptions.push(disposable);
 
-        // register annotation content provider
-        //this.m_context.subscriptions.push(
-        //    workspace.registerTextDocumentContentProvider(
-        //        ClearcaseAnnotateContentProvider.scheme, new ClearcaseAnnotateContentProvider(this.m_context, this)));
-
         this.m_context.subscriptions.push(
             languages.registerCodeLensProvider(
                 ccCodeLensProvider.selector, new ccCodeLensProvider(this.m_context)));
@@ -139,6 +141,11 @@ export class ClearCase{
     public onCommandExecuted(func : (string) => void)
     {
         this.m_updateEvent.on("changed", func);
+    }
+
+    public get onWindowChanged(): vscode.Event<void>
+    {
+        return this.m_windowChangedEvent.event;
     }
 
     public bindEvents()
@@ -153,21 +160,16 @@ export class ClearCase{
                     }
                 } catch (error) { console.log("error " + error); }
         }, this, this.m_context.subscriptions));
+
+        this.m_context.subscriptions.push(
+            vscode.window.onDidChangeActiveTextEditor(this.checkIsView, this, this.m_context.subscriptions)
+        );
     }
 
-    public async checkIsClearcaseView(document:TextDocument)
+    public async checkIsView()
     {
-        if( document )
-        {
-            try{
-                let msg:string = await this.updateObject(document.uri, 0);
-                this.m_isClearcaseView = true;
-            }
-            catch(error)
-            {
-                this.m_isClearcaseView = false;
-            }
-        }
+        this.m_isCCView = this.getConfigspec();
+        this.m_windowChangedEvent.fire();
     }
 
     public execOnSCMFile(doc: TextDocument, func: (string) => void) {
@@ -249,6 +251,28 @@ export class ClearCase{
 
     public updateView() {
         exec("clearviewupdate");
+    }
+
+    public getConfigspec(): boolean {
+    {
+        try{
+            let f = vscode.window.activeTextEditor;
+            let p = "";
+            if( f.document )
+            {
+                p = f.document.uri.fsPath;
+                if( vscode.workspace.rootPath !== undefined )
+                    execSync("cleartool catcs", {cwd:vscode.workspace.rootPath});
+                else
+                    execSync(`cleartool ls ${p}`);
+                return true;
+            }
+            return false;
+        }
+        catch(error)
+        {
+            return false;
+        }
     }
 
     public async updateDir(uri:Uri)
