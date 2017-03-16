@@ -49,15 +49,18 @@ export class ccAnnotationController
 	setAnnotationInText(annotationText: string)
 	{
 		let deco : vscode.DecorationOptions[] = [];
+		let maxWidth : number = 0;
 		if( this.m_isActive === false )
 		{
 			let textLines = annotationText.split(/[\n\r]+/);
 			let textLineParts = textLines.map( l => {
 				let parts = l.split(" | ");
 				parts[0] = parts[0].replace(/\\/g, "/");
+				if( parts[0].length > maxWidth )
+					maxWidth = parts[0].length;
 				return parts;
 			});
-			deco = this.getDecoration(textLineParts, annotationText);
+			deco = this.getDecoration(textLineParts, maxWidth);
 			this.m_isActive = true;
 		}
 		else
@@ -67,13 +70,17 @@ export class ccAnnotationController
 		this.editor.setDecorations(this.m_decorationType, deco);
 	}
 
-	getDecoration(lines:string[][], text:string): vscode.DecorationOptions[]
+	getDecoration(iLines:string[][], iMaxWidth:number): vscode.DecorationOptions[]
 	{
 		let max: number = 0;
 		let deco: vscode.DecorationOptions[] = [];
-		for( let lineNr=0; lineNr<lines.length; lineNr++)
+		for( let lineNr=0; lineNr<iLines.length; lineNr++)
 		{
-			let line = lines[lineNr][0].replace(/ /gi, '\u00A0');
+			let line = iLines[lineNr][0].replace(/ /gi, '\u00A0');
+			while( line.length < iMaxWidth )
+			{
+				line = line.concat('\u00A0');
+			}
 			deco.push(this.createLineDecoration(line, lineNr, 0, max));
 		}
 		return deco;

@@ -7,7 +7,6 @@ import {exec, execSync} from 'child_process'
 import * as fs from 'fs';
 import {dirname} from 'path';
 import {EventEmitter} from 'events'
-import ClearcaseAnnotateContentProvider from "./annotateContentProvider"
 import {ccCodeLensProvider} from "./ccAnnotateLensProvider";
 import {ccAnnotationController} from './ccAnnotateController'
 import {ccConfigHandler} from './ccConfigHandler';
@@ -334,10 +333,6 @@ export class ClearCase{
             error = error.replace(/[\r\n]+/g, " ");
             window.showErrorMessage(error);
         }
-        //let annUri = fileUri.with( {scheme: ClearcaseAnnotateContentProvider.scheme});
-        //workspace.openTextDocument(annUri).then(doc => {
-        //    window.showTextDocument(doc);
-        //});
     }
 
     public async getAnnotatedFileContent(filePath: string): Promise<string> {
