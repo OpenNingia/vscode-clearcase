@@ -163,27 +163,27 @@
                 {
                     "command": "extension.ccUndoCheckout",
                     "group": "cc@3",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccCheckin",
                     "group": "cc@2",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccCheckout",
                     "group": "cc@1",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccComparePrevious",
                     "group": "cc@4",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccVersionTree",
                     "group": "cc@5",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 }
             ]
         },
