@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     cc.onCommandExecuted(() => {
         uiInfo.initialQuery();
-    });
+    }, uiInfo);
 }
 
 // this method is called when your extension is deactivated

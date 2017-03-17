@@ -1,130 +1,130 @@
 {
-  "name": "vscode-clearcase",
-  "displayName": "Unofficial ClearCase SCM Commands",
-  "description": "Unofficial support for IBM Rational ClearCase most common commands",
+    "name": "vscode-clearcase",
+    "displayName": "Unofficial ClearCase SCM Commands",
+    "description": "Unofficial support for IBM Rational ClearCase most common commands",
     "version": "1.8.0",
-  "publisher": "OpenNingia",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/OpenNingia/vscode-clearcase.git"
-  },
-  "galleryBanner": {
-    "color": "#FF524C",
-    "theme": "dark"
-  },
-  "icon": "images/icon.png",
-  "engines": {
-    "vscode": "^1.6.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "keywords": [
-    "scm",
-    "clearcase",
-    "keybindings"
-  ],
-  "activationEvents": [
-    "*"
-  ],
-  "main": "./out/src/extension",
-  "contributes": {
-    "commands": [
-      {
-        "command": "extension.ccExplorer",
+    "publisher": "OpenNingia",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenNingia/vscode-clearcase.git"
+    },
+    "galleryBanner": {
+        "color": "#FF524C",
+        "theme": "dark"
+    },
+    "icon": "images/icon.png",
+    "engines": {
+        "vscode": "^1.6.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "scm",
+        "clearcase",
+        "keybindings"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "extension.ccExplorer",
                 "title": "Explorer",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccCheckout",
+            },
+            {
+                "command": "extension.ccCheckout",
                 "title": "Checkout",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccCheckin",
+            },
+            {
+                "command": "extension.ccCheckin",
                 "title": "Checkin",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccVersionTree",
+            },
+            {
+                "command": "extension.ccVersionTree",
                 "title": "Version Tree",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccComparePrevious",
+            },
+            {
+                "command": "extension.ccComparePrevious",
                 "title": "Compare with previous version",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccUndoCheckout",
+            },
+            {
+                "command": "extension.ccUndoCheckout",
                 "title": "Undo Checkout",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccFindCheckouts",
+            },
+            {
+                "command": "extension.ccFindCheckouts",
                 "title": "Find Checkouts",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccFindModified",
+            },
+            {
+                "command": "extension.ccFindModified",
                 "title": "Find modified files",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccItemProperties",
+            },
+            {
+                "command": "extension.ccItemProperties",
                 "title": "Item Properties",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccUpdateView",
+            },
+            {
+                "command": "extension.ccUpdateView",
                 "title": "Update View",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccUpdateDir",
+            },
+            {
+                "command": "extension.ccUpdateDir",
                 "title": "Update Directory",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccUpdateFile",
+            },
+            {
+                "command": "extension.ccUpdateFile",
                 "title": "Update",
                 "category": "Clearcase"
-      },
-      {
-        "command": "extension.ccAnnotate",
+            },
+            {
+                "command": "extension.ccAnnotate",
                 "title": "Annotate",
                 "category": "Clearcase"
-      }
-    ],
+            }
+        ],
         "menus": {
             "commandPalette": [
-      {
-        "command": "extension.ccExplorer",
+                {
+                    "command": "extension.ccExplorer",
                     "when": "vscode-clearcase:enabled"
-      },
-      {
-        "command": "extension.ccCheckout",
+                },
+                {
+                    "command": "extension.ccCheckout",
                     "when": "vscode-clearcase:enabled"
-      },
-      {
-        "command": "extension.ccCheckin",
+                },
+                {
+                    "command": "extension.ccCheckin",
                     "when": "vscode-clearcase:enabled"
-      },
-      {
-        "command": "extension.ccVersionTree",
+                },
+                {
+                    "command": "extension.ccVersionTree",
                     "when": "vscode-clearcase:enabled"
-      },
-      {
-        "command": "extension.ccComparePrevious",
+                },
+                {
+                    "command": "extension.ccComparePrevious",
                     "when": "vscode-clearcase:enabled"
-      },
-      {
-        "command": "extension.ccUndoCheckout",
+                },
+                {
+                    "command": "extension.ccUndoCheckout",
                     "when": "vscode-clearcase:enabled"
-      },
-      {
-        "command": "extension.ccFindCheckouts",
+                },
+                {
+                    "command": "extension.ccFindCheckouts",
                     "when": "vscode-clearcase:enabled"
                 },
                 {
@@ -150,11 +150,11 @@
                 {
                     "command": "extension.ccAnnotate",
                     "when": "vscode-clearcase:enabled"
-      }
-    ],
-      "explorer/context": [
-        {
-          "command": "extension.ccUpdateFile",
+                }
+            ],
+            "explorer/context": [
+                {
+                    "command": "extension.ccUpdateFile",
                     "group": "cc",
                     "when": "vscode-clearcase:enabled"
                 }
@@ -163,29 +163,29 @@
                 {
                     "command": "extension.ccUndoCheckout",
                     "group": "cc@3",
-                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+                    "when": "vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccCheckin",
                     "group": "cc@2",
-                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+                    "when": "vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccCheckout",
                     "group": "cc@1",
-                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+                    "when": "vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccComparePrevious",
                     "group": "cc@4",
-                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+                    "when": "vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccVersionTree",
                     "group": "cc@5",
-                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
-        }
-      ]
+                    "when": "vscode-clearcase:enabled"
+                }
+            ]
         },
         "keybindings": [
             {
@@ -217,7 +217,7 @@
                 "key": "ctrl+j ctrl+p",
                 "mac": "ctrl+j ctrl+p",
                 "when": "editorTextFocus"
-    },
+            },
             {
                 "command": "extension.ccUndoCheckout",
                 "key": "ctrl+j ctrl+u",
@@ -231,45 +231,45 @@
                 "when": "editorTextFocus"
             }
         ],
-    "configuration": {
-      "title": "Clearcase confguration",
-      "properties": {
-        "vscode-clearcase.showVersionInStatusbar": {
-          "type": "boolean",
-          "default": true,
-          "description": "Shows the current file clearcase version information."
-        },
-        "vscode-clearcase.annotationColor": {
-          "type": "string",
-          "default": "rgba(220, 220, 220, 0.8)",
-          "description": "Text color of the annotation."
-        },
-        "vscode-clearcase.annotationBackgroundColor": {
-          "type": "string",
-          "default": "rgba(20, 20, 20, 0.8)",
-          "description": "Background color of the annotation."
-        },
-        "vscode-clearcase.annotationFormatString": {
-          "type": "string",
-          "default": "%d %12u",
-          "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
+        "configuration": {
+            "title": "Clearcase confguration",
+            "properties": {
+                "vscode-clearcase.showVersionInStatusbar": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Shows the current file clearcase version information."
+                },
+                "vscode-clearcase.annotationColor": {
+                  "type": "string",
+                  "default": "rgba(220, 220, 220, 0.8)",
+                  "description": "Text color of the annotation."
+                },
+                "vscode-clearcase.annotationBackgroundColor": {
+                  "type": "string",
+                  "default": "rgba(20, 20, 20, 0.8)",
+                  "description": "Background color of the annotation."
+                },
+                "vscode-clearcase.annotationFormatString": {
+                  "type": "string",
+                  "default": "%d %12u",
+                  "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
+                }
+            }
         }
-      }
-    }
-  },
-  "scripts": {
-    "vscode:prepublish": "tsc -p ./",
-    "compile": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install"
-  },
-  "dependencies": {
-    "child_process": "^1.0.2"
-  },
-  "devDependencies": {
+    },
+    "scripts": {
+        "vscode:prepublish": "tsc -p ./",
+        "compile": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install"
+    },
+    "dependencies": {
+        "child_process": "^1.0.2"
+    },
+    "devDependencies": {
         "typescript": "^2.0.3",
         "vscode": "^1.0.0",
         "mocha": "^2.3.3",
-    "@types/node": "^6.0.40",
+        "@types/node": "^6.0.40",
         "@types/mocha": "^2.2.32"
-  }
+    }
 }

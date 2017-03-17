@@ -2,11 +2,10 @@
 // The module ' contains the VS Code extensibility API
 // Import the module and reference it with the alias in your code below
 import {ExtensionContext,commands, window, workspace, Uri,
-        languages, TextDocument, TextDocumentSaveReason} from 'vscode'
+        languages, TextDocument, TextDocumentSaveReason, EventEmitter, Event} from 'vscode'
 import {exec, execSync} from 'child_process'
 import * as fs from 'fs';
 import {dirname} from 'path';
-import {EventEmitter} from 'events'
 import {ccCodeLensProvider} from "./ccAnnotateLensProvider";
 import {ccAnnotationController} from './ccAnnotateController'
 import {ccConfigHandler} from './ccConfigHandler';
@@ -15,15 +14,15 @@ export class ClearCase{
 
     private m_isCCView: boolean;
     private m_context: ExtensionContext;
-    private m_updateEvent: EventEmitter;
-    private m_windowChangedEvent: vscode.EventEmitter<void>;
+    private m_updateEvent: EventEmitter<void>;
+    private m_windowChangedEvent: EventEmitter<void>;
 
     public constructor(context:ExtensionContext,
                        private configHandler: ccConfigHandler)
     {
         this.m_context = context;
-        this.m_updateEvent = new EventEmitter();
-        this.m_windowChangedEvent = new vscode.EventEmitter<void>();
+        this.m_updateEvent = new EventEmitter<void>();
+        this.m_windowChangedEvent = new EventEmitter<void>();
         this.m_isCCView = this.getConfigspec();
     }
 
@@ -138,12 +137,12 @@ export class ClearCase{
 
     }
 
-    public onCommandExecuted(func : (string) => void)
+    public get onCommandExecuted(): Event<void>
     {
-        this.m_updateEvent.on("changed", func);
+        return this.m_updateEvent.event;
     }
 
-    public get onWindowChanged(): vscode.Event<void>
+    public get onWindowChanged(): Event<void>
     {
         return this.m_windowChangedEvent.event;
     }
@@ -162,7 +161,7 @@ export class ClearCase{
         }, this, this.m_context.subscriptions));
 
         this.m_context.subscriptions.push(
-            vscode.window.onDidChangeActiveTextEditor(this.checkIsView, this, this.m_context.subscriptions)
+            window.onDidChangeActiveTextEditor(this.checkIsView, this, this.m_context.subscriptions)
         );
     }
 
@@ -195,7 +194,7 @@ export class ClearCase{
     public checkoutFile(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.emit("changed");
+            this.m_updateEvent.fire();
         });
     }
 
@@ -210,6 +209,7 @@ export class ClearCase{
             // retriggered because of that save.
             if( this.isReadOnly(doc) === false ) {
                 doc.save();
+                this.m_updateEvent.fire();
                 console.log(`clearcase, file saved.`);
             } else {
                 console.log(`clearcase, file is still read only.`);
@@ -220,14 +220,14 @@ export class ClearCase{
     public undoCheckoutFile(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleartool unco -rm \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.emit("changed");
+            this.m_updateEvent.fire();
         });
     }
 
     public checkinFile(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleardlg /checkin \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.emit("changed");
+            this.m_updateEvent.fire();
         });
     }
 
@@ -253,16 +253,16 @@ export class ClearCase{
         exec("clearviewupdate");
     }
 
-    public getConfigspec(): boolean {
+    public getConfigspec(): boolean
     {
         try{
-            let f = vscode.window.activeTextEditor;
+            let f = window.activeTextEditor;
             let p = "";
             if( f.document )
             {
                 p = f.document.uri.fsPath;
-                if( vscode.workspace.rootPath !== undefined )
-                    execSync("cleartool catcs", {cwd:vscode.workspace.rootPath});
+                if( workspace.rootPath !== undefined )
+                    execSync("cleartool catcs", {cwd:workspace.rootPath});
                 else
                     execSync(`cleartool ls ${p}`);
                 return true;
@@ -324,7 +324,7 @@ export class ClearCase{
             return new Promise<string>((resolve, reject) => {
                 exec(cmd, (error, stdout, stderr) => {
                     if (stdout !== "") {
-                        this.m_updateEvent.emit("changed");
+                        this.m_updateEvent.fire();
                         resolve(path);
                     }
                     else if (stderr !== "") {

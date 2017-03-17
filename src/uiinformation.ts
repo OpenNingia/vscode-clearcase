@@ -10,8 +10,8 @@ export class UIInformation
 	private m_isActive: boolean;
 
 	public constructor(private context: vscode.ExtensionContext,
-					   private configHandler: ccConfigHandler,
-					   private m_editor: vscode.TextEditor)
+										 private configHandler: ccConfigHandler,
+										 private m_editor: vscode.TextEditor)
 	{
 		this.m_isActive = true;
 		this.handleConfigState();
