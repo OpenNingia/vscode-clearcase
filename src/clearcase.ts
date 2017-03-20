@@ -1,25 +1,28 @@
 'use strict';
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+// The module ' contains the VS Code extensibility API
+// Import the module and reference it with the alias in your code below
+import {ExtensionContext,commands, window, workspace, Uri,
+        languages, TextDocument, TextDocumentSaveReason, EventEmitter, Event} from 'vscode'
 import {exec, execSync} from 'child_process'
 import * as fs from 'fs';
 import {dirname} from 'path';
-import {EventEmitter} from 'events'
-import ClearcaseAnnotateContentProvider from "./annotateContentProvider"
+import {ccCodeLensProvider} from "./ccAnnotateLensProvider";
+import {ccAnnotationController} from './ccAnnotateController'
+import {ccConfigHandler} from './ccConfigHandler';
 
 export class ClearCase{
 
     private m_isCCView: boolean;
-    private m_context: vscode.ExtensionContext;
-    private m_updateEvent: EventEmitter;
-    private m_windowChangedEvent: vscode.EventEmitter<void>;
+    private m_context: ExtensionContext;
+    private m_updateEvent: EventEmitter<void>;
+    private m_windowChangedEvent: EventEmitter<void>;
 
-    public constructor(context:vscode.ExtensionContext)
+    public constructor(context:ExtensionContext,
+                       private configHandler: ccConfigHandler)
     {
         this.m_context = context;
-        this.m_updateEvent = new EventEmitter();
-        this.m_windowChangedEvent = new vscode.EventEmitter<void>();
+        this.m_updateEvent = new EventEmitter<void>();
+        this.m_windowChangedEvent = new EventEmitter<void>();
         this.m_isCCView = this.getConfigspec();
     }
 
@@ -30,111 +33,116 @@ export class ClearCase{
 
     public bindCommands()
     {
-        let disposable = vscode.commands.registerCommand('extension.ccExplorer', () => {
-            this.execOnSCMFile(vscode.window.activeTextEditor.document, this.runClearCaseExplorer);
+        let disposable = commands.registerCommand('extension.ccExplorer', () => {
+            this.execOnSCMFile(window.activeTextEditor.document, this.runClearCaseExplorer);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccCheckout', () => {
-            this.execOnSCMFile(vscode.window.activeTextEditor.document, this.checkoutFile);
+        disposable = commands.registerCommand('extension.ccCheckout', () => {
+            this.execOnSCMFile(window.activeTextEditor.document, this.checkoutFile);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccCheckin', () => {
-            this.execOnSCMFile(vscode.window.activeTextEditor.document, this.checkinFile);
+        disposable = commands.registerCommand('extension.ccCheckin', () => {
+            this.execOnSCMFile(window.activeTextEditor.document, this.checkinFile);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccVersionTree', () => {
-            this.execOnSCMFile(vscode.window.activeTextEditor.document, this.versionTree);
+        disposable = commands.registerCommand('extension.ccVersionTree', () => {
+            this.execOnSCMFile(window.activeTextEditor.document, this.versionTree);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccComparePrevious', () => {
-            this.execOnSCMFile(vscode.window.activeTextEditor.document, this.diffWithPrevious);
+        disposable = commands.registerCommand('extension.ccComparePrevious', () => {
+            this.execOnSCMFile(window.activeTextEditor.document, this.diffWithPrevious);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccUndoCheckout', () => {
-            this.execOnSCMFile(vscode.window.activeTextEditor.document, this.undoCheckoutFile);
+        disposable = commands.registerCommand('extension.ccUndoCheckout', () => {
+            this.execOnSCMFile(window.activeTextEditor.document, this.undoCheckoutFile);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccFindCheckouts', () => {
-            if (vscode.workspace.rootPath)
-                this.findCheckouts(vscode.workspace.rootPath);
+        disposable = commands.registerCommand('extension.ccFindCheckouts', () => {
+            if (workspace.rootPath)
+                this.findCheckouts(workspace.rootPath);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccFindModified', () => {
-            if (vscode.workspace.rootPath)
-                this.findModified(vscode.workspace.rootPath);
+        disposable = commands.registerCommand('extension.ccFindModified', () => {
+            if (workspace.rootPath)
+                this.findModified(workspace.rootPath);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccItemProperties', () => {
-            this.execOnSCMFile(vscode.window.activeTextEditor.document, this.itemProperties);
+        disposable = commands.registerCommand('extension.ccItemProperties', () => {
+            this.execOnSCMFile(window.activeTextEditor.document, this.itemProperties);
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccUpdateView', () => {
+        disposable = commands.registerCommand('extension.ccUpdateView', () => {
             this.updateView();
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccUpdateDir', (filePath?: vscode.Uri) => {
-            if (vscode.window &&
-                vscode.window.activeTextEditor &&
-                vscode.window.activeTextEditor.document) {
-                this.updateObject(filePath, 0);
+        disposable = commands.registerCommand('extension.ccUpdateDir', (filePath?: Uri) => {
+            if (window &&
+                window.activeTextEditor &&
+                window.activeTextEditor.document) {
+                this.updateDir(filePath);
             }
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccUpdateFile', (filePath?: vscode.Uri) => {
-            if (vscode.window &&
-                vscode.window.activeTextEditor &&
-                vscode.window.activeTextEditor.document) {
-                this.updateObject(filePath, 1);
+        disposable = commands.registerCommand('extension.ccUpdateFile', (filePath?: Uri) => {
+            if (window &&
+                window.activeTextEditor &&
+                window.activeTextEditor.document) {
+                this.updateFile(filePath);
             }
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        disposable = vscode.commands.registerCommand('extension.ccAnnotate', (filePath?: vscode.Uri) => {
-            if (vscode.window &&
-                vscode.window.activeTextEditor &&
-                vscode.window.activeTextEditor.document) {
-                this.annotate(filePath || vscode.window.activeTextEditor.document.uri);
+        let annoCtrl = new ccAnnotationController(this,
+                                                  window.activeTextEditor,
+                                                  this.m_context,
+                                                  this.configHandler);
+        this.m_context.subscriptions.push(annoCtrl);
+
+        disposable = commands.registerCommand('extension.ccAnnotate', (filePath?: Uri) => {
+            if (window &&
+                window.activeTextEditor &&
+                window.activeTextEditor.document) {
+                this.annotate(filePath || window.activeTextEditor.document.uri, annoCtrl);
             }
         }, this);
 
         this.m_context.subscriptions.push(disposable);
 
-        // register annotation content provider
         this.m_context.subscriptions.push(
-            vscode.workspace.registerTextDocumentContentProvider(
-                ClearcaseAnnotateContentProvider.scheme, new ClearcaseAnnotateContentProvider(this.m_context, this)));
+            languages.registerCodeLensProvider(
+                ccCodeLensProvider.selector, new ccCodeLensProvider(this.m_context)));
 
     }
 
-    public onCommandExecuted(func : (string) => void)
+    public get onCommandExecuted(): Event<void>
     {
-        this.m_updateEvent.on("changed", func);
+        return this.m_updateEvent.event;
     }
 
-    public get onWindowChanged(): vscode.Event<void>
+    public get onWindowChanged(): Event<void>
     {
         return this.m_windowChangedEvent.event;
     }
@@ -142,9 +150,9 @@ export class ClearCase{
     public bindEvents()
     {
         this.m_context.subscriptions.push(
-            vscode.workspace.onWillSaveTextDocument((event) => {
+            workspace.onWillSaveTextDocument((event) => {
                 try {
-                    if (event == null || event.document == null || event.document.isUntitled || event.reason != vscode.TextDocumentSaveReason.Manual)
+                    if (event == null || event.document == null || event.document.isUntitled || event.reason != TextDocumentSaveReason.Manual)
                         return;
                     if (this.isReadOnly(event.document)) {
                         this.execOnSCMFile(event.document, this.checkoutAndSaveFile);
@@ -153,7 +161,7 @@ export class ClearCase{
         }, this, this.m_context.subscriptions));
 
         this.m_context.subscriptions.push(
-            vscode.window.onDidChangeActiveTextEditor(this.checkIsView, this, this.m_context.subscriptions)
+            window.onDidChangeActiveTextEditor(this.checkIsView, this, this.m_context.subscriptions)
         );
     }
 
@@ -163,13 +171,13 @@ export class ClearCase{
         this.m_windowChangedEvent.fire();
     }
 
-    public execOnSCMFile(doc: vscode.TextDocument, func: (string) => void) {
+    public execOnSCMFile(doc: TextDocument, func: (string) => void) {
         var path = doc.fileName;
         var self = this;
         exec("cleartool ls \"" + path + "\"", (error, stdout, stderr) => {
             if (error) {
                 console.error(`clearcase, exec error: ${error}`);
-                vscode.window.showErrorMessage(`${path} is not a valid ClearCase object.`);
+                window.showErrorMessage(`${path} is not a valid ClearCase object.`);
                 return;
             }
             func.apply(self, [doc]);
@@ -178,19 +186,19 @@ export class ClearCase{
         });
     }
 
-    public runClearCaseExplorer(doc: vscode.TextDocument) {
+    public runClearCaseExplorer(doc: TextDocument) {
         var path = doc.fileName;
         exec("clearexplorer \"" + path + "\"");
     }
 
-    public checkoutFile(doc: vscode.TextDocument) {
+    public checkoutFile(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.emit("changed");
+            this.m_updateEvent.fire();
         });
     }
 
-    public checkoutAndSaveFile(doc: vscode.TextDocument) {
+    public checkoutAndSaveFile(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
             console.log(`clearcase, checkout and save.`);
@@ -201,6 +209,7 @@ export class ClearCase{
             // retriggered because of that save.
             if( this.isReadOnly(doc) === false ) {
                 doc.save();
+                this.m_updateEvent.fire();
                 console.log(`clearcase, file saved.`);
             } else {
                 console.log(`clearcase, file is still read only.`);
@@ -208,26 +217,26 @@ export class ClearCase{
         });
     }
 
-    public undoCheckoutFile(doc: vscode.TextDocument) {
+    public undoCheckoutFile(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleartool unco -rm \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.emit("changed");
+            this.m_updateEvent.fire();
         });
     }
 
-    public checkinFile(doc: vscode.TextDocument) {
+    public checkinFile(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleardlg /checkin \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.emit("changed");
+            this.m_updateEvent.fire();
         });
     }
 
-    public versionTree(doc: vscode.TextDocument) {
+    public versionTree(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleartool lsvtree -graphical \"" + path + "\"");
     }
 
-    public diffWithPrevious(doc: vscode.TextDocument) {
+    public diffWithPrevious(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleartool diff -graph -pred \"" + path + "\"");
     }
@@ -244,15 +253,16 @@ export class ClearCase{
         exec("clearviewupdate");
     }
 
-    public getConfigspec(): boolean {
+    public getConfigspec(): boolean
+    {
         try{
-            let f = vscode.window.activeTextEditor;
+            let f = window.activeTextEditor;
             let p = "";
             if( f.document )
             {
                 p = f.document.uri.fsPath;
-                if( vscode.workspace.rootPath !== undefined )
-                    execSync("cleartool catcs", {cwd:vscode.workspace.rootPath});
+                if( workspace.rootPath !== undefined )
+                    execSync("cleartool catcs", {cwd:workspace.rootPath});
                 else
                     execSync(`cleartool ls ${p}`);
                 return true;
@@ -265,14 +275,38 @@ export class ClearCase{
         }
     }
 
+    public async updateDir(uri:Uri)
+    {
+        try{
+            let msg:string = await this.updateObject(uri, 0);
+            window.showInformationMessage(`Update of ${msg} finished!`);
+        }
+        catch(error)
+        {
+            window.showErrorMessage(error);
+        }
+    }
+
+    public async updateFile(uri:Uri)
+    {
+        try{
+            let msg:string = await this.updateObject(uri, 1);
+            window.showInformationMessage(`Update of ${msg} finished!`);
+        }
+        catch(error)
+        {
+            window.showErrorMessage(error);
+        }
+    }
+
     /**
      * @param filePath Uri of the selected file object in the explorer
      * @param updateType which one to update: 0=directory, 1=file
      */
-    public updateObject(filePath: vscode.Uri, updateType:number) {
+    public async updateObject(filePath: Uri, updateType:number): Promise<string> {
         try {
             let p = ((filePath === null || filePath === undefined || filePath.fsPath === null) ?
-                        vscode.window.activeTextEditor.document.fileName : filePath.fsPath);
+                        window.activeTextEditor.document.fileName : filePath.fsPath);
             let stat = fs.lstatSync(p);
             let path = "";
             if (stat.isDirectory()) {
@@ -287,52 +321,65 @@ export class ClearCase{
             }
             let cmd = "cleartool update " + path;
 
-            exec(cmd, (error, stdout, stderr) => {
-                if (stdout !== "") {
-                    vscode.window.showInformationMessage("Update of " + path + " finished");
-                    this.m_updateEvent.emit("changed");
-                }
-                else if (stderr !== "") {
-                    vscode.window.showErrorMessage(stderr);
-                }
-                else
-                {
-                    vscode.window.showErrorMessage(error.message);
-                }
-            });
+            return new Promise<string>((resolve, reject) => {
+                exec(cmd, (error, stdout, stderr) => {
+                    if (stdout !== "") {
+                        this.m_updateEvent.fire();
+                        resolve(path);
+                    }
+                    else if (stderr !== "") {
+                        reject(stderr);
+                    }
+                    else
+                    {
+                        reject(error.message);
+                    }
+                });
+            })
         } catch (error) {
-            vscode.window.showErrorMessage(error.message);
+            throw error.message;
         }
     }
 
-    public itemProperties(doc: vscode.TextDocument) {
+    public itemProperties(doc: TextDocument) {
         var path = doc.fileName;
         exec("cleardescribe \"" + path + "\"");
     }
 
-    public annotate(fileUri: vscode.Uri) {
-        let annUri = fileUri.with( {scheme: ClearcaseAnnotateContentProvider.scheme});
-        vscode.workspace.openTextDocument(annUri).then(doc => {
-            vscode.window.showTextDocument(doc);
-        });
+    async annotate(fileUri: Uri, ctrl: ccAnnotationController): Promise<any> {
+        try
+        {
+            let content = await this.getAnnotatedFileContent(fileUri.fsPath);
+            ctrl.setAnnotationInText(content);
+        }
+        catch(error)
+        {
+            error = error.replace(/[\r\n]+/g, " ");
+            window.showErrorMessage(error);
+        }
     }
 
     public async getAnnotatedFileContent(filePath: string): Promise<string> {
+        let fmt = this.configHandler.configuration.AnnotationFormatString;
+        let sep = " | ";
         let param = "\"" + filePath + "\"";
-        let cmd = "cleartool annotate -out - -nhe -nco -long " + param;
+        let cmd = "cleartool annotate -out - -nhe -fmt \"" + fmt + sep + "\" " + param;
 
-        return new Promise<string>(function(resolve,reject){
-            exec(cmd, (error, stdout, stderr) => {
+        return new Promise<string>((resolve,reject) => {
+            exec(cmd, {maxBuffer:10485760}, (error, stdout, stderr) => {
                     if ( error )
-                        reject(error);
+                        reject(error.message);
                     else
-                        resolve(stdout);
+                        if( stderr )
+                            reject(stderr);
+                        else
+                            resolve(stdout);
                 });
         });
     }
 
     // returns true if the given document is read-only
-    public isReadOnly(doc: vscode.TextDocument): boolean {
+    public isReadOnly(doc: TextDocument): boolean {
         let filePath = doc.fileName;
         try {
             fs.accessSync(filePath, fs.constants.W_OK);

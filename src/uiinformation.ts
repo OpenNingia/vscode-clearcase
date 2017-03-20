@@ -2,13 +2,15 @@
 
 import * as vscode from 'vscode';
 import {exec} from 'child_process';
+import {ccConfigHandler} from './ccConfigHandler';
 
 export class UIInformation
 {
 	private m_statusbar: vscode.StatusBarItem;
 	private m_isActive: boolean;
 
-	public constructor(private m_context: vscode.ExtensionContext,
+	public constructor(private context: vscode.ExtensionContext,
+										 private configHandler: ccConfigHandler,
 										 private m_editor: vscode.TextEditor)
 	{
 		this.m_isActive = true;
@@ -23,24 +25,22 @@ export class UIInformation
 	public bindEvents()
 	{
 		// configuration change event
-		vscode.workspace.onDidChangeConfiguration(() => {
-			this.handleConfigState();
-		}, this, this.m_context.subscriptions);
+		this.configHandler.onDidChangeConfiguration(this.handleConfigState, this);
 
 		if( this.m_editor )
 		{
-			this.m_context.subscriptions.push(
+			this.context.subscriptions.push(
 				vscode.workspace.onDidOpenTextDocument(
-					this.receiveDocument, this, this.m_context.subscriptions));
-			this.m_context.subscriptions.push(
+					this.receiveDocument, this, this.context.subscriptions));
+			this.context.subscriptions.push(
 				vscode.workspace.onDidSaveTextDocument(
-					this.receiveDocument, this, this.m_context.subscriptions));
-			this.m_context.subscriptions.push(
+					this.receiveDocument, this, this.context.subscriptions));
+			this.context.subscriptions.push(
 				vscode.window.onDidChangeActiveTextEditor(
-					this.receiveEditor, this, this.m_context.subscriptions));
-			this.m_context.subscriptions.push(
+					this.receiveEditor, this, this.context.subscriptions));
+			this.context.subscriptions.push(
 				vscode.window.onDidChangeTextEditorViewColumn(
-					this.receiveEditorColumn, this, this.m_context.subscriptions));
+					this.receiveEditorColumn, this, this.context.subscriptions));
 		}
 	}
 
@@ -72,11 +72,7 @@ export class UIInformation
 
 	private handleConfigState()
 	{
-		let config = vscode.workspace.getConfiguration('vscode-clearcase');
-		if( config && config.has("showVersionInStatusbar") )
-		{
-			this.m_isActive = config.get("showVersionInStatusbar") as boolean;
-		}
+		this.m_isActive = this.configHandler.configuration.ShowStatusbar;
 
 		if( this.m_isActive === false )
 		{

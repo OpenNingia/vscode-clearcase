@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 import {ClearCase} from './clearcase';
 import {UIInformation} from './uiinformation'
+import {ccConfigHandler} from './ccConfigHandler';
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -15,8 +16,9 @@ export function activate(context: vscode.ExtensionContext) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
+    let configHandler = new ccConfigHandler(context);
 
-    let cc = new ClearCase(context);
+    let cc = new ClearCase(context, configHandler);
     vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', cc.IsView);
     cc.onWindowChanged(() => {
         vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', cc.IsView);
@@ -24,14 +26,14 @@ export function activate(context: vscode.ExtensionContext) {
     cc.bindEvents();
     cc.bindCommands();
 
-    let uiInfo = new UIInformation(context, vscode.window.activeTextEditor);
+    let uiInfo = new UIInformation(context, configHandler, vscode.window.activeTextEditor);
     uiInfo.createStatusbarItem();
     uiInfo.bindEvents();
     uiInfo.initialQuery();
 
     cc.onCommandExecuted(() => {
         uiInfo.initialQuery();
-    });
+    }, uiInfo);
 }
 
 // this method is called when your extension is deactivated
