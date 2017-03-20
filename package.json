@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "1.8.0",
+    "version": "1.9.0",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
@@ -240,19 +240,19 @@
                     "description": "Shows the current file clearcase version information."
                 },
                 "vscode-clearcase.annotationColor": {
-                  "type": "string",
-                  "default": "rgba(220, 220, 220, 0.8)",
-                  "description": "Text color of the annotation."
+                    "type": "string",
+                    "default": "rgba(220, 220, 220, 0.8)",
+                    "description": "Text color of the annotation."
                 },
                 "vscode-clearcase.annotationBackgroundColor": {
-                  "type": "string",
-                  "default": "rgba(20, 20, 20, 0.8)",
-                  "description": "Background color of the annotation."
+                    "type": "string",
+                    "default": "rgba(20, 20, 20, 0.8)",
+                    "description": "Background color of the annotation."
                 },
                 "vscode-clearcase.annotationFormatString": {
-                  "type": "string",
-                  "default": "%d %12u",
-                  "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
+                    "type": "string",
+                    "default": "%d %12u",
+                    "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
                 }
             }
         }
