@@ -16,18 +16,26 @@ Clearcase commands exposed by this extensions:
     * Find modified files
     * Update snapshot
     * Item Properties
-    * Annotations
-
-All commands are relative to the current file.
+    * Annotate
 
 ### GUI
 
    * Auto show checkout dialog on save if file isn't checked out.
    * Show version of current file in the status bar. This can be disabled via the user setting
-   
+
      ```TypeScript
      vscode-clearcase.showVersionInStatusbar = false
      ```
+
+   * Annotate code lens is customizable via these user settings
+
+     ```TypeScript
+     vscode-clearcase.annotationColor = rgba(220, 220, 220, 0.8)
+     vscode-clearcase.annotationBackgroundColor = rgba(20, 20, 20, 0.8)
+     vscode-clearcase.annotationFormatString = "%d %12u"
+     ```
+
+     Format string is documented at https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm
 
 ## Requirements
 

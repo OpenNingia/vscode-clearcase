@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.9.0
+* Fixed context menu being activated in Output window
+* Annotate is now a code lens
+
 ### 1.8.0
 * Added editor context menu
 * The extension is now activated only when a clearcase view is detected
