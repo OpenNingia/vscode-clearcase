@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.9.1
+* Annotate code lens is now activated only on valid clearcase objects
+
 ### 1.9.0
 * Fixed context menu being activated in Output window
 * Annotate is now a code lens
