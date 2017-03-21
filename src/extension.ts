@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
     cc.bindEvents();
     cc.bindCommands();
 
-    let uiInfo = new UIInformation(context, configHandler, vscode.window.activeTextEditor);
+    let uiInfo = new UIInformation(context, configHandler, vscode.window.activeTextEditor, cc);
     uiInfo.createStatusbarItem();
     uiInfo.bindEvents();
     uiInfo.initialQuery();

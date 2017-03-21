@@ -2,7 +2,8 @@
 // The module ' contains the VS Code extensibility API
 // Import the module and reference it with the alias in your code below
 import {ExtensionContext,commands, window, workspace, Uri,
-        languages, TextDocument, TextDocumentSaveReason, EventEmitter, Event} from 'vscode'
+        languages, TextEditor, TextDocument, TextDocumentSaveReason,
+        EventEmitter, Event} from 'vscode'
 import {exec, execSync} from 'child_process'
 import * as fs from 'fs';
 import {dirname} from 'path';
@@ -23,7 +24,7 @@ export class ClearCase{
         this.m_context = context;
         this.m_updateEvent = new EventEmitter<void>();
         this.m_windowChangedEvent = new EventEmitter<void>();
-        this.m_isCCView = this.getConfigspec();
+        this.checkIsView(window.activeTextEditor);
     }
 
     public get IsView(): boolean
@@ -133,8 +134,8 @@ export class ClearCase{
 
         this.m_context.subscriptions.push(
             languages.registerCodeLensProvider(
-                ccCodeLensProvider.selector, new ccCodeLensProvider(this.m_context)));
-
+                ccCodeLensProvider.selector,
+                new ccCodeLensProvider(this.m_context, this)));
     }
 
     public get onCommandExecuted(): Event<void>
@@ -165,9 +166,32 @@ export class ClearCase{
         );
     }
 
-    public async checkIsView()
+    /**
+     * Checks if the file itself is a clearcase object or if it's in a
+     * clearcase view
+     * 
+     * @param editor current editor instance
+     */
+    public async checkIsView(editor: TextEditor)
     {
-        this.m_isCCView = this.getConfigspec();
+        if( editor !== undefined && editor.document !== undefined )
+        {
+            try
+            {
+                this.m_isCCView = await this.isClearcaseObject(editor.document.uri);
+                if( this.m_isCCView === false )
+                    this.m_isCCView = this.hasConfigspec();
+            }
+            catch(error)
+            {
+                // can happen i.e. with a new file which has not been save yet
+                this.m_isCCView = this.hasConfigspec();
+            }
+        }
+        else
+        {
+            this.m_isCCView = this.hasConfigspec();
+        }
         this.m_windowChangedEvent.fire();
     }
 
@@ -253,18 +277,12 @@ export class ClearCase{
         exec("clearviewupdate");
     }
 
-    public getConfigspec(): boolean
+    public hasConfigspec(): boolean
     {
         try{
-            let f = window.activeTextEditor;
-            let p = "";
-            if( f.document )
+            if( workspace.rootPath !== undefined )
             {
-                p = f.document.uri.fsPath;
-                if( workspace.rootPath !== undefined )
-                    execSync("cleartool catcs", {cwd:workspace.rootPath});
-                else
-                    execSync(`cleartool ls ${p}`);
+                execSync("cleartool catcs", {cwd:workspace.rootPath});
                 return true;
             }
             return false;
@@ -273,6 +291,74 @@ export class ClearCase{
         {
             return false;
         }
+    }
+
+    /**
+     * Returns whether the given file object a clearcase object.
+     * 
+     * @param iUri the uri of the file object to be checked
+     */
+    public async isClearcaseObject(iUri:Uri): Promise<boolean>
+    {
+        try
+        {
+            return ("" !== await this.getVersionInformation(iUri));
+        }
+        catch(error)
+        {
+            return false;
+        }
+    }
+
+    /**
+     * Retruns a promise promise which will contain a branch information in
+     * case the file object is a clearcase object.
+     * The string is empty if not.
+     * 
+     * @param iUri the uri of the file object to be checked
+     * @returns Promise<string>
+     */
+    public async getVersionInformation(iUri:Uri): Promise<string>
+    {
+        return new Promise<string>((resolve, reject) => {
+            if( iUri === undefined )
+                reject("");
+
+            exec(`cleartool ls -short ${iUri.fsPath}`, (error, stdout, stderr) => {
+                if(error || stderr)
+                {
+                    reject("");
+                }
+                else
+                {
+                    let version:string = this.getVersionString(stdout)
+                    if( version === "" )
+                        reject("");
+                    else
+                        resolve(version);
+                }
+            });
+        });
+    }
+
+    /**
+     * Given a string as it is returned by cleartool ls -short, this function
+     * can return the version information of that string
+     * 
+     * @param iFileInfo a string with filename and version information
+     * @returns string
+     */
+    public getVersionString(iFileInfo:string)
+    {
+        if( iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "" )
+        {
+            let res = iFileInfo.split("@@");
+            if( res.length > 1 )
+            {
+                return res[1].replace(/\\/g, "/").trim();
+            }
+        }
+        return "";
     }
 
     public async updateDir(uri:Uri)

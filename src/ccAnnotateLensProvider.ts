@@ -2,6 +2,7 @@
 
 import * as vscode from 'vscode';
 import {ccAnnotateLens} from './ccAnnotateLens';
+import {ClearCase} from './clearcase'
 
 export class ccCodeLensProvider implements vscode.CodeLensProvider
 {
@@ -9,19 +10,26 @@ export class ccCodeLensProvider implements vscode.CodeLensProvider
 		scheme: "file"
 	};
 
-	private m_context:vscode.ExtensionContext;
-
-	public constructor(context: vscode.ExtensionContext)
+	public constructor(private m_context: vscode.ExtensionContext, private m_clearcase: ClearCase)
 	{
-		this.m_context = context;
 	}
 
 	async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]>
 	{
 		let l_lenses: vscode.CodeLens[] = [];
-
-		l_lenses.push(new ccAnnotateLens(document, new vscode.Range(0,0,0,1)));
-
+		let l_isCcO: boolean;
+		try
+		{
+			l_isCcO = await this.m_clearcase.isClearcaseObject(document.uri);
+		}
+		catch(error)
+		{
+			l_isCcO = error;
+		}
+		if( document !== undefined && l_isCcO === true )
+		{
+			l_lenses.push(new ccAnnotateLens(document, new vscode.Range(0,0,0,1)));
+		}
 		return l_lenses;
 	}
 
