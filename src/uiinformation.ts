@@ -3,15 +3,17 @@
 import * as vscode from 'vscode';
 import {exec} from 'child_process';
 import {ccConfigHandler} from './ccConfigHandler';
+import {ClearCase} from './clearcase';
 
 export class UIInformation
 {
 	private m_statusbar: vscode.StatusBarItem;
 	private m_isActive: boolean;
 
-	public constructor(private context: vscode.ExtensionContext,
-										 private configHandler: ccConfigHandler,
-										 private m_editor: vscode.TextEditor)
+	public constructor(private m_context: vscode.ExtensionContext,
+										 private m_configHandler: ccConfigHandler,
+										 private m_editor: vscode.TextEditor,
+										 private m_clearcase: ClearCase)
 	{
 		this.m_isActive = true;
 		this.handleConfigState();
@@ -25,22 +27,22 @@ export class UIInformation
 	public bindEvents()
 	{
 		// configuration change event
-		this.configHandler.onDidChangeConfiguration(this.handleConfigState, this);
+		this.m_configHandler.onDidChangeConfiguration(this.handleConfigState, this);
 
 		if( this.m_editor )
 		{
-			this.context.subscriptions.push(
+			this.m_context.subscriptions.push(
 				vscode.workspace.onDidOpenTextDocument(
-					this.receiveDocument, this, this.context.subscriptions));
-			this.context.subscriptions.push(
+					this.receiveDocument, this, this.m_context.subscriptions));
+			this.m_context.subscriptions.push(
 				vscode.workspace.onDidSaveTextDocument(
-					this.receiveDocument, this, this.context.subscriptions));
-			this.context.subscriptions.push(
+					this.receiveDocument, this, this.m_context.subscriptions));
+			this.m_context.subscriptions.push(
 				vscode.window.onDidChangeActiveTextEditor(
-					this.receiveEditor, this, this.context.subscriptions));
-			this.context.subscriptions.push(
+					this.receiveEditor, this, this.m_context.subscriptions));
+			this.m_context.subscriptions.push(
 				vscode.window.onDidChangeTextEditorViewColumn(
-					this.receiveEditorColumn, this, this.context.subscriptions));
+					this.receiveEditorColumn, this, this.m_context.subscriptions));
 		}
 	}
 
@@ -49,7 +51,7 @@ export class UIInformation
 		if( event && this.m_isActive )
 		{
 			this.m_editor = event.textEditor;
-			this.queryVersionInformation(this.m_editor.document.fileName);
+			this.queryVersionInformation(this.m_editor.document.uri);
 		}
 	}
 
@@ -57,7 +59,7 @@ export class UIInformation
 	{
 		if( event && this.m_isActive )
 		{
-			this.queryVersionInformation(event.fileName);
+			this.queryVersionInformation(event.uri);
 		}
 	}
 
@@ -66,13 +68,13 @@ export class UIInformation
 		if( event && this.m_isActive )
 		{
 			this.m_editor = event;
-			this.queryVersionInformation(event.document.fileName);
+			this.queryVersionInformation(event.document.uri);
 		}
 	}
 
 	private handleConfigState()
 	{
-		this.m_isActive = this.configHandler.configuration.ShowStatusbar;
+		this.m_isActive = this.m_configHandler.configuration.ShowStatusbar;
 
 		if( this.m_isActive === false )
 		{
@@ -88,39 +90,35 @@ export class UIInformation
 	{
 		if( this.m_isActive && this.m_editor && this.m_editor.document )
 		{
-			this.queryVersionInformation(this.m_editor.document.fileName);
+			this.queryVersionInformation(this.m_editor.document.uri);
 		}
 	}
 
-	public queryVersionInformation(iFile:string)
+	public queryVersionInformation(iUri:vscode.Uri)
 	{
-		exec("cleartool ls -short \"" + iFile + "\"", (error, stdout, stderr) => {
-			if(error || stderr)
-			{
-				this.updateStatusbar("");
-			}
-			else
-			{
-				if(stdout)
-				{
-					this.updateStatusbar(stdout);
-				}
-			}
+		this.m_clearcase.getVersionInformation(iUri).then((value) => {
+			this.updateStatusbar(value);
+		}).catch((error) => {
+			this.updateStatusbar(error);
 		});
 	}
 
 	public updateStatusbar(iFileInfo:string)
 	{
-		if( iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "" )
+		if( iFileInfo !== undefined )
 		{
-			let res = iFileInfo.split("@@");
-			let version = "view private";
-			if( res.length > 1 )
+			if( this.m_clearcase.hasConfigspec() === true || iFileInfo !== "" )
 			{
-				version = res[1].replace(/\\/g, "/").trim();
+				let version = "view private";
+				if( iFileInfo !== "" )
+					version = iFileInfo;
+				this.m_statusbar.text = "[" + version + "]";
+				this.m_statusbar.show();
 			}
-			this.m_statusbar.text = "[" + version + "]";
-			this.m_statusbar.show();
+			else
+			{
+				this.m_statusbar.hide();
+			}
 		}
 		else
 		{
