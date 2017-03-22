@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.9.2
+* Status bar events are now correnctly registered even when no editor is opened
+
 ### 1.9.1
 * Annotate code lens is now activated only on valid clearcase objects
 
