@@ -29,21 +29,18 @@ export class UIInformation
 		// configuration change event
 		this.m_configHandler.onDidChangeConfiguration(this.handleConfigState, this);
 
-		if( this.m_editor )
-		{
-			this.m_context.subscriptions.push(
-				vscode.workspace.onDidOpenTextDocument(
-					this.receiveDocument, this, this.m_context.subscriptions));
-			this.m_context.subscriptions.push(
-				vscode.workspace.onDidSaveTextDocument(
-					this.receiveDocument, this, this.m_context.subscriptions));
-			this.m_context.subscriptions.push(
-				vscode.window.onDidChangeActiveTextEditor(
-					this.receiveEditor, this, this.m_context.subscriptions));
-			this.m_context.subscriptions.push(
-				vscode.window.onDidChangeTextEditorViewColumn(
-					this.receiveEditorColumn, this, this.m_context.subscriptions));
-		}
+		this.m_context.subscriptions.push(
+			vscode.workspace.onDidOpenTextDocument(
+				this.receiveDocument, this, this.m_context.subscriptions));
+		this.m_context.subscriptions.push(
+			vscode.workspace.onDidSaveTextDocument(
+				this.receiveDocument, this, this.m_context.subscriptions));
+		this.m_context.subscriptions.push(
+			vscode.window.onDidChangeActiveTextEditor(
+				this.receiveEditor, this, this.m_context.subscriptions));
+		this.m_context.subscriptions.push(
+			vscode.window.onDidChangeTextEditorViewColumn(
+				this.receiveEditorColumn, this, this.m_context.subscriptions));
 	}
 
 	public receiveEditorColumn(event:vscode.TextEditorViewColumnChangeEvent)
