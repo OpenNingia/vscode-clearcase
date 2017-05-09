@@ -1,0 +1,174 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Clearcase Config Spec",
+	"scopeName": "source.config-spec",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#mkbranchrule"
+		},
+		{
+			"include": "#elementrule"
+		},
+		{
+			"include": "#loadrule"
+		},
+		{
+			"include": "#endrule"
+		},
+		{
+			"include": "#keywords"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.config-spec",
+					"match": "\\b(element|include|end|load|identity|ucm)\\b"
+				},
+				{
+					"name": "keyword.control.config-spec",
+					"match": "\\b(?<!-)(time)\\b"
+				},
+				{
+					"name": "constant.language.config-spec",
+					"match": "\\b(LATEST|CHECKEDOUT)\\b"
+				},
+				{
+					"name": "keyword.operator.config-spec",
+					"match": "\\b-(time|nocheckout|none|error)\\b"
+				}
+			]
+		},
+		"mkbranchrule": {
+			"patterns": [
+				{
+					"begin": "\\b(?<!-)(mkbranch)\\s+([A-Za-z0-9_.]+)\\b",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.config-spec"							
+						},
+						"2": {
+							"name": "entity.name.type.branchtype.config-spec"							
+						}
+					},
+					"patterns": [
+						{
+							"include": "#time-clause"
+						}
+					],
+					"end": "(;|$)"
+				}
+			]
+		},
+		"elementrule": {
+			"patterns": [
+				{
+					"begin": "\\b(element)\\s+([A-Za-z0-9_\\.\\*\\\\/]+)\\s+([A-Za-z0-9_\\.\\*\\\\/]+)\\b",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.config-spec"							
+						},
+						"2": {
+							"name": "constant.language.pattern.config-spec"							
+						},
+						"3": {
+							"name": "constant.language.selector.config-spec"							
+						}
+					},
+					"patterns": [
+						{
+							"include": "#mkbranch-clause"
+						},
+						{
+							"include": "#time-clause"
+						}
+
+					],
+					"end": "(;|$)"
+				}
+			]
+		},
+		"loadrule": {
+			"patterns": [
+				{
+					"begin": "\\b(load)\\s+([A-Za-z0-9_\\.\\*\\\\/]+)\\b",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.config-spec"							
+						},
+						"2": {
+							"name": "string.quoted.double.path.config-spec"							
+						}
+					},
+					"end": "(;|$)"
+				}
+			]
+		},		"endrule": {
+			"patterns": [
+				{
+					"begin": "\\b(end)\\s+(mkbranch|time)\\b",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.config-spec"							
+						},
+						"2": {
+							"name": "keyword.control.config-spec"							
+						}
+					},
+					"end": "(;|$)"
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.number-sign.config-spec",
+					"match": "^\\s*#.*$"
+				}
+			]
+		},
+		"time-clause": {
+			"patterns": [
+				{
+					"begin": "(-time)\\s+",
+					"patterns": [
+						{
+							"name": "constant.numeric.now.config-spec",
+							"match": "\\b(now)\\b"
+						},
+						{
+							"name": "constant.numeric.time.config-spec",
+							"match": "\\b[-A-Za-z0-9.:]+\\b"
+						}
+					],
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.operator.config-spec"
+						}
+					},
+					"end": "(;|$)"
+				}
+			]
+		},
+		"mkbranch-clause": {
+			"patterns": [
+				{
+					"begin": "(-mkbranch)\\s+([A-Za-z0-9_.]+)\\b",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.operator.config-spec"
+						},
+						"2": {
+							"name": "entity.name.type.branchtype.config-spec"
+						}
+					},
+					"end": "(;|$)"
+				}
+			]
+		}
+	}
+}
