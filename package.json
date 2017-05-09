@@ -18,6 +18,7 @@
         "vscode": "^1.6.0"
     },
     "categories": [
+        "Languages",
         "Other"
     ],
     "keywords": [
@@ -255,7 +256,18 @@
                     "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
                 }
             }
-        }
+        },
+        "languages": [{
+            "id": "config-spec",
+            "aliases": ["ClearcaseConfigSpec", "config-spec"],
+            "extensions": [".ics"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "config-spec",
+            "scopeName": "source.config-spec",
+            "path": "./syntaxes/config-spec.tmLanguage.json"
+        }]
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
