@@ -37,6 +37,8 @@ Clearcase commands exposed by this extensions:
 
      Format string is documented at https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm
 
+   * Syntax highlighting for ClearCase config-spec files
+
 ## Requirements
 
 A valid ClearCase installation within the system's PATH.
