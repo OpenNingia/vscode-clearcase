@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "1.9.2",
+    "version": "1.10.0",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
@@ -257,17 +257,26 @@
                 }
             }
         },
-        "languages": [{
-            "id": "config-spec",
-            "aliases": ["ClearcaseConfigSpec", "config-spec"],
-            "extensions": [".ics"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "config-spec",
-            "scopeName": "source.config-spec",
-            "path": "./syntaxes/config-spec.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "config-spec",
+                "aliases": [
+                    "ClearcaseConfigSpec",
+                    "config-spec"
+                ],
+                "extensions": [
+                    ".ics"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "config-spec",
+                "scopeName": "source.config-spec",
+                "path": "./syntaxes/config-spec.tmLanguage.json"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
