@@ -13,11 +13,11 @@ export class ccConfiguration
 	public set ShowStatusbar(iDo : boolean) {
 		this.m_showStatusbar = iDo;
 	}
-	
+
 	public set AnnotationColor(iColor : string) {
 		this.m_annotationColor = iColor;
 	}
-	
+
 	public set AnnotationBackground(iColor : string) {
 		this.m_annotationBackgroundColor = iColor;
 	}
@@ -26,11 +26,11 @@ export class ccConfiguration
 	{
 		this.m_annotationFormatString = iFormat;
 	}
-	
+
 	public get ShowStatusbar() : boolean {
 		return this.m_showStatusbar;
 	}
-	
+
 	public get AnnotationColor() : string {
 		return this.m_annotationColor;
 	}

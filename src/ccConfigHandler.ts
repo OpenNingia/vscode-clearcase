@@ -14,6 +14,9 @@ export class ccConfigHandler
 		this.context = context;
 		this.m_configChanged = new vscode.EventEmitter<void>();
 		this.m_configuration = new ccConfiguration();
+
+		this.loadConfig()
+
 		vscode.workspace.onDidChangeConfiguration(this.handleChangedConfig, this, this.context.subscriptions)
 	}
 
@@ -27,7 +30,7 @@ export class ccConfigHandler
 		return this.m_configuration;
 	}
 
-	private handleChangedConfig(): void {
+	private loadConfig(): boolean {
 		let config = vscode.workspace.getConfiguration("vscode-clearcase");
 		if( config )
 		{
@@ -39,7 +42,12 @@ export class ccConfigHandler
 				this.m_configuration.AnnotationBackground = config.get("annotationBackgroundColor") as string;
 			if( config.has("annotationFormatString") )
 				this.m_configuration.AnnotationFormatString = config.get("annotationFormatString") as string;
-			this.m_configChanged.fire();
+			return true;
 		}
+		return false;
+	}
+	private handleChangedConfig(): void {
+		if( this.loadConfig() )
+			this.m_configChanged.fire();
 	}
 }
