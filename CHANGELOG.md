@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.10.0
+* Some configuration flags were not honored on extension load
+* Added syntax definition for ClearCase config-spec file
+
 ### 1.9.2
 * Status bar events are now correnctly registered even when no editor is opened
 
