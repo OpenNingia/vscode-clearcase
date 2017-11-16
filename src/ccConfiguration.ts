@@ -9,9 +9,14 @@ export class ccConfiguration
 	private m_annotationColor: string = "rgba(220, 220, 220, 0.8)";
 	private m_annotationBackgroundColor: string ="rgba(20, 20, 20, 0.8)";
 	private m_annotationFormatString: string = "%d %12u";
+	private m_showAnnotationCodeLens: boolean = true;
 
 	public set ShowStatusbar(iDo : boolean) {
 		this.m_showStatusbar = iDo;
+	}
+
+	public set ShowAnnotationCodeLens(iDo : boolean) {
+		this.m_showAnnotationCodeLens = iDo;
 	}
 
 	public set AnnotationColor(iColor : string) {
@@ -29,6 +34,10 @@ export class ccConfiguration
 
 	public get ShowStatusbar() : boolean {
 		return this.m_showStatusbar;
+	}
+
+	public get ShowAnnotationCodeLens() : boolean {
+		return this.m_showAnnotationCodeLens;
 	}
 
 	public get AnnotationColor() : string {

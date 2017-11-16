@@ -135,7 +135,7 @@ export class ClearCase{
         this.m_context.subscriptions.push(
             languages.registerCodeLensProvider(
                 ccCodeLensProvider.selector,
-                new ccCodeLensProvider(this.m_context, this)));
+                new ccCodeLensProvider(this.m_context, this.configHandler, this)));
     }
 
     public get onCommandExecuted(): Event<void>

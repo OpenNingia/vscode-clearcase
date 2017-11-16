@@ -3,6 +3,8 @@
 import * as vscode from 'vscode';
 import {ccAnnotateLens} from './ccAnnotateLens';
 import {ClearCase} from './clearcase'
+import {ccConfigHandler} from './ccConfigHandler';
+import {ccConfiguration} from './ccConfiguration';
 
 export class ccCodeLensProvider implements vscode.CodeLensProvider
 {
@@ -10,12 +12,15 @@ export class ccCodeLensProvider implements vscode.CodeLensProvider
 		scheme: "file"
 	};
 
-	public constructor(private m_context: vscode.ExtensionContext, private m_clearcase: ClearCase)
+	public constructor(private m_context: vscode.ExtensionContext, private m_cfg: ccConfigHandler, private m_clearcase: ClearCase)
 	{
 	}
 
 	async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]>
 	{
+		if ( !this.m_cfg.configuration.ShowAnnotationCodeLens )
+			return [];
+
 		let l_lenses: vscode.CodeLens[] = [];
 		let l_isCcO: boolean;
 		try

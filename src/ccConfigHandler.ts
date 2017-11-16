@@ -36,6 +36,8 @@ export class ccConfigHandler
 		{
 			if( config.has("showVersionInStatusbar") )
 				this.m_configuration.ShowStatusbar = config.get("showVersionInStatusbar") as boolean;
+			if( config.has("showAnnotationCodeLens") )
+				this.m_configuration.ShowAnnotationCodeLens = config.get("showAnnotationCodeLens") as boolean;
 			if( config.has("annotationColor") )
 				this.m_configuration.AnnotationColor = config.get("annotationColor") as string;
 			if( config.has("annotationBackgroundColor") )

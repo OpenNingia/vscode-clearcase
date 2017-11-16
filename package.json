@@ -240,6 +240,11 @@
                     "default": true,
                     "description": "Shows the current file clearcase version information."
                 },
+                "vscode-clearcase.showAnnotationCodeLens": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable the 'Toggle Annotate' code lens."
+                },
                 "vscode-clearcase.annotationColor": {
                     "type": "string",
                     "default": "rgba(220, 220, 220, 0.8)",
