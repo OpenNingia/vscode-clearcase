@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.11.0
+* Added an option to disable the Annotation Code Lens ( `vscode-clearcase.showAnnotationCodeLens` )
+
 ### 1.10.0
 * Some configuration flags were not honored on extension load
 * Added syntax definition for ClearCase config-spec file
