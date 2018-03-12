@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "1.11.0",
+    "version": "1.12.0",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
@@ -288,7 +288,7 @@
                     "type": "string",
                     "default": null,
                     "description": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`."
-                }                     
+                }
             }
         },
         "languages": [
