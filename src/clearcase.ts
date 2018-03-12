@@ -3,7 +3,7 @@
 // Import the module and reference it with the alias in your code below
 import {ExtensionContext,commands, window, workspace, Uri,
         languages, TextEditor, TextDocument, TextDocumentSaveReason,
-        EventEmitter, Event} from 'vscode'
+        EventEmitter, Event, QuickPickItem} from 'vscode'
 import {exec, execSync} from 'child_process'
 import * as fs from 'fs';
 import {dirname} from 'path';
@@ -116,6 +116,12 @@ export class ClearCase{
 
         this.m_context.subscriptions.push(disposable);
 
+        disposable = commands.registerCommand('extension.ccSelectActv', () => {
+            this.changeCurrentActivity();
+        }, this);
+
+        this.m_context.subscriptions.push(disposable);        
+
         let annoCtrl = new ccAnnotationController(this,
                                                   window.activeTextEditor,
                                                   this.m_context,
@@ -169,7 +175,7 @@ export class ClearCase{
     /**
      * Checks if the file itself is a clearcase object or if it's in a
      * clearcase view
-     * 
+     *
      * @param editor current editor instance
      */
     public async checkIsView(editor: TextEditor)
@@ -295,7 +301,7 @@ export class ClearCase{
 
     /**
      * Returns whether the given file object a clearcase object.
-     * 
+     *
      * @param iUri the uri of the file object to be checked
      */
     public async isClearcaseObject(iUri:Uri): Promise<boolean>
@@ -314,7 +320,7 @@ export class ClearCase{
      * Retruns a promise promise which will contain a branch information in
      * case the file object is a clearcase object.
      * The string is empty if not.
-     * 
+     *
      * @param iUri the uri of the file object to be checked
      * @returns Promise<string>
      */
@@ -344,7 +350,7 @@ export class ClearCase{
     /**
      * Given a string as it is returned by cleartool ls -short, this function
      * can return the version information of that string
-     * 
+     *
      * @param iFileInfo a string with filename and version information
      * @returns string
      */
@@ -474,4 +480,104 @@ export class ClearCase{
             return true;
         }
     }
+
+    async getCurrentActivity() : Promise<string> {
+        let cmd = 'cleartool lsactivity -cac -fmt "%n"';
+
+        return new Promise<string>((resolve,reject) => {
+            exec(cmd, {cwd:workspace.rootPath}, (error, stdout, stderr) => {
+                    if ( error )
+                        reject();
+                    else
+                        if( stderr )
+                            reject();
+                        else
+                            resolve(stdout);
+                });
+        });        
+    }
+
+    // return view activities as QuickPickItem list
+    async getQuickPickActivities(currentAcvtId: string) : Promise<QuickPickItem[]> {
+        let cmd = "cleartool lsactivity";
+
+        return new Promise<QuickPickItem[]>((resolve,reject) => {
+            exec(cmd, {maxBuffer:10485760, cwd:workspace.rootPath}, (error, stdout, stderr) => {
+                    if ( error ) {
+                        reject();
+                    } else {
+                        if( stderr ) {
+                            reject();
+                        } else {
+
+                            let lines = stdout.split(/[\n\r]+/);
+                            let items: QuickPickItem[] = [];
+                            for (let index = 0; index < lines.length; index++) {
+                                let parts = lines[index].split(" ");                                
+                                if ( parts.length >= 7 ) {
+                                    let actv_id = parts[2];
+                                    let actv_lb = parts.slice(7).join(" ");
+
+                                    if ( actv_id === currentAcvtId ) {
+                                        actv_lb = '\u2713 ' + actv_lb;
+                                    } else {
+                                        actv_lb = '\u2610 ' + actv_lb;
+                                    }
+
+                                    items.push({
+                                        label: actv_lb,
+                                        description: "",
+                                        detail: actv_id});
+                                }
+                            }
+
+                            resolve(items);
+                        }
+                    }
+                });                                                
+        });
+    }
+
+    async changeCurrentActivity() {
+        try
+        {
+            let currentActv = await this.getCurrentActivity();
+            let userChoose = await window.showQuickPick<QuickPickItem>(
+                this.getQuickPickActivities(currentActv)
+            );
+
+            if ( userChoose ) {
+                if ( currentActv == userChoose.detail )
+                    this.setViewActivity(null);
+                else
+                    this.setViewActivity(userChoose.detail);
+            }
+        }
+        catch(error)
+        {
+            error = error.replace(/[\r\n]+/g, " ");
+            window.showErrorMessage(error);
+        }        
+    }  
+    
+    async setViewActivity(actvID: String)
+    {
+        var cmd = 'cleartool setactivity ';
+        if ( actvID )
+            cmd += actvID;
+        else
+            cmd += "-none";
+
+        return new Promise<string>((resolve,reject) => {
+            exec(cmd, {cwd:workspace.rootPath}, (error, stdout, stderr) => {
+                    if ( error )
+                        reject(error.message);
+                    else
+                        if( stderr )
+                            reject(stderr);
+                        else
+                            resolve(stdout);
+                });
+        });    
+    }    
 }

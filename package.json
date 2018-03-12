@@ -96,6 +96,11 @@
                 "command": "extension.ccAnnotate",
                 "title": "Annotate",
                 "category": "Clearcase"
+            },
+            {
+                "command": "extension.ccSelectActv",
+                "title": "Change current activity",
+                "category": "Clearcase"
             }
         ],
         "menus": {
@@ -150,6 +155,10 @@
                 },
                 {
                     "command": "extension.ccAnnotate",
+                    "when": "vscode-clearcase:enabled"
+                },
+                {
+                    "command": "extension.ccSelectActv",
                     "when": "vscode-clearcase:enabled"
                 }
             ],
