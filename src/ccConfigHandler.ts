@@ -44,6 +44,14 @@ export class ccConfigHandler
 				this.m_configuration.AnnotationBackground = config.get("annotationBackgroundColor") as string;
 			if( config.has("annotationFormatString") )
 				this.m_configuration.AnnotationFormatString = config.get("annotationFormatString") as string;
+			if( config.has("useClearDlg") )
+				this.m_configuration.UseClearDlg = config.get("useClearDlg") as boolean;
+			if( config.has("checkoutCommandArgs") )
+				this.m_configuration.CheckoutCommand = config.get("checkoutCommandArgs") as string;
+			if( config.has("checkinCommandArgs") )
+				this.m_configuration.CheckinCommand = config.get("checkinCommandArgs") as string;
+			if( config.has("defaultComment") )
+				this.m_configuration.DefaultComment = config.get("defaultComment") as string;
 			return true;
 		}
 		return false;

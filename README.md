@@ -17,10 +17,11 @@ Clearcase commands exposed by this extensions:
     * Update snapshot
     * Item Properties
     * Annotate
+    * Set current Activity
 
 ### GUI
 
-   * Auto show checkout dialog on save if file isn't checked out.
+   * Automatically checkout on save if file isn't checked out.
    * Show version of current file in the status bar. This can be disabled via the user setting
 
      ```TypeScript

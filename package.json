@@ -268,7 +268,27 @@
                     "type": "string",
                     "default": "%d %12u",
                     "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
-                }
+                },
+                "vscode-clearcase.useClearDlg": {
+                    "type": "boolean",
+                    "default": "true",
+                    "description": "Use clearDlg command for checkout and checking operations."
+                },
+                "vscode-clearcase.checkoutCommandArgs": {
+                    "type": "string",
+                    "default": "-comment ${comment} ${filename}",
+                    "description": "Clearcase checkout arguments. Ignored if useClearDlg is `true`."
+                },
+                "vscode-clearcase.checkinCommandArgs": {
+                    "type": "string",
+                    "default": "-comment ${comment} ${filename}",
+                    "description": "Clearcase checkin arguments. Ignored if useClearDlg is `true`."
+                },
+                "vscode-clearcase.defaultComment": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`."
+                }                     
             }
         },
         "languages": [

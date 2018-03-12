@@ -1,5 +1,10 @@
 ## Release Notes
 
+### 1.12.0
+* Added an option to toggle the usage of "clearDlg" for checkouts and checkings. Useful on Linux boxes.
+* Implemented "Change current activity" command
+* Added "DefaultComment" option that is used on both checkout and checkins ( ignored when useClearDlg is true ).
+
 ### 1.11.0
 * Added an option to disable the Annotation Code Lens ( `vscode-clearcase.showAnnotationCodeLens` )
 

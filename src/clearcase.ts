@@ -3,13 +3,14 @@
 // Import the module and reference it with the alias in your code below
 import {ExtensionContext,commands, window, workspace, Uri,
         languages, TextEditor, TextDocument, TextDocumentSaveReason,
-        EventEmitter, Event, QuickPickItem} from 'vscode'
+        EventEmitter, Event, QuickPickItem, InputBoxOptions} from 'vscode'
 import {exec, execSync} from 'child_process'
 import * as fs from 'fs';
 import {dirname} from 'path';
 import {ccCodeLensProvider} from "./ccAnnotateLensProvider";
 import {ccAnnotationController} from './ccAnnotateController'
 import {ccConfigHandler} from './ccConfigHandler';
+import { ccConfiguration } from './ccConfiguration';
 
 export class ClearCase{
 
@@ -162,7 +163,16 @@ export class ClearCase{
                     if (event == null || event.document == null || event.document.isUntitled || event.reason != TextDocumentSaveReason.Manual)
                         return;
                     if (this.isReadOnly(event.document)) {
-                        this.execOnSCMFile(event.document, this.checkoutAndSaveFile);
+                        
+                        let useClearDlg = this.configHandler.configuration.UseClearDlg;
+                        if ( useClearDlg ) {
+                            this.execOnSCMFile(event.document, this.checkoutAndSaveFile);
+                        } else {
+                            event.waitUntil(Promise.all([
+                                this.isClearcaseObject(event.document.uri), 
+                                this.checkoutFile(event.document),
+                                event.document.save()]));
+                        }
                     }
                 } catch (error) { console.log("error " + error); }
         }, this, this.m_context.subscriptions));
@@ -221,15 +231,43 @@ export class ClearCase{
         exec("clearexplorer \"" + path + "\"");
     }
 
-    public checkoutFile(doc: TextDocument) {
+    public async checkoutFile(doc: TextDocument) {
         var path = doc.fileName;
-        exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.fire();
-        });
+        let useClearDlg = this.configHandler.configuration.UseClearDlg;
+        let coArgTmpl = this.configHandler.configuration.CheckoutCommand;
+        let defComment = this.configHandler.configuration.DefaultComment;
+
+        if ( useClearDlg ) {
+            exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
+                this.m_updateEvent.fire();
+            });
+        } else {
+
+            var comment = "";            
+            if ( coArgTmpl.indexOf("${comment}") != -1 ) {
+
+                if ( defComment )
+                    comment = defComment;
+                else {
+                    comment = await window.showInputBox(
+                        {
+                            ignoreFocusOut: true,
+                            prompt: "Checkout comment"
+                        }
+                    ) || "";
+                }
+            }
+
+            let coArgs = coArgTmpl.replace("${filename}", '"' + path + '"')
+                                  .replace("${comment}", '"' + comment + '"');
+            exec("cleartool co " + coArgs, (error, stdout, stderr) => {
+                this.m_updateEvent.fire();
+            });            
+        }
     }
 
-    public checkoutAndSaveFile(doc: TextDocument) {
-        var path = doc.fileName;
+    public checkoutAndSaveFile(doc: TextDocument) {           
+        let path = doc.fileName;
         exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
             console.log(`clearcase, checkout and save.`);
             console.log(`clearcase, stdout: ${stdout}`);
@@ -254,11 +292,39 @@ export class ClearCase{
         });
     }
 
-    public checkinFile(doc: TextDocument) {
+    public async checkinFile(doc: TextDocument) {
         var path = doc.fileName;
-        exec("cleardlg /checkin \"" + path + "\"", (error, stdout, stderr) => {
-            this.m_updateEvent.fire();
-        });
+        let useClearDlg = this.configHandler.configuration.UseClearDlg;
+        let coArgTmpl = this.configHandler.configuration.CheckinCommand;
+        let defComment = this.configHandler.configuration.DefaultComment;
+
+        if ( useClearDlg ) {
+            exec("cleardlg /checkin \"" + path + "\"", (error, stdout, stderr) => {
+                this.m_updateEvent.fire();
+            });
+        } else {
+
+            var comment = "";            
+            if ( coArgTmpl.indexOf("${comment}") != -1 ) {
+
+                if ( defComment )
+                    comment = defComment;
+                else {
+                    comment = await window.showInputBox(
+                        {
+                            ignoreFocusOut: true,
+                            prompt: "Checkin comment"
+                        }
+                    ) || "";
+                }
+            }
+
+            let coArgs = coArgTmpl.replace("${filename}", '"' + path + '"')
+                                  .replace("${comment}", '"' + comment + '"');
+            exec("cleartool ci " + coArgs, (error, stdout, stderr) => {
+                this.m_updateEvent.fire();
+            });            
+        }        
     }
 
     public versionTree(doc: TextDocument) {
