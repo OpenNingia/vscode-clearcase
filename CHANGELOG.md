@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.12.1
+* Updated some dependencies to avoid vulnerability warnings
+
 ### 1.12.0
 * Added an option to toggle the usage of "clearDlg" for checkouts and checkings. Useful on Linux boxes.
 * Implemented "Change current activity" command
