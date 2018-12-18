@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.12.2
+* Updated to last vscode dependency to avoid url-parse vulnerability
+
 ### 1.12.1
 * Updated some dependencies to avoid vulnerability warnings
 
