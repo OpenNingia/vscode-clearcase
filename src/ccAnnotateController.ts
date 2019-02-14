@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import {ClearCase} from './clearcase'
 import {ccConfigHandler} from './ccConfigHandler';
 import {ccConfiguration} from './ccConfiguration';
+import { ccScmProvider } from './ccScmProvider';
 
 export class ccAnnotationController
 {
@@ -11,7 +12,7 @@ export class ccAnnotationController
 	private m_isActive: boolean;
 	private m_configuration: ccConfiguration;
 
-	constructor(private cc: ClearCase,
+	constructor(private cc: ccScmProvider,
 							private editor: vscode.TextEditor,
 							private context: vscode.ExtensionContext,
 							private configHandler: ccConfigHandler)

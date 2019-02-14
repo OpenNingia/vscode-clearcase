@@ -14,6 +14,7 @@ export class ccConfiguration
 	private m_checkoutCommand: string = "-comment ${comment} ${filename}";
 	private m_checkinCommand: string = "-comment ${comment} ${filename}";
 	private m_defaultComment: string = null;
+	private m_viewPrivateFiles: string = '/(hh|cpp|def|c|h)$/i';
 
 	public set ShowStatusbar(iDo : boolean) {
 		this.m_showStatusbar = iDo;
@@ -52,6 +53,10 @@ export class ccConfiguration
 		this.m_defaultComment = sValue;
 	}	
 
+	public set ViewPrivateFileSuffixes(sValue : string) {
+		this.m_viewPrivateFiles = sValue;
+	}	
+
 	public get ShowStatusbar() : boolean {
 		return this.m_showStatusbar;
 	}
@@ -86,5 +91,9 @@ export class ccConfiguration
 
 	public get DefaultComment() {
 		return this.m_defaultComment;
-	}		
+	}
+
+	public get ViewPrivateFileSuffixes(): string {
+		return this.m_viewPrivateFiles;
+	}
 }

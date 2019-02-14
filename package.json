@@ -15,7 +15,7 @@
     },
     "icon": "images/icon.png",
     "engines": {
-        "vscode": "^1.6.0"
+        "vscode": "^1.31.0"
     },
     "categories": [
         "Languages",
@@ -46,6 +46,15 @@
                 "command": "extension.ccCheckin",
                 "title": "Checkin",
                 "category": "Clearcase"
+            },
+            {
+                "command": "extension.ccCheckinAll",
+                "title": "Checkin All",
+                "category": "Clearcase",
+                "icon": {
+                    "light": "icons/light/check.svg",
+                    "dark": "icons/dark/check.svg"
+                }
             },
             {
                 "command": "extension.ccVersionTree",
@@ -80,7 +89,11 @@
             {
                 "command": "extension.ccUpdateView",
                 "title": "Update View",
-                "category": "Clearcase"
+                "category": "Clearcase",
+                "icon": {
+                    "light": "icons/light/refresh.svg",
+                    "dark": "icons/dark/refresh.svg"
+                }
             },
             {
                 "command": "extension.ccUpdateDir",
@@ -100,6 +113,11 @@
             {
                 "command": "extension.ccSelectActv",
                 "title": "Change current activity",
+                "category": "Clearcase"
+            },
+            {
+                "command": "extension.ccOpenResource",
+                "title": "Open resource",
                 "category": "Clearcase"
             }
         ],
@@ -195,6 +213,40 @@
                     "group": "cc@5",
                     "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 }
+            ],
+            "scm/title": [
+                {
+                    "command": "extension.ccCheckinAll",
+                    "group": "navigation",
+                    "when": "vscode-clearcase:enabled"
+                },
+                {
+                    "command": "extension.ccUpdateView",
+                    "group": "navigation",
+                    "when": "vscode-clearcase:enabled"
+                }
+            ],
+            "scm/resourceState/context": [
+                {
+                    "command": "extension.ccOpenResource",
+                    "when": "vscode-clearcase:enabled",
+                    "group": "cc_file"
+                },
+                {
+                    "command": "extension.ccCheckin",
+                    "when": "vscode-clearcase:enabled",
+                    "group": "cc_file"
+                },
+                {
+                    "command": "extension.ccUndoCheckout",
+                    "when": "vscode-clearcase:enabled",
+                    "group": "cc_file"
+                },
+                {
+                    "command": "extension.ccComparePrevious",
+                    "when": "vscode-clearcase:enabled",
+                    "group": "cc_file"
+                }
             ]
         },
         "keybindings": [
@@ -288,9 +340,34 @@
                     "type": "string",
                     "default": null,
                     "description": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`."
+                },
+                "vscode-clearcase.viewPrivateFileSuffixes": {
+                    "type": "string",
+                    "default": "/(hh|cpp|def|c|h)$/i",
+                    "description": "Regular expression style string for file suffixes be shown as view private."
                 }
             }
         },
+        "colors": [
+            {
+                "id": "ccDecoration.modifiedResourceForeground",
+                "description": "%colors.modified%",
+                "defaults": {
+                    "light": "#895503",
+                    "dark": "#E2C08D",
+                    "highContrast": "#E2C08D"
+                }
+            },
+            {
+                "id": "ccDecoration.untrackedResourceForeground",
+                "description": "%colors.untracked%",
+                "defaults": {
+                    "light": "#007100",
+                    "dark": "#73C991",
+                    "highContrast": "#73C991"
+                }
+            }
+        ],
         "languages": [
             {
                 "id": "config-spec",
@@ -318,13 +395,14 @@
         "postinstall": "node ./node_modules/vscode/bin/install"
     },
     "dependencies": {
-        "child_process": "^1.0.2"
+        "child_process": "^1.0.2",
+        "vscode": "^1.1.29",
+        "vscode-nls": "^4.0.0"
     },
     "devDependencies": {
         "@types/mocha": "^2.2.32",
-        "@types/node": "^6.0.113",
+        "@types/node": "^6.14.2",
         "mocha": "^5.2.0",
-        "typescript": "^2.9.2",
-        "vscode": "^1.1.21"
+        "typescript": "^2.9.2"
     }
 }

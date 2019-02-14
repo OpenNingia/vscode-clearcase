@@ -5,19 +5,20 @@ import {ccConfiguration} from './ccConfiguration'
 
 export class ccConfigHandler
 {
-	private context: vscode.ExtensionContext;
 	private m_configChanged: vscode.EventEmitter<void>;
 	private m_configuration: ccConfiguration;
 
-	public constructor(context: vscode.ExtensionContext)
+	public constructor( private context: vscode.ExtensionContext,
+											private disposables: vscode.Disposable[] )
 	{
-		this.context = context;
 		this.m_configChanged = new vscode.EventEmitter<void>();
 		this.m_configuration = new ccConfiguration();
 
 		this.loadConfig()
 
-		vscode.workspace.onDidChangeConfiguration(this.handleChangedConfig, this, this.context.subscriptions)
+		this.disposables.push(
+			vscode.workspace.onDidChangeConfiguration(this.handleChangedConfig, this, this.context.subscriptions)
+		);
 	}
 
 	get onDidChangeConfiguration(): vscode.Event<void>
@@ -52,6 +53,8 @@ export class ccConfigHandler
 				this.m_configuration.CheckinCommand = config.get("checkinCommandArgs") as string;
 			if( config.has("defaultComment") )
 				this.m_configuration.DefaultComment = config.get("defaultComment") as string;
+			if( config.has("viewPrivateFileSuffixes") )
+				this.m_configuration.ViewPrivateFileSuffixes = config.get("viewPrivateFileSuffixes") as string;
 			return true;
 		}
 		return false;
