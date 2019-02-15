@@ -1,17 +1,16 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import {ccConfiguration} from './ccConfiguration'
+import { ccConfiguration, ConfigurationProperty } from './ccConfiguration'
 
-export class ccConfigHandler
-{
-	private m_configChanged: vscode.EventEmitter<void>;
+export class ccConfigHandler {
+	private m_configChanged: vscode.EventEmitter<string[]>;
 	private m_configuration: ccConfiguration;
+	private m_changeIdents: string[];
 
-	public constructor( private context: vscode.ExtensionContext,
-											private disposables: vscode.Disposable[] )
-	{
-		this.m_configChanged = new vscode.EventEmitter<void>();
+	public constructor(private context: vscode.ExtensionContext,
+		private disposables: vscode.Disposable[]) {
+		this.m_configChanged = new vscode.EventEmitter<string[]>();
 		this.m_configuration = new ccConfiguration();
 
 		this.loadConfig()
@@ -21,46 +20,45 @@ export class ccConfigHandler
 		);
 	}
 
-	get onDidChangeConfiguration(): vscode.Event<void>
-	{
+	get onDidChangeConfiguration(): vscode.Event<string[]> {
 		return this.m_configChanged.event;
 	}
 
-	get configuration() : ccConfiguration
-	{
+	get configuration(): ccConfiguration {
 		return this.m_configuration;
 	}
 
 	private loadConfig(): boolean {
 		let config = vscode.workspace.getConfiguration("vscode-clearcase");
-		if( config )
-		{
-			if( config.has("showVersionInStatusbar") )
-				this.m_configuration.ShowStatusbar = config.get("showVersionInStatusbar") as boolean;
-			if( config.has("showAnnotationCodeLens") )
-				this.m_configuration.ShowAnnotationCodeLens = config.get("showAnnotationCodeLens") as boolean;
-			if( config.has("annotationColor") )
-				this.m_configuration.AnnotationColor = config.get("annotationColor") as string;
-			if( config.has("annotationBackgroundColor") )
-				this.m_configuration.AnnotationBackground = config.get("annotationBackgroundColor") as string;
-			if( config.has("annotationFormatString") )
-				this.m_configuration.AnnotationFormatString = config.get("annotationFormatString") as string;
-			if( config.has("useClearDlg") )
-				this.m_configuration.UseClearDlg = config.get("useClearDlg") as boolean;
-			if( config.has("checkoutCommandArgs") )
-				this.m_configuration.CheckoutCommand = config.get("checkoutCommandArgs") as string;
-			if( config.has("checkinCommandArgs") )
-				this.m_configuration.CheckinCommand = config.get("checkinCommandArgs") as string;
-			if( config.has("defaultComment") )
-				this.m_configuration.DefaultComment = config.get("defaultComment") as string;
-			if( config.has("viewPrivateFileSuffixes") )
-				this.m_configuration.ViewPrivateFileSuffixes = config.get("viewPrivateFileSuffixes") as string;
+		if (config) {
+			this.m_changeIdents = [];
+			this.setChangeConfigDate<boolean>(config, "showVersionInStatusbar", this.m_configuration.ShowStatusbar);
+			this.setChangeConfigDate<boolean>(config, "showAnnotationCodeLens", this.m_configuration.ShowAnnotationCodeLens);
+			this.setChangeConfigDate<string>(config, "annotationColor", this.m_configuration.AnnotationColor);
+			this.setChangeConfigDate<string>(config, "annotationBackgroundColor", this.m_configuration.AnnotationBackground);
+			this.setChangeConfigDate<string>(config, "annotationFormatString", this.m_configuration.AnnotationFormatString);
+			this.setChangeConfigDate<boolean>(config, "useClearDlg", this.m_configuration.UseClearDlg);
+			this.setChangeConfigDate<string>(config, "checkoutCommandArgs", this.m_configuration.CheckoutCommand);
+			this.setChangeConfigDate<string>(config, "checkinCommandArgs", this.m_configuration.CheckinCommand);
+			this.setChangeConfigDate<string>(config, "defaultComment", this.m_configuration.DefaultComment);
+			this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.m_configuration.ViewPrivateFileSuffixes);
 			return true;
 		}
 		return false;
 	}
 	private handleChangedConfig(): void {
-		if( this.loadConfig() )
-			this.m_configChanged.fire();
+		if (this.loadConfig())
+			this.m_configChanged.fire(this.m_changeIdents);
+	}
+
+	private setChangeConfigDate<T>(config: vscode.WorkspaceConfiguration, descriptor: string, configValue: ConfigurationProperty<T>): boolean {
+		if (config.has(descriptor)) {
+			configValue.Value = config.get(descriptor) as T;
+			if (configValue.Changed) {
+				this.m_changeIdents.push(descriptor);
+				return true;
+			}
+		}
+		return false;
 	}
 }

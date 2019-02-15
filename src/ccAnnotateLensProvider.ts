@@ -19,7 +19,7 @@ export class ccCodeLensProvider implements vscode.CodeLensProvider
 
 	async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]>
 	{
-		if ( !this.m_cfg.configuration.ShowAnnotationCodeLens )
+		if ( !this.m_cfg.configuration.ShowAnnotationCodeLens.Value )
 			return [];
 
 		let l_lenses: vscode.CodeLens[] = [];

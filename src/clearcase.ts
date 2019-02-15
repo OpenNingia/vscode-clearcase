@@ -2,17 +2,16 @@
 // The module ' contains the VS Code extensibility API
 // Import the module and reference it with the alias in your code below
 import {
-  ExtensionContext, commands, window, workspace, Uri,
-  languages, TextEditor, TextDocument, TextDocumentSaveReason,
-  EventEmitter, Event, QuickPickItem, InputBoxOptions, OutputChannel
+  ExtensionContext, window, workspace, Uri,
+  TextEditor, TextDocument,
+  EventEmitter, Event, QuickPickItem, OutputChannel
 } from 'vscode'
-import { exec, execSync, spawn } from 'child_process'
+import { exec, spawn } from 'child_process'
 import * as fs from 'fs';
 import { dirname } from 'path';
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccAnnotationController } from './ccAnnotateController'
 import { ccConfigHandler } from './ccConfigHandler';
-import { ccConfiguration } from './ccConfiguration';
 
 export enum EventActions {
   Add = 0,
@@ -25,8 +24,17 @@ export class EventArgs {
   action: EventActions;
 }
 
+enum ViewType {
+  UNKNOWN,
+  DYNAMIC,
+  SNAPSHOT
+}
 
 export class ClearCase {
+  private readonly LS_VIEW: string[] = ['lsview', '-cview', '-long'];
+
+  private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
+
 
   private m_isCCView: boolean;
   private m_updateEvent: EventEmitter<Uri>;
@@ -56,20 +64,20 @@ export class ClearCase {
       try {
         this.m_isCCView = await this.isClearcaseObject(editor.document.uri);
         if (this.m_isCCView === false)
-          this.m_isCCView = this.hasConfigspec();
+          this.m_isCCView = await this.hasConfigspec();
       }
       catch (error) {
         // can happen i.e. with a new file which has not been save yet
-        this.m_isCCView = this.hasConfigspec();
+        this.m_isCCView = await this.hasConfigspec();
       }
     }
     else {
-      this.m_isCCView = this.hasConfigspec();
+      this.m_isCCView = await this.hasConfigspec();
     }
   }
 
-  public execOnSCMFile(doc: TextDocument, func: (string) => void) {
-    var path = doc.fileName;
+  public execOnSCMFile(doc: Uri, func: (string) => void) {
+    var path = doc.fsPath;
     var self = this;
     exec("cleartool ls \"" + path + "\"", (error, stdout, stderr) => {
       if (error) {
@@ -85,20 +93,20 @@ export class ClearCase {
     });
   }
 
-  public runClearCaseExplorer(doc: TextDocument) {
-    var path = doc.fileName;
+  public runClearCaseExplorer(doc: Uri) {
+    var path = doc.fsPath;
     exec("clearexplorer \"" + path + "\"");
   }
 
-  public async checkoutFile(doc: TextDocument) {
-    var path = doc.fileName;
-    let useClearDlg = this.configHandler.configuration.UseClearDlg;
-    let coArgTmpl = this.configHandler.configuration.CheckoutCommand;
-    let defComment = this.configHandler.configuration.DefaultComment;
+  public async checkoutFile(doc: Uri) {
+    var path = doc.fsPath;
+    let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
+    let coArgTmpl = this.configHandler.configuration.CheckoutCommand.Value;
+    let defComment = this.configHandler.configuration.DefaultComment.Value;
 
     if (useClearDlg) {
       exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
-        this.m_updateEvent.fire(doc.uri);
+        this.m_updateEvent.fire(doc);
       });
     } else {
 
@@ -120,7 +128,7 @@ export class ClearCase {
       let coArgs = coArgTmpl.replace("${filename}", '"' + path + '"')
         .replace("${comment}", '"' + comment + '"');
       exec("cleartool co " + coArgs, (error, stdout, stderr) => {
-        this.m_updateEvent.fire();
+        this.m_updateEvent.fire(doc);
       });
     }
   }
@@ -140,22 +148,22 @@ export class ClearCase {
     });
   }
 
-  public undoCheckoutFile(doc: TextDocument) {
-    var path = doc.fileName;
+  public undoCheckoutFile(doc: Uri) {
+    var path = doc.fsPath;
     exec("cleartool unco -rm \"" + path + "\"", (error, stdout, stderr) => {
-      this.m_updateEvent.fire(doc.uri);
+      this.m_updateEvent.fire(doc);
     });
   }
 
-  public async checkinFile(doc: TextDocument) {
-    var path = doc.fileName;
-    let useClearDlg = this.configHandler.configuration.UseClearDlg;
-    let coArgTmpl = this.configHandler.configuration.CheckinCommand;
-    let defComment = this.configHandler.configuration.DefaultComment;
+  public async checkinFile(doc: Uri) {
+    var path = doc.fsPath;
+    let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
+    let coArgTmpl = this.configHandler.configuration.CheckinCommand.Value;
+    let defComment = this.configHandler.configuration.DefaultComment.Value;
 
     if (useClearDlg) {
       exec("cleardlg /checkin \"" + path + "\"", (error, stdout, stderr) => {
-        this.m_updateEvent.fire(doc.uri);
+        this.m_updateEvent.fire(doc);
       });
     } else {
 
@@ -177,37 +185,30 @@ export class ClearCase {
       let coArgs = coArgTmpl.replace("${filename}", '"' + path + '"')
         .replace("${comment}", '"' + comment + '"');
       exec("cleartool ci " + coArgs, (error, stdout, stderr) => {
-        this.m_updateEvent.fire(doc.uri);
+        this.m_updateEvent.fire(doc);
       });
     }
   }
 
-  public checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      let prs: Promise<void>[] = [];
-      for(let i=0; i < fileObjs.length; i++)
-      {
-        let cmd: string[] = ["ci", "-nc", fileObjs[i].fsPath];
-        if( comment != "" )
-        {
-          cmd = ["ci", "-c", comment, fileObjs[i].fsPath];
-        }
-        prs.push(
-          this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-            this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`);
-        }));
+  public async checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
+    for (let i = 0; i < fileObjs.length; i++) {
+      let cmd: string[] = ["ci", "-nc", fileObjs[i].fsPath];
+      if (comment != "") {
+        cmd = ["ci", "-c", comment, fileObjs[i].fsPath];
       }
-      Promise.all(prs).then(() => resolve());
-    });
+      await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+        this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`);
+      });
+    }
   }
 
-  public versionTree(doc: TextDocument) {
-    var path = doc.fileName;
+  public versionTree(doc: Uri) {
+    var path = doc.fsPath;
     exec("cleartool lsvtree -graphical \"" + path + "\"");
   }
 
-  public diffWithPrevious(doc: TextDocument) {
-    var path = doc.fileName;
+  public diffWithPrevious(doc: Uri) {
+    var path = doc.fsPath;
     exec("cleartool diff -graph -pred \"" + path + "\"");
   }
 
@@ -217,13 +218,10 @@ export class ClearCase {
   public async findCheckouts(): Promise<string[]> {
     let results: string[] = [];
 
-    return new Promise<string[]>((resolve, reject) => {
-      this.runCleartoolCommand(["lsco", "-me", "-cview", "-short", "-avobs"],  workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-        results = results.concat(data);
-      }).then(() => {
-        resolve(results);
-      });
+    await this.runCleartoolCommand(["lsco", "-me", "-cview", "-short", "-avobs"], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+      results = results.concat(data);
     });
+    return results;
   }
 
   /**
@@ -233,25 +231,18 @@ export class ClearCase {
   public async findUntracked(): Promise<string[]> {
     let results: string[] = [];
 
-    return new Promise<string[]>((resolve, reject) => {
-      let prs: Promise<void>[] = [];
-      for (let i = 0; i < workspace.workspaceFolders.length; i++) {
-        prs.push(
-          this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], workspace.workspaceFolders[i].uri.fsPath, (data: string[]) => {
-            let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes);
-            let res = data.filter((val) => {
-              if (val.match(regex) != null) {
-                return val.trim();
-              }
-            });
-            results = results.concat(res);
-          })
-        );
-      }
-      Promise.all(prs).then(() => {
-        resolve(results);
+    for (let i = 0; i < workspace.workspaceFolders.length; i++) {
+      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], workspace.workspaceFolders[i].uri.fsPath, (data: string[]) => {
+        let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value);
+        let res = data.filter((val) => {
+          if (val.match(regex) != null) {
+            return val.trim();
+          }
+        });
+        results = results.concat(res);
       });
-    });
+    }
+    return results;
   }
 
   public findModified(path: string) {
@@ -266,10 +257,10 @@ export class ClearCase {
    * Alternate methode detecting if the given path is part of an clearcase
    * view.
    */
-  public hasConfigspec(): boolean {
+  public async hasConfigspec(): Promise<boolean> {
     try {
-      if (workspace.workspaceFolders.length > 0 ) {
-        execSync("cleartool catcs", { cwd: workspace.workspaceFolders[0].uri.fsPath });
+      if (workspace.workspaceFolders.length > 0) {
+        await exec("cleartool catcs", { cwd: workspace.workspaceFolders[0].uri.fsPath });
         return true;
       }
       return false;
@@ -292,7 +283,6 @@ export class ClearCase {
       return false;
     }
   }
-
 
   /**
    * Retruns a promise promise which will contain a branch information in
@@ -413,8 +403,8 @@ export class ClearCase {
     }
   }
 
-  public itemProperties(doc: TextDocument) {
-    var path = doc.fileName;
+  public itemProperties(doc: Uri) {
+    var path = doc.fsPath;
     exec("cleardescribe \"" + path + "\"");
   }
 
@@ -430,7 +420,7 @@ export class ClearCase {
   }
 
   public async getAnnotatedFileContent(filePath: string): Promise<string> {
-    let fmt = this.configHandler.configuration.AnnotationFormatString;
+    let fmt = this.configHandler.configuration.AnnotationFormatString.Value;
     let sep = " | ";
     let param = "\"" + filePath + "\"";
     let cmd = "cleartool annotate -out - -nhe -fmt \"" + fmt + sep + "\" " + param;
@@ -537,7 +527,7 @@ export class ClearCase {
     }
   }
 
-  async setViewActivity(actvID: String) {
+  public setViewActivity(actvID: String): Promise<string> {
     var cmd = 'cleartool setactivity ';
     if (actvID)
       cmd += actvID;
@@ -561,7 +551,7 @@ export class ClearCase {
     let self: ClearCase = this;
     // tslint:disable-next-line:typedef
     return new Promise<void>(function (resolve, reject): void {
-      self.outputChannel.appendLine(cmd.reduce((val => val + " ")));
+      self.outputChannel.appendLine(cmd.reduce(((val) => { return val + " " })));
       const command = spawn("cleartool", cmd, { cwd: cwd, env: process.env });
 
       command.stdout.on('data', (data) => {
@@ -587,15 +577,48 @@ export class ClearCase {
         if (code !== 0) {
           let msg = `Cleartool error: Cleartool command ${cmd} exited with error code: ${code}`;
           self.outputChannel.appendLine(msg);
-          //reject(msg);
-          resolve();
         } else {
           if (typeof onFinished === 'function') {
             onFinished();
           }
-          resolve();
         }
+        resolve();
+      });
+
+      command.on('error', (error) => {
+        let msg = `Cleartool error: Cleartool command error: ${error.message}`;
+        self.outputChannel.appendLine(msg);
+        reject(error.message);
       });
     });
+  }
+
+  private async detectViewType(): Promise<ViewType> {
+    let lines: string[] = [];
+    let viewType: ViewType = ViewType.UNKNOWN;
+
+    let filterGlobalPathLines = (l: string) => {
+      if (l.length === 0) {
+        return false;
+      }
+      let ma: RegExpMatchArray | null = l.match(this.rxViewType);
+      return !!ma && (ma.length > 0);
+    };
+
+    await this.runCleartoolCommand(this.LS_VIEW, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+      lines = lines.concat(data);
+    }, () => {
+      let resLines: string[] = lines.filter(filterGlobalPathLines);
+      if (resLines.length === 0) {
+        return;
+      }
+      if (resLines[0].endsWith('.vws')) {
+        viewType = ViewType.DYNAMIC;
+      } else {
+        viewType = ViewType.SNAPSHOT;
+      }
+    });
+
+    return viewType;
   }
 }

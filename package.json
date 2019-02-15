@@ -218,33 +218,38 @@
                 {
                     "command": "extension.ccCheckinAll",
                     "group": "navigation",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "scmProvider == cc && vscode-clearcase:enabled"
                 },
                 {
                     "command": "extension.ccUpdateView",
                     "group": "navigation",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "scmProvider == cc && vscode-clearcase:enabled"
                 }
             ],
             "scm/resourceState/context": [
                 {
                     "command": "extension.ccOpenResource",
-                    "when": "vscode-clearcase:enabled",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled",
                     "group": "cc_file"
                 },
                 {
                     "command": "extension.ccCheckin",
-                    "when": "vscode-clearcase:enabled",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled",
                     "group": "cc_file"
                 },
                 {
                     "command": "extension.ccUndoCheckout",
-                    "when": "vscode-clearcase:enabled",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled",
                     "group": "cc_file"
                 },
                 {
                     "command": "extension.ccComparePrevious",
-                    "when": "vscode-clearcase:enabled",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled",
+                    "group": "cc_file"
+                },
+                {
+                    "command": "extension.ccVersionTree",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled",
                     "group": "cc_file"
                 }
             ]
@@ -395,11 +400,11 @@
         "postinstall": "node ./node_modules/vscode/bin/install"
     },
     "dependencies": {
-        "child_process": "^1.0.2",
-        "vscode": "^1.1.29",
-        "vscode-nls": "^4.0.0"
+        "child_process": "^1.0.2"
     },
     "devDependencies": {
+        "vscode": "^1.1.29",
+        "vscode-nls": "^4.0.0",
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.14.2",
         "mocha": "^5.2.0",

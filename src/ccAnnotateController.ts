@@ -95,8 +95,8 @@ export class ccAnnotationController
 			range: vscode.window.activeTextEditor.document.validateRange(new vscode.Range(iLineNr, iCharStart, iLineNr, charLen)),
 			renderOptions: {
 				before:{
-					color: this.m_configuration.AnnotationColor,
-					backgroundColor: this.m_configuration.AnnotationBackground,
+					color: this.m_configuration.AnnotationColor.Value,
+					backgroundColor: this.m_configuration.AnnotationBackground.Value,
 					contentText: iLinePart
 				}
 			}

@@ -17,6 +17,7 @@ export class ccScmProvider {
   private m_ccScm: SourceControl;
   private m_ccCheckedoutGrp: SourceControlResourceGroup;
   private m_ccUntrackedGrp: SourceControlResourceGroup;
+  private m_isUpdatingUntracked: boolean;
 
   private m_windowChangedEvent: EventEmitter<void>;
 
@@ -30,7 +31,6 @@ export class ccScmProvider {
     this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
     this.m_ccCheckedoutGrp.hideWhenEmpty = true;
     this.m_ccUntrackedGrp.hideWhenEmpty = true;
-    this.resetCheckedOutList();
 
     this.m_context.subscriptions.push(this.m_ccScm);
 
@@ -48,8 +48,10 @@ export class ccScmProvider {
 
     this.m_windowChangedEvent = new EventEmitter<void>();
 
+    this.m_isUpdatingUntracked = false;
+
     this.updateCheckedOutList();
-    // this.updateUntrackedList();
+    this.updateUntrackedList();
   }
 
   public get ClearCase(): ClearCase {
@@ -75,9 +77,11 @@ export class ccScmProvider {
       if (val.resourceUri.fsPath != fileObj.fsPath)
         return val;
     });
+    // file is checked out, add to resource state list
     if (version.match(/checkedout/i) !== null) {
       filteredCheckedout.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.MODIFIED));
     }
+    // file has no version information, so it is view private
     if (version == "") {
       filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
     }
@@ -102,26 +106,22 @@ export class ccScmProvider {
         return new ccScmResource(ResourceGroupType.Index, Uri.file(val), ccScmStatus.MODIFIED);
       });
       this.m_ccCheckedoutGrp.resourceStates = checkedout;
+      this.m_isUpdatingUntracked = false;
     });
   }
 
   public async updateUntrackedList() {
     let viewPrv: ccScmResource[] = [];
-
-    this.ClearCase.findUntracked().then((files) => {
-      viewPrv = files.map((val) => {
-        return new ccScmResource(ResourceGroupType.Untracked, Uri.file(val), ccScmStatus.UNTRACKED);
+    if( this.m_isUpdatingUntracked === false )
+    {
+      this.m_isUpdatingUntracked = true;
+      this.ClearCase.findUntracked().then((files) => {
+        viewPrv = files.map((val) => {
+          return new ccScmResource(ResourceGroupType.Untracked, Uri.file(val), ccScmStatus.UNTRACKED);
+        });
+        this.m_ccUntrackedGrp.resourceStates = viewPrv;
       });
-      this.m_ccUntrackedGrp.resourceStates = viewPrv;
-    });
-  }
-
-  public resetCheckedOutList() {
-    this.m_ccCheckedoutGrp.resourceStates = [];
-  }
-
-  public resetUntrackedList() {
-    this.m_ccUntrackedGrp.resourceStates = [];
+    }
   }
 
   public get onWindowChanged(): Event<void> {
@@ -129,24 +129,15 @@ export class ccScmProvider {
   }
 
   public bindCommands() {
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccExplorer', () => {
-        this.ClearCase.execOnSCMFile(window.activeTextEditor.document, this.ClearCase.runClearCaseExplorer);
-      }, this)
-    );
-
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccCheckout', () => {
-        this.ClearCase.execOnSCMFile(window.activeTextEditor.document, this.ClearCase.checkoutFile);
-      }, this)
-    );
-
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccCheckin', () => {
-        this.ClearCase.execOnSCMFile(window.activeTextEditor.document, this.ClearCase.checkinFile);
-      }, this)
-    );
-
+  
+    this.registerCommand('extension.ccExplorer', this.ClearCase.runClearCaseExplorer);
+    this.registerCommand('extension.ccCheckout', this.ClearCase.checkoutFile);
+    this.registerCommand('extension.ccCheckin', this.ClearCase.checkinFile);
+    this.registerCommand('extension.ccUndoCheckout', this.ClearCase.undoCheckoutFile);
+    this.registerCommand('extension.ccVersionTree', this.ClearCase.versionTree);
+    this.registerCommand('extension.ccComparePrevious', this.ClearCase.diffWithPrevious);
+    this.registerCommand('extension.ccItemProperties', this.ClearCase.itemProperties);
+    
     this.m_disposables.push(
       commands.registerCommand('extension.ccCheckinAll', () => {
         let fileObjs: Uri[] = this.m_ccCheckedoutGrp.resourceStates.map(val => {
@@ -160,24 +151,6 @@ export class ccScmProvider {
       }, this));
 
     this.m_disposables.push(
-      commands.registerCommand('extension.ccVersionTree', () => {
-        this.ClearCase.execOnSCMFile(window.activeTextEditor.document, this.ClearCase.versionTree);
-      }, this)
-    );
-
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccComparePrevious', () => {
-        this.ClearCase.execOnSCMFile(window.activeTextEditor.document, this.ClearCase.diffWithPrevious);
-      }, this)
-    );
-
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccUndoCheckout', () => {
-        this.ClearCase.execOnSCMFile(window.activeTextEditor.document, this.ClearCase.undoCheckoutFile);
-      }, this)
-    );
-
-    this.m_disposables.push(
       commands.registerCommand('extension.ccOpenResource', (fileObj: Uri) => {
         this.openResource(fileObj);
       }, this)
@@ -187,12 +160,6 @@ export class ccScmProvider {
       commands.registerCommand('extension.ccFindModified', () => {
         if (workspace.rootPath)
           this.ClearCase.findModified(workspace.rootPath);
-      }, this)
-    );
-
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccItemProperties', () => {
-        this.ClearCase.execOnSCMFile(window.activeTextEditor.document, this.ClearCase.itemProperties);
       }, this)
     );
 
@@ -250,14 +217,34 @@ export class ccScmProvider {
         new ccCodeLensProvider(this.m_context, this.configHandler, this)));
   }
 
+  public registerCommand(cmdName: string, cmd: (fileObj:Uri) => void)
+  {
+    this.m_disposables.push(
+      commands.registerCommand(cmdName, (fileObj:Uri|ccScmResource) => {
+        let file: Uri = null;
+        if( fileObj instanceof Uri )
+          file = fileObj;
+        if( fileObj instanceof ccScmResource )
+          file = fileObj.resourceUri;
+        if( file !== null )
+          this.ClearCase.execOnSCMFile(file, cmd);
+      }, this)
+    );
+  }
+
   public bindEvents() {
-    this.m_context.subscriptions.push(
-      workspace.onWillSaveTextDocument(this.onWillSaveDocument, this, this.m_context.subscriptions)
+    this.m_disposables.push(
+      workspace.onWillSaveTextDocument(this.onWillSaveDocument, this)
     );
 
-    this.m_context.subscriptions.push(
-      window.onDidChangeActiveTextEditor(this.onDidChangeTextEditor, this, this.m_context.subscriptions)
+    this.m_disposables.push(
+      window.onDidChangeActiveTextEditor(this.onDidChangeTextEditor, this)
     );
+
+    this.configHandler.onDidChangeConfiguration((vals: string[]) => {
+      if(vals.indexOf("viewPrivateFileSuffixes") !== -1)
+        this.updateUntrackedList();
+    });
   }
 
   public async onWillSaveDocument(event: TextDocumentWillSaveEvent) {
@@ -269,13 +256,13 @@ export class ccScmProvider {
         return;
       if (this.ClearCase.isReadOnly(event.document)) {
 
-        let useClearDlg = this.configHandler.configuration.UseClearDlg;
+        let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
         if (useClearDlg) {
           this.ClearCase.checkoutAndSaveFile(event.document);
         } else {
           event.waitUntil(Promise.all([
             this.ClearCase.isClearcaseObject(event.document.uri),
-            this.ClearCase.checkoutFile(event.document),
+            this.ClearCase.checkoutFile(event.document.uri),
             event.document.save()]));
         }
       }
@@ -291,7 +278,7 @@ export class ccScmProvider {
   }
 
   public async openResource(fileObj: Uri) {
-    if (window && window.activeTextEditor) {
+    if (window) {
       let doc: TextDocument = await workspace.openTextDocument(fileObj);
       window.showTextDocument(doc);
     }
@@ -299,6 +286,7 @@ export class ccScmProvider {
 
   public async onDidChangeTextEditor(editor: TextEditor) {
     await this.ClearCase.checkIsView(editor);
+    this.updateCheckedOutList();
     this.m_windowChangedEvent.fire();
   }
 

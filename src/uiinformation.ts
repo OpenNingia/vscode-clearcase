@@ -61,7 +61,7 @@ export class UIInformation {
 	}
 
 	private handleConfigState() {
-		this.m_isActive = this.m_configHandler.configuration.ShowStatusbar;
+		this.m_isActive = this.m_configHandler.configuration.ShowStatusbar.Value;
 
 		if (this.m_isActive === false) {
 			this.m_statusbar.hide();
@@ -85,9 +85,9 @@ export class UIInformation {
 		});
 	}
 
-	public updateStatusbar(iFileInfo: string) {
+	public async updateStatusbar(iFileInfo: string) {
 		if (iFileInfo !== undefined) {
-			if (this.m_clearcase.hasConfigspec() === true || iFileInfo !== "") {
+			if (await this.m_clearcase.hasConfigspec() === true || iFileInfo !== "") {
 				let version = "view private";
 				if (iFileInfo !== "")
 					version = iFileInfo;
