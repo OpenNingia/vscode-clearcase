@@ -7,6 +7,7 @@ import { Model } from "./model";
 import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
+import { join } from "path";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -26,46 +27,51 @@ export class ccScmProvider {
     private outputChannel: OutputChannel,
     private configHandler: ccConfigHandler) {
 
-    this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
-    this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
-    this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
-    this.m_ccCheckedoutGrp.hideWhenEmpty = true;
-    this.m_ccUntrackedGrp.hideWhenEmpty = true;
-
-    this.m_context.subscriptions.push(this.m_ccScm);
-
     this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
-
-    this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckin', title: localize('checkin', 'Check In') };
-
-    this.m_model = new Model();
-    this.m_model.onWorkspaceChanged(this.handleChangeFiles, this, this.m_disposables);
-    this.m_model.onWorkspaceDeleted(this.handleDeleteFiles, this, this.m_disposables);
-
-    this.ClearCase.onCommandExecuted((evArgs: Uri) => {
-      this.handleChangeFiles(evArgs);
-    });
-
     this.m_windowChangedEvent = new EventEmitter<void>();
 
-    this.m_isUpdatingUntracked = false;
+    this.m_ccHandler.checkIsView(null).then(() => {
+      if (this.m_ccHandler.IsView) {
+        this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
+        this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
+        this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
+        this.m_ccCheckedoutGrp.hideWhenEmpty = true;
+        this.m_ccUntrackedGrp.hideWhenEmpty = true;
+        
+        this.m_context.subscriptions.push(this.m_ccScm);
+        
+        this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
+        this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
+        
+        this.m_model = new Model();
+        this.m_model.onWorkspaceChanged(this.handleChangeFiles, this, this.m_disposables);
+        this.m_model.onWorkspaceDeleted(this.handleDeleteFiles, this, this.m_disposables);
+        
+        this.ClearCase.onCommandExecuted((evArgs: Uri) => {
+          this.handleChangeFiles(evArgs);
+        });
 
-    this.updateCheckedOutList();
-    this.updateUntrackedList();
+        this.bindScmCommand();
+
+        this.m_isUpdatingUntracked = false;
+
+        this.updateCheckedOutList();
+        this.updateUntrackedList();
+      }
+    });
   }
 
   public get ClearCase(): ClearCase {
     return this.m_ccHandler;
   }
 
-  public updateIsView(): Promise<boolean>{
+  public updateIsView(): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.ClearCase.checkIsView(window.activeTextEditor).then(() => {
         resolve(this.ClearCase.IsView);
       });
     });
   }
-
 
   public async handleChangeFiles(fileObj: Uri) {
     let version = await this.ClearCase.getVersionInformation(fileObj);
@@ -104,6 +110,8 @@ export class ccScmProvider {
     this.ClearCase.findCheckouts().then((files) => {
       checkedout = files.map((val) => {
         return new ccScmResource(ResourceGroupType.Index, Uri.file(val), ccScmStatus.MODIFIED);
+      }).sort((val1, val2) => {
+        return (val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath));
       });
       this.m_ccCheckedoutGrp.resourceStates = checkedout;
       this.m_isUpdatingUntracked = false;
@@ -112,15 +120,17 @@ export class ccScmProvider {
 
   public async updateUntrackedList() {
     let viewPrv: ccScmResource[] = [];
-    if( this.m_isUpdatingUntracked === false )
-    {
+    if (this.m_isUpdatingUntracked === false) {
       this.m_isUpdatingUntracked = true;
-      this.ClearCase.findUntracked().then((files) => {
-        viewPrv = files.map((val) => {
-          return new ccScmResource(ResourceGroupType.Untracked, Uri.file(val), ccScmStatus.UNTRACKED);
-        });
+      for (let i = 0; i < workspace.workspaceFolders.length; i++)
+      {
+        let root = workspace.workspaceFolders[i].uri;
+        let files = await this.ClearCase.findUntracked(root);
+        viewPrv = viewPrv.concat(files.map((val) => {
+          return new ccScmResource(ResourceGroupType.Untracked, Uri.file(join(root.fsPath, val)), ccScmStatus.UNTRACKED);
+        }));
         this.m_ccUntrackedGrp.resourceStates = viewPrv;
-      });
+      }
     }
   }
 
@@ -129,7 +139,7 @@ export class ccScmProvider {
   }
 
   public bindCommands() {
-  
+
     this.registerCommand('extension.ccExplorer', this.ClearCase.runClearCaseExplorer);
     this.registerCommand('extension.ccCheckout', this.ClearCase.checkoutFile);
     this.registerCommand('extension.ccCheckin', this.ClearCase.checkinFile);
@@ -137,18 +147,6 @@ export class ccScmProvider {
     this.registerCommand('extension.ccVersionTree', this.ClearCase.versionTree);
     this.registerCommand('extension.ccComparePrevious', this.ClearCase.diffWithPrevious);
     this.registerCommand('extension.ccItemProperties', this.ClearCase.itemProperties);
-    
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccCheckinAll', () => {
-        let fileObjs: Uri[] = this.m_ccCheckedoutGrp.resourceStates.map(val => {
-          return val.resourceUri;
-        });
-        let checkinComment = this.m_ccScm.inputBox.value;
-        this.ClearCase.checkinFiles(fileObjs, checkinComment).then(() => {
-          this.m_ccScm.inputBox.value = "";
-          this.updateCheckedOutList();
-        });
-      }, this));
 
     this.m_disposables.push(
       commands.registerCommand('extension.ccOpenResource', (fileObj: Uri) => {
@@ -217,19 +215,45 @@ export class ccScmProvider {
         new ccCodeLensProvider(this.m_context, this.configHandler, this)));
   }
 
-  public registerCommand(cmdName: string, cmd: (fileObj:Uri) => void)
-  {
+  public registerCommand(cmdName: string, cmd: (fileObj: Uri) => void) {
     this.m_disposables.push(
-      commands.registerCommand(cmdName, (fileObj:Uri|ccScmResource) => {
+      commands.registerCommand(cmdName, (fileObj: Uri | ccScmResource) => {
         let file: Uri = null;
-        if( fileObj instanceof Uri )
+        if (fileObj instanceof Uri)
           file = fileObj;
-        if( fileObj instanceof ccScmResource )
+        if (fileObj instanceof ccScmResource)
           file = fileObj.resourceUri;
-        if( file !== null )
+        if( file === null )
+        {
+          if( window && window.activeTextEditor )
+          {
+            file = window.activeTextEditor.document.uri;
+          }
+        }
+        if (file !== null)
           this.ClearCase.execOnSCMFile(file, cmd);
       }, this)
     );
+  }
+
+  public bindScmCommand() {
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccCheckinAll', () => {
+        let fileObjs: Uri[] = this.m_ccCheckedoutGrp.resourceStates.map(val => {
+          return val.resourceUri;
+        });
+        let checkinComment = this.m_ccScm.inputBox.value;
+        this.ClearCase.checkinFiles(fileObjs, checkinComment).then(() => {
+          this.m_ccScm.inputBox.value = "";
+          this.updateCheckedOutList();
+        });
+      }, this));
+
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccRefreshFileList', () => {
+        this.updateCheckedOutList();
+        this.updateUntrackedList();
+      }, this));
   }
 
   public bindEvents() {
@@ -242,7 +266,7 @@ export class ccScmProvider {
     );
 
     this.configHandler.onDidChangeConfiguration((vals: string[]) => {
-      if(vals.indexOf("viewPrivateFileSuffixes") !== -1)
+      if (vals.indexOf("viewPrivateFileSuffixes") !== -1)
         this.updateUntrackedList();
     });
   }

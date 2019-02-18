@@ -2,7 +2,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import {ClearCase} from './clearcase';
+import {ClearCase, ViewType} from './clearcase';
 import {UIInformation} from './uiinformation'
 import {ccConfigHandler} from './ccConfigHandler';
 import { ccScmProvider } from './ccScmProvider';
@@ -28,10 +28,12 @@ async function _activate(context: vscode.ExtensionContext, disposables: vscode.D
 
     provider.updateIsView().then((is:boolean) => {
         vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', is);
+        vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
     })
 
     provider.onWindowChanged(() => {
         vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.ClearCase.IsView);
+        vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
     }, provider);
 
     let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.ClearCase);
@@ -50,8 +52,10 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
       new vscode.Disposable(() => vscode.Disposable.from(...disposables).dispose())
     );
-  
-    await _activate(context, disposables).catch(err => console.error(err));
+    if( vscode.workspace.workspaceFolders.length > 0 )
+    {
+        await _activate(context, disposables).catch(err => console.error(err));
+    }
 }
 
 // this method is called when your extension is deactivated

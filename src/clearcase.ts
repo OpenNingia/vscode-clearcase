@@ -8,7 +8,7 @@ import {
 } from 'vscode'
 import { exec, spawn } from 'child_process'
 import * as fs from 'fs';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccAnnotationController } from './ccAnnotateController'
 import { ccConfigHandler } from './ccConfigHandler';
@@ -24,7 +24,7 @@ export class EventArgs {
   action: EventActions;
 }
 
-enum ViewType {
+export enum ViewType {
   UNKNOWN,
   DYNAMIC,
   SNAPSHOT
@@ -37,16 +37,22 @@ export class ClearCase {
 
 
   private m_isCCView: boolean;
+  private m_viewType: ViewType;
   private m_updateEvent: EventEmitter<Uri>;
 
   public constructor(private m_context: ExtensionContext,
     private configHandler: ccConfigHandler,
     private outputChannel: OutputChannel) {
     this.m_updateEvent = new EventEmitter<Uri>();
+    this.m_viewType = ViewType.UNKNOWN;
   }
 
   public get IsView(): boolean {
     return this.m_isCCView;
+  }
+
+  public get ViewType(): ViewType {
+    return this.m_viewType;
   }
 
   public get onCommandExecuted(): Event<Uri> {
@@ -60,7 +66,7 @@ export class ClearCase {
    * @param editor current editor instance
    */
   public async checkIsView(editor: TextEditor) {
-    if (editor !== undefined && editor.document !== undefined) {
+    if (editor !== null && editor !== undefined && editor.document !== undefined) {
       try {
         this.m_isCCView = await this.isClearcaseObject(editor.document.uri);
         if (this.m_isCCView === false)
@@ -74,6 +80,7 @@ export class ClearCase {
     else {
       this.m_isCCView = await this.hasConfigspec();
     }
+    this.m_viewType = await this.detectViewType();
   }
 
   public execOnSCMFile(doc: Uri, func: (string) => void) {
@@ -228,20 +235,20 @@ export class ClearCase {
    * Searching view private objects in all workspace folders of the current project.
    * The result is filtered by the configuration 'ViewPrivateFileSuffixes'
    */
-  public async findUntracked(): Promise<string[]> {
+  public async findUntracked(folder: Uri): Promise<string[]> {
     let results: string[] = [];
 
-    for (let i = 0; i < workspace.workspaceFolders.length; i++) {
-      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], workspace.workspaceFolders[i].uri.fsPath, (data: string[]) => {
-        let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value);
-        let res = data.filter((val) => {
-          if (val.match(regex) != null) {
-            return val.trim();
-          }
-        });
-        results = results.concat(res);
+    await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], folder.fsPath, (data: string[]) => {
+      let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
+      let res = data.filter((val) => {
+        if (val.match(regex) != null) {
+          val = join(folder.fsPath, val.trim());
+          if( fs.existsSync(val) )
+            return val;
+        }
       });
-    }
+      results = results.concat(res);
+    });
     return results;
   }
 
@@ -299,7 +306,10 @@ export class ClearCase {
 
       exec(`cleartool ls -short ${iUri.fsPath}`, (error, stdout, stderr) => {
         if (error || stderr) {
-          reject("");
+          if( error)
+            reject(error.message);
+          else
+          reject(stderr);
         }
         else {
           let version: string = this.getVersionString(stdout)

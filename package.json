@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "1.12.1",
+    "version": "1.12.4",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
@@ -104,6 +104,15 @@
                 "command": "extension.ccUpdateFile",
                 "title": "Update",
                 "category": "Clearcase"
+            },
+            {
+                "command": "extension.ccRefreshFileList",
+                "title": "Refresh file list",
+                "category": "Clearcase",
+                "icon": {
+                    "light": "icons/light/refresh.svg",
+                    "dark": "icons/dark/refresh.svg"
+                }
             },
             {
                 "command": "extension.ccAnnotate",
@@ -223,15 +232,15 @@
                 {
                     "command": "extension.ccUpdateView",
                     "group": "navigation",
-                    "when": "scmProvider == cc && vscode-clearcase:enabled"
+                    "when": "scmProvider == cc && vscode-clearcase:enabled && !vscode-clearcase:DynView"
+                },
+                {
+                    "command": "extension.ccRefreshFileList",
+                    "group": "navigation",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled && vscode-clearcase:DynView"
                 }
             ],
             "scm/resourceState/context": [
-                {
-                    "command": "extension.ccOpenResource",
-                    "when": "scmProvider == cc && vscode-clearcase:enabled",
-                    "group": "cc_file"
-                },
                 {
                     "command": "extension.ccCheckin",
                     "when": "scmProvider == cc && vscode-clearcase:enabled",
@@ -239,17 +248,17 @@
                 },
                 {
                     "command": "extension.ccUndoCheckout",
-                    "when": "scmProvider == cc && vscode-clearcase:enabled",
+                    "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
                     "group": "cc_file"
                 },
                 {
                     "command": "extension.ccComparePrevious",
-                    "when": "scmProvider == cc && vscode-clearcase:enabled",
+                    "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
                     "group": "cc_file"
                 },
                 {
                     "command": "extension.ccVersionTree",
-                    "when": "scmProvider == cc && vscode-clearcase:enabled",
+                    "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
                     "group": "cc_file"
                 }
             ]
@@ -348,7 +357,7 @@
                 },
                 "vscode-clearcase.viewPrivateFileSuffixes": {
                     "type": "string",
-                    "default": "/(hh|cpp|def|c|h)$/i",
+                    "default": "(hh|cpp|def|c|h|txt)$",
                     "description": "Regular expression style string for file suffixes be shown as view private."
                 }
             }
@@ -400,11 +409,12 @@
         "postinstall": "node ./node_modules/vscode/bin/install"
     },
     "dependencies": {
-        "child_process": "^1.0.2"
+        "child_process": "^1.0.2",
+        "vscode-nls": "^4.0.0"
     },
     "devDependencies": {
         "vscode": "^1.1.29",
-        "vscode-nls": "^4.0.0",
+        "vscode-nls-dev": "^2.1.2",
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.14.2",
         "mocha": "^5.2.0",

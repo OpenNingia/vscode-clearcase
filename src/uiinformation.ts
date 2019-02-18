@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import { ccConfigHandler } from './ccConfigHandler';
 import { ClearCase } from './clearcase';
+import { existsSync } from 'fs';
 
 export class UIInformation {
 	private m_statusbar: vscode.StatusBarItem;
@@ -47,8 +48,8 @@ export class UIInformation {
 		}
 	}
 
-	public receiveDocument(event: vscode.TextDocument) {
-		if (event && this.m_isActive) {
+	public receiveDocument(event: any) {
+		if (event && this.m_isActive && existsSync(event.uri.fsPath)) {
 			this.queryVersionInformation(event.uri);
 		}
 	}

@@ -37,7 +37,7 @@ export class ccConfiguration
 	private m_checkoutCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
 	private m_checkinCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
 	private m_defaultComment: ConfigurationProperty<string> = new ConfigurationProperty(null);
-	private m_viewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('/(hh|cpp|def|c|h)$/i');
+	private m_viewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
 
 	public get ShowStatusbar() : ConfigurationProperty<boolean> {
 		return this.m_showStatusbar;
