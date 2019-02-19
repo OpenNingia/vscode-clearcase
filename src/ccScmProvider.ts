@@ -1,4 +1,4 @@
-import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument } from "vscode";
+import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem } from "vscode";
 import { ccScmResource, ResourceGroupType } from "./ccScmResource";
 import { ccScmStatus } from "./ccScmStatus";
 import { ClearCase, EventArgs } from "./clearcase";
@@ -8,6 +8,7 @@ import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { join } from "path";
+import { fstat, unlink, exists } from "fs";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -37,16 +38,17 @@ export class ccScmProvider {
         this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
         this.m_ccCheckedoutGrp.hideWhenEmpty = true;
         this.m_ccUntrackedGrp.hideWhenEmpty = true;
-        
+
         this.m_context.subscriptions.push(this.m_ccScm);
-        
+
         this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
         this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
-        
+
         this.m_model = new Model();
+        this.m_model.onWorkspaceCreated(this.handleChangeFiles, this, this.m_disposables);
         this.m_model.onWorkspaceChanged(this.handleChangeFiles, this, this.m_disposables);
         this.m_model.onWorkspaceDeleted(this.handleDeleteFiles, this, this.m_disposables);
-        
+
         this.ClearCase.onCommandExecuted((evArgs: Uri) => {
           this.handleChangeFiles(evArgs);
         });
@@ -75,12 +77,10 @@ export class ccScmProvider {
 
   public async handleChangeFiles(fileObj: Uri) {
     let version = "";
-    try
-    {
+    try {
       version = await this.ClearCase.getVersionInformation(fileObj);
     }
-    catch(error)
-    {
+    catch (error) {
       this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
     }
     let filteredCheckedout = this.m_ccCheckedoutGrp.resourceStates.filter((val) => {
@@ -109,6 +109,12 @@ export class ccScmProvider {
         return val;
     });
     this.m_ccCheckedoutGrp.resourceStates = filtered;
+    filtered = this.m_ccUntrackedGrp.resourceStates.filter((val) => {
+      if (val.resourceUri.fsPath != fileObj.fsPath)
+        return val;
+    });
+    this.m_ccCheckedoutGrp.resourceStates = filtered;
+    this.m_ccUntrackedGrp.resourceStates = filtered;
   }
 
   public async updateCheckedOutList() {
@@ -129,8 +135,7 @@ export class ccScmProvider {
     let viewPrv: ccScmResource[] = [];
     if (this.m_isUpdatingUntracked === false) {
       this.m_isUpdatingUntracked = true;
-      for (let i = 0; i < workspace.workspaceFolders.length; i++)
-      {
+      for (let i = 0; i < workspace.workspaceFolders.length; i++) {
         let root = workspace.workspaceFolders[i].uri;
         let files = await this.ClearCase.findUntracked(root);
         viewPrv = viewPrv.concat(files.map((val) => {
@@ -139,6 +144,27 @@ export class ccScmProvider {
         this.m_ccUntrackedGrp.resourceStates = viewPrv;
       }
     }
+  }
+
+  public deleteViewPrivateFile(fileObj: ccScmResource) {
+    let yes: MessageItem = { title: "Yes" };
+    let no: MessageItem = { title: "No", isCloseAffordance: true };
+    window.showInformationMessage(
+      `Really delete file ${fileObj.resourceUri.fsPath}?`,
+      { modal: true }, yes, no)
+      .then((retVal: MessageItem) => {
+
+      if (retVal.title === yes.title) {
+        exists(fileObj.resourceUri.fsPath, (exists => {
+          if( exists === true )
+            unlink(fileObj.resourceUri.fsPath, (error => {
+              if(error)
+                this.outputChannel.appendLine(`Delete error: ${error.message}`);
+              this.handleDeleteFiles(fileObj.resourceUri);
+            }));
+        }))
+      }
+    });
   }
 
   public get onWindowChanged(): Event<void> {
@@ -230,10 +256,8 @@ export class ccScmProvider {
           file = fileObj;
         if (fileObj instanceof ccScmResource)
           file = fileObj.resourceUri;
-        if( file === null )
-        {
-          if( window && window.activeTextEditor )
-          {
+        if (file === null) {
+          if (window && window.activeTextEditor) {
             file = window.activeTextEditor.document.uri;
           }
         }
@@ -260,6 +284,11 @@ export class ccScmProvider {
       commands.registerCommand('extension.ccRefreshFileList', () => {
         this.updateCheckedOutList();
         this.updateUntrackedList();
+      }, this));
+
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccDeleteViewPrivate', (fileObj: ccScmResource) => {
+        this.deleteViewPrivateFile(fileObj);
       }, this));
   }
 
@@ -291,7 +320,7 @@ export class ccScmProvider {
         if (useClearDlg) {
           this.ClearCase.checkoutAndSaveFile(event.document);
         } else {
-          this.ClearCase.isClearcaseObject(event.document.uri).then((state:boolean) => {
+          this.ClearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
             this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
               event.document.save();
             });
@@ -300,12 +329,10 @@ export class ccScmProvider {
       }
       else {
         let version = "";
-        try
-        {
+        try {
           version = await this.ClearCase.getVersionInformation(event.document.uri);
         }
-        catch(error)
-        {
+        catch (error) {
           this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
         }
         if (version == "") {
