@@ -74,7 +74,15 @@ export class ccScmProvider {
   }
 
   public async handleChangeFiles(fileObj: Uri) {
-    let version = await this.ClearCase.getVersionInformation(fileObj);
+    let version = "";
+    try
+    {
+      version = await this.ClearCase.getVersionInformation(fileObj);
+    }
+    catch(error)
+    {
+      this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
+    }
     let filteredCheckedout = this.m_ccCheckedoutGrp.resourceStates.filter((val) => {
       if (val.resourceUri.fsPath != fileObj.fsPath)
         return val;
@@ -96,7 +104,6 @@ export class ccScmProvider {
   }
 
   public async handleDeleteFiles(fileObj: Uri) {
-    let version = await this.ClearCase.getVersionInformation(fileObj);
     let filtered = this.m_ccCheckedoutGrp.resourceStates.filter((val) => {
       if (val.resourceUri.fsPath != fileObj.fsPath)
         return val;
@@ -284,14 +291,23 @@ export class ccScmProvider {
         if (useClearDlg) {
           this.ClearCase.checkoutAndSaveFile(event.document);
         } else {
-          event.waitUntil(Promise.all([
-            this.ClearCase.isClearcaseObject(event.document.uri),
-            this.ClearCase.checkoutFile(event.document.uri),
-            event.document.save()]));
+          this.ClearCase.isClearcaseObject(event.document.uri).then((state:boolean) => {
+            this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
+              event.document.save();
+            });
+          });
         }
       }
       else {
-        let version = await this.ClearCase.getVersionInformation(event.document.uri);
+        let version = "";
+        try
+        {
+          version = await this.ClearCase.getVersionInformation(event.document.uri);
+        }
+        catch(error)
+        {
+          this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
+        }
         if (version == "") {
           this.handleChangeFiles(event.document.uri);
         }

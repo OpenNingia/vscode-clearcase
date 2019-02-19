@@ -105,7 +105,7 @@ export class ClearCase {
     exec("clearexplorer \"" + path + "\"");
   }
 
-  public async checkoutFile(doc: Uri) {
+  public async checkoutFile(doc: Uri): Promise<boolean> {
     var path = doc.fsPath;
     let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
     let coArgTmpl = this.configHandler.configuration.CheckoutCommand.Value;
@@ -115,11 +115,13 @@ export class ClearCase {
       exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
         this.m_updateEvent.fire(doc);
       });
+      return true;
     } else {
 
-      var comment = "";
-      if (coArgTmpl.indexOf("${comment}") != -1) {
-
+      let comment = "";
+      let cmdOpts = coArgTmpl.split(' ');
+      let idx = cmdOpts.indexOf("${comment}");
+      if (idx > -1) {
         if (defComment)
           comment = defComment;
         else {
@@ -130,13 +132,44 @@ export class ClearCase {
             }
           ) || "";
         }
+        cmdOpts[idx] = comment;
       }
+      else
+      {
+        let pI = cmdOpts.indexOf("-comment");
+        if( pI > -1 )
+        {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-c");
+        if( pI > -1 )
+        {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-nc");
+        if( pI == -1 )
+          cmdOpts.push("-nc");
+      }
+      idx = cmdOpts.indexOf("${filename}");
+      if( idx > -1 )
+        cmdOpts[idx] = path;
+      else
+        cmdOpts.push(path);
 
-      let coArgs = coArgTmpl.replace("${filename}", '"' + path + '"')
-        .replace("${comment}", '"' + comment + '"');
-      exec("cleartool co " + coArgs, (error, stdout, stderr) => {
+      let cmd: string[] = ["co"];
+      cmd = cmd.concat(cmdOpts);
+
+      try
+      {
+        await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
+        });
         this.m_updateEvent.fire(doc);
-      });
+      }
+      catch(error)
+      {
+        this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + error);
+      }
+      return true;
     }
   }
 
@@ -165,7 +198,7 @@ export class ClearCase {
   public async checkinFile(doc: Uri) {
     var path = doc.fsPath;
     let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
-    let coArgTmpl = this.configHandler.configuration.CheckinCommand.Value;
+    let ciArgTmpl = this.configHandler.configuration.CheckinCommand.Value;
     let defComment = this.configHandler.configuration.DefaultComment.Value;
 
     if (useClearDlg) {
@@ -174,8 +207,10 @@ export class ClearCase {
       });
     } else {
 
-      var comment = "";
-      if (coArgTmpl.indexOf("${comment}") != -1) {
+      let comment = "";
+      let cmdOpts = ciArgTmpl.split(' ');
+      let idx = cmdOpts.indexOf("${comment}");
+      if (idx > -1) {
 
         if (defComment)
           comment = defComment;
@@ -187,11 +222,34 @@ export class ClearCase {
             }
           ) || "";
         }
+        cmdOpts[idx] = comment;
       }
+      else
+      {
+        let pI = cmdOpts.indexOf("-comment");
+        if( pI > -1 )
+        {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-c");
+        if( pI > -1 )
+        {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-nc");
+        if( pI == -1 )
+          cmdOpts.push("-nc");
+      }
+      idx = cmdOpts.indexOf("${filename}");
+      if( idx > -1 )
+        cmdOpts[idx] = path;
+      else
+        cmdOpts.push(path);
 
-      let coArgs = coArgTmpl.replace("${filename}", '"' + path + '"')
-        .replace("${comment}", '"' + comment + '"');
-      exec("cleartool ci " + coArgs, (error, stdout, stderr) => {
+      let cmd: string[] = ["ci"];
+      cmd = cmd.concat(cmdOpts);
+
+      await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
         this.m_updateEvent.fire(doc);
       });
     }
