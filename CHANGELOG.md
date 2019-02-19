@@ -1,9 +1,16 @@
 ## Release Notes
 
-### 2.0.1
-* Implemented new SCM api
+### 2.0.2
+* Integrated SCM API (best user experience when `vscode-clearcase.useClearDlg` is set to false)
+* Untracked files are listed in the SCM View, file types can be configured by `vscode-clearcase.viewPrivateFileSuffixes`
+* Checkedout files are listed in the SCM View
+* Checkin all files via the SCM View, also add comment
+* New context menu `delete file` for view private files
 
 Special thanks to https://github.com/fr43nk for the contributions.
+
+### 2.0.1
+* Implemented new SCM api
 
 ### 1.12.2
 * Updated to last vscode dependency to avoid url-parse vulnerability
