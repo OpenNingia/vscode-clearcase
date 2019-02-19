@@ -275,7 +275,7 @@ export class ClearCase {
   public diffWithPrevious(doc: Uri) {
     var path = doc.fsPath;
     exec("cleartool diff -graph -pred \"" + path + "\"");
-  }
+  }  
 
   /**
    * Searching checkout files in all vobs of the current view
@@ -309,6 +309,10 @@ export class ClearCase {
     });
     return results;
   }
+
+  public findCheckoutsGui(path: string) {
+    exec("clearfindco \"" + path + "\"");
+  }  
 
   public findModified(path: string) {
     exec("clearviewupdate -pname \"" + path + "\" -modified");

@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 2.0.3
+* Fixed regression, Find checkout command was not working.
+
 ### 2.0.2
 * Integrated SCM API (best user experience when `vscode-clearcase.useClearDlg` is set to false)
 * Untracked files are listed in the SCM View, file types can be configured by `vscode-clearcase.viewPrivateFileSuffixes`
