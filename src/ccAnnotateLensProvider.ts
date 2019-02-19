@@ -5,6 +5,7 @@ import {ccAnnotateLens} from './ccAnnotateLens';
 import {ClearCase} from './clearcase'
 import {ccConfigHandler} from './ccConfigHandler';
 import {ccConfiguration} from './ccConfiguration';
+import { ccScmProvider } from './ccScmProvider';
 
 export class ccCodeLensProvider implements vscode.CodeLensProvider
 {
@@ -12,20 +13,20 @@ export class ccCodeLensProvider implements vscode.CodeLensProvider
 		scheme: "file"
 	};
 
-	public constructor(private m_context: vscode.ExtensionContext, private m_cfg: ccConfigHandler, private m_clearcase: ClearCase)
+	public constructor(private m_context: vscode.ExtensionContext, private m_cfg: ccConfigHandler, private m_provider: ccScmProvider)
 	{
 	}
 
 	async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]>
 	{
-		if ( !this.m_cfg.configuration.ShowAnnotationCodeLens )
+		if ( !this.m_cfg.configuration.ShowAnnotationCodeLens.Value )
 			return [];
 
 		let l_lenses: vscode.CodeLens[] = [];
 		let l_isCcO: boolean;
 		try
 		{
-			l_isCcO = await this.m_clearcase.isClearcaseObject(document.uri);
+			l_isCcO = await this.m_provider.ClearCase.isClearcaseObject(document.uri);
 		}
 		catch(error)
 		{

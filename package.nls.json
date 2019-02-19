@@ -1,0 +1,8 @@
+{
+  "command.lsvtree": "Show version tree",
+  "command.checkin": "Checkin",
+  "command.checkout": "Checkout",
+  "command.undocheckout": "Undo checkout",
+  "command.addToSourceControl": "Add to Source Control",
+  "config.enabled": "Whether ClearCase SCM is enabled"
+}

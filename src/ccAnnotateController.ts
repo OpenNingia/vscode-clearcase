@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import {ClearCase} from './clearcase'
 import {ccConfigHandler} from './ccConfigHandler';
 import {ccConfiguration} from './ccConfiguration';
+import { ccScmProvider } from './ccScmProvider';
 
 export class ccAnnotationController
 {
@@ -11,7 +12,7 @@ export class ccAnnotationController
 	private m_isActive: boolean;
 	private m_configuration: ccConfiguration;
 
-	constructor(private cc: ClearCase,
+	constructor(private cc: ccScmProvider,
 							private editor: vscode.TextEditor,
 							private context: vscode.ExtensionContext,
 							private configHandler: ccConfigHandler)
@@ -94,8 +95,8 @@ export class ccAnnotationController
 			range: vscode.window.activeTextEditor.document.validateRange(new vscode.Range(iLineNr, iCharStart, iLineNr, charLen)),
 			renderOptions: {
 				before:{
-					color: this.m_configuration.AnnotationColor,
-					backgroundColor: this.m_configuration.AnnotationBackground,
+					color: this.m_configuration.AnnotationColor.Value,
+					backgroundColor: this.m_configuration.AnnotationBackground.Value,
 					contentText: iLinePart
 				}
 			}
