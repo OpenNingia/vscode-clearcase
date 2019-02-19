@@ -1,5 +1,10 @@
 ## Release Notes
 
+### 2.0.1
+* Implemented new SCM api
+
+Special thanks to https://github.com/fr43nk for the contributions.
+
 ### 1.12.2
 * Updated to last vscode dependency to avoid url-parse vulnerability
 
