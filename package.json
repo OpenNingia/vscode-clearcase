@@ -110,8 +110,8 @@
                 "title": "Refresh file list",
                 "category": "Clearcase",
                 "icon": {
-                    "light": "icons/light/refresh.svg",
-                    "dark": "icons/dark/refresh.svg"
+                    "light": "icons/light/open-change-head.svg",
+                    "dark": "icons/dark/open-change-head.svg"
                 }
             },
             {
@@ -242,7 +242,7 @@
                 {
                     "command": "extension.ccRefreshFileList",
                     "group": "navigation",
-                    "when": "scmProvider == cc && vscode-clearcase:enabled && vscode-clearcase:DynView"
+                    "when": "scmProvider == cc && vscode-clearcase:enabled"
                 }
             ],
             "scm/resourceState/context": [

@@ -82,7 +82,7 @@ export class UIInformation {
 		this.m_clearcase.getVersionInformation(iUri).then((value) => {
 			this.updateStatusbar(value);
 		}).catch((error) => {
-			this.updateStatusbar(error);
+			this.updateStatusbar('');
 		});
 	}
 
