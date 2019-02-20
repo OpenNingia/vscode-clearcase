@@ -189,10 +189,19 @@ export class ccScmProvider {
 
     this.m_disposables.push(
       commands.registerCommand('extension.ccFindModified', () => {
-        if (workspace.rootPath)
-          this.ClearCase.findModified(workspace.rootPath);
+        var path = workspace.rootPath || workspace.workspaceFolders[0].uri.fsPath;
+        if (path)
+          this.ClearCase.findModified(path);
       }, this)
     );
+
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccFindCheckouts', () => {
+        var path = workspace.rootPath || workspace.workspaceFolders[0].uri.fsPath;
+        if (path)
+          this.ClearCase.findCheckoutsGui(path);
+      }, this)
+    );    
 
     this.m_disposables.push(
       commands.registerCommand('extension.ccUpdateView', () => {
