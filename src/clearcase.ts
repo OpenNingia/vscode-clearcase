@@ -134,24 +134,21 @@ export class ClearCase {
         }
         cmdOpts[idx] = comment;
       }
-      else
-      {
+      else {
         let pI = cmdOpts.indexOf("-comment");
-        if( pI > -1 )
-        {
+        if (pI > -1) {
           cmdOpts.splice(pI, 1);
         }
         pI = cmdOpts.indexOf("-c");
-        if( pI > -1 )
-        {
+        if (pI > -1) {
           cmdOpts.splice(pI, 1);
         }
         pI = cmdOpts.indexOf("-nc");
-        if( pI == -1 )
+        if (pI == -1)
           cmdOpts.push("-nc");
       }
       idx = cmdOpts.indexOf("${filename}");
-      if( idx > -1 )
+      if (idx > -1)
         cmdOpts[idx] = path;
       else
         cmdOpts.push(path);
@@ -159,15 +156,14 @@ export class ClearCase {
       let cmd: string[] = ["co"];
       cmd = cmd.concat(cmdOpts);
 
-      try
-      {
+      try {
         await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
         });
         this.m_updateEvent.fire(doc);
       }
-      catch(error)
-      {
+      catch (error) {
         this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + error);
+        return false;
       }
       return true;
     }
@@ -224,24 +220,21 @@ export class ClearCase {
         }
         cmdOpts[idx] = comment;
       }
-      else
-      {
+      else {
         let pI = cmdOpts.indexOf("-comment");
-        if( pI > -1 )
-        {
+        if (pI > -1) {
           cmdOpts.splice(pI, 1);
         }
         pI = cmdOpts.indexOf("-c");
-        if( pI > -1 )
-        {
+        if (pI > -1) {
           cmdOpts.splice(pI, 1);
         }
         pI = cmdOpts.indexOf("-nc");
-        if( pI == -1 )
+        if (pI == -1)
           cmdOpts.push("-nc");
       }
       idx = cmdOpts.indexOf("${filename}");
-      if( idx > -1 )
+      if (idx > -1)
         cmdOpts[idx] = path;
       else
         cmdOpts.push(path);
@@ -282,10 +275,14 @@ export class ClearCase {
    */
   public async findCheckouts(): Promise<string[]> {
     let results: string[] = [];
-
-    await this.runCleartoolCommand(["lsco", "-me", "-cview", "-short", "-avobs"], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-      results = results.concat(data);
-    });
+    try {
+      await this.runCleartoolCommand(["lsco", "-me", "-cview", "-short", "-avobs"], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+        results = results.concat(data);
+      });
+    }
+    catch (error) {
+      this.outputChannel.appendLine(error);
+    }
     return results;
   }
 
@@ -295,18 +292,22 @@ export class ClearCase {
    */
   public async findUntracked(folder: Uri): Promise<string[]> {
     let results: string[] = [];
-
-    await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], folder.fsPath, (data: string[]) => {
-      let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
-      let res = data.filter((val) => {
-        if (val.match(regex) != null) {
-          val = join(folder.fsPath, val.trim());
-          if( fs.existsSync(val) )
-            return val;
-        }
+    try {
+      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], folder.fsPath, (data: string[]) => {
+        let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
+        let res = data.filter((val) => {
+          if (val.match(regex) != null) {
+            val = join(folder.fsPath, val.trim());
+            if (fs.existsSync(val))
+              return val;
+          }
+        });
+        results = results.concat(res);
       });
-      results = results.concat(res);
-    });
+    }
+    catch (error) {
+      this.outputChannel.appendLine(error);
+    }
     return results;
   }
 
@@ -325,7 +326,9 @@ export class ClearCase {
   public async hasConfigspec(): Promise<boolean> {
     try {
       if (workspace.workspaceFolders.length > 0) {
-        await exec("cleartool catcs", { cwd: workspace.workspaceFolders[0].uri.fsPath });
+        await this.runCleartoolCommand(["catcs"], workspace.workspaceFolders[0].uri.fsPath, (data) => {
+          
+        });
         return true;
       }
       return false;
@@ -364,10 +367,10 @@ export class ClearCase {
 
       exec(`cleartool ls -short ${iUri.fsPath}`, (error, stdout, stderr) => {
         if (error || stderr) {
-          if( error)
+          if (error)
             reject(error.message);
           else
-          reject(stderr);
+            reject(stderr);
         }
         else {
           let version: string = this.getVersionString(stdout)
@@ -639,6 +642,8 @@ export class ClearCase {
         }
         msg = `ClearCase error: ClearCase error: ${msg}`;
         self.outputChannel.appendLine(msg);
+        if (msg.match(/clearcase error/i) !== null)
+          reject();
       });
 
       command.on('close', (code) => {
