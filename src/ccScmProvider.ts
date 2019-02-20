@@ -99,7 +99,10 @@ export class ccScmProvider {
     }
     // file has no version information, so it is view private
     if (version == "") {
-      filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
+      let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
+      if (fileObj.fsPath.match(regex) != null) {
+        filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
+      }
     }
     this.m_ccCheckedoutGrp.resourceStates = filteredCheckedout;
     this.m_ccUntrackedGrp.resourceStates = filteredUntracked;
