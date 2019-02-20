@@ -335,11 +335,14 @@ export class ccScmProvider {
           this.ClearCase.checkoutAndSaveFile(event.document);
         } else {
           this.ClearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
-            this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
-              event.document.save();
-            }).catch((error) => {
-              return;
-            });
+            if( state === true ) {
+              this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
+                if( isCheckedOut === true )
+                  event.document.save();
+              }).catch((error) => {
+                return;
+              });
+            }
           });
         }
       }
