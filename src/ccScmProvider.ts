@@ -71,6 +71,8 @@ export class ccScmProvider {
     return new Promise<boolean>((resolve, reject) => {
       this.ClearCase.checkIsView(window.activeTextEditor).then(() => {
         resolve(this.ClearCase.IsView);
+      }).catch((error) => {
+        reject(false);
       });
     });
   }
@@ -332,6 +334,8 @@ export class ccScmProvider {
           this.ClearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
             this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
               event.document.save();
+            }).catch((error) => {
+              return;
             });
           });
         }
