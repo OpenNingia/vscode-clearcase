@@ -274,9 +274,11 @@ export class ClearCase {
    * Searching checkout files in all vobs of the current view
    */
   public async findCheckouts(): Promise<string[]> {
+    let lscoArgTmpl = this.configHandler.configuration.FindCheckoutsCommand.Value;
     let results: string[] = [];
     try {
-      await this.runCleartoolCommand(["lsco", "-me", "-cview", "-short", "-avobs"], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+      let cmdOpts = lscoArgTmpl.split(' ');
+      await this.runCleartoolCommand(["lsco"].concat(cmdOpts), workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
         results = results.concat(data);
       });
     }

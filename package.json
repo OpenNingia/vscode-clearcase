@@ -355,6 +355,11 @@
                     "default": "-comment ${comment} ${filename}",
                     "description": "Clearcase checkout arguments. Ignored if useClearDlg is `true`."
                 },
+                "vscode-clearcase.findCheckoutCommandArgs": {
+                    "type": "string",
+                    "default": "-me -cview -short -avobs",
+                    "description": "Clearcase lsco arguments."
+                },                
                 "vscode-clearcase.checkinCommandArgs": {
                     "type": "string",
                     "default": "-comment ${comment} ${filename}",
