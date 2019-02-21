@@ -12,6 +12,22 @@ import { fstat, unlink, exists } from "fs";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
+export class Lock {
+  private m_count: number;
+  constructor(private m_accessCnt:number) {
+    this.m_count = 0;
+  }
+  public reserve(): boolean {
+    let s = this.m_count;
+    this.m_count++;
+    return (s<this.m_accessCnt);
+  }
+
+  public release() {
+    this.m_count--;
+  }
+}
+
 export class ccScmProvider {
 
   private m_ccHandler: ClearCase;
@@ -20,6 +36,7 @@ export class ccScmProvider {
   private m_ccCheckedoutGrp: SourceControlResourceGroup;
   private m_ccUntrackedGrp: SourceControlResourceGroup;
   private m_isUpdatingUntracked: boolean;
+  private m_listLock: Lock;
 
   private m_windowChangedEvent: EventEmitter<void>;
 
@@ -28,6 +45,7 @@ export class ccScmProvider {
     private outputChannel: OutputChannel,
     private configHandler: ccConfigHandler) {
 
+    this.m_listLock = new Lock(1);
     this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
     this.m_windowChangedEvent = new EventEmitter<void>();
 
@@ -79,33 +97,51 @@ export class ccScmProvider {
 
   public async handleChangeFiles(fileObj: Uri) {
     let version = "";
-    try {
-      version = await this.ClearCase.getVersionInformation(fileObj);
-    }
-    catch (error) {
-      this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
-    }
-    let filteredCheckedout = this.m_ccCheckedoutGrp.resourceStates.filter((val) => {
-      if (val.resourceUri.fsPath != fileObj.fsPath)
-        return val;
-    });
-    let filteredUntracked = this.m_ccUntrackedGrp.resourceStates.filter((val) => {
-      if (val.resourceUri.fsPath != fileObj.fsPath)
-        return val;
-    });
-    // file is checked out, add to resource state list
-    if (version.match(/checkedout/i) !== null) {
-      filteredCheckedout.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.MODIFIED));
-    }
-    // file has no version information, so it is view private
-    if (version == "") {
-      let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
-      if (fileObj.fsPath.match(regex) != null) {
-        filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
+    if( this.m_listLock.reserve() )
+    {
+      try {
+        version = await this.ClearCase.getVersionInformation(fileObj);
+        let changed: boolean[] = [false,false];
+        let filteredUntracked = [];
+        let filteredCheckedout = this.m_ccCheckedoutGrp.resourceStates.filter((val,index) => {
+          if(val.resourceUri.fsPath !== fileObj.fsPath)
+            return val;
+          else
+            changed[0] = true;
+        });
+        if( changed[0] = false ) {
+          filteredUntracked = this.m_ccUntrackedGrp.resourceStates.filter((val,index) => {
+            if(val.resourceUri.fsPath !== fileObj.fsPath)
+              return val;
+            else
+              changed[1] = true;
+          });
+        }
+        // file is checked out, add to resource state list
+        if (version.match(/checkedout/i) !== null) {
+          filteredCheckedout.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.MODIFIED));
+          changed[0] = true;
+        }
+        // file has no version information, so it is view private
+        if (version == "") {
+          let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
+          if (fileObj.fsPath.match(regex) != null) {
+            filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
+            changed[1] = true;
+          }
+        }
+        if( changed[0] ) {
+          this.m_ccCheckedoutGrp.resourceStates = filteredCheckedout;
+        }
+        if( changed[1] ) {
+          this.m_ccUntrackedGrp.resourceStates = filteredUntracked;
+        }
+      }
+      catch (error) {
+        this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
       }
     }
-    this.m_ccCheckedoutGrp.resourceStates = filteredCheckedout;
-    this.m_ccUntrackedGrp.resourceStates = filteredUntracked;
+    this.m_listLock.release();
   }
 
   public async handleDeleteFiles(fileObj: Uri) {
@@ -118,7 +154,6 @@ export class ccScmProvider {
       if (val.resourceUri.fsPath != fileObj.fsPath)
         return val;
     });
-    this.m_ccCheckedoutGrp.resourceStates = filtered;
     this.m_ccUntrackedGrp.resourceStates = filtered;
   }
 
@@ -335,11 +370,14 @@ export class ccScmProvider {
           this.ClearCase.checkoutAndSaveFile(event.document);
         } else {
           this.ClearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
-            this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
-              event.document.save();
-            }).catch((error) => {
-              return;
-            });
+            if( state === true ) {
+              this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
+                if( isCheckedOut === true )
+                  event.document.save();
+              }).catch((error) => {
+                return;
+              });
+            }
           });
         }
       }
