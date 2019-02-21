@@ -1,4 +1,4 @@
-import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem } from "vscode";
+import { SourceControl, QuickDiffProvider, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem } from "vscode";
 import { ccScmResource, ResourceGroupType } from "./ccScmResource";
 import { ccScmStatus } from "./ccScmStatus";
 import { ClearCase, EventArgs } from "./clearcase";
@@ -28,7 +28,7 @@ export class Lock {
   }
 }
 
-export class ccScmProvider {
+export class ccScmProvider implements QuickDiffProvider {
 
   private m_ccHandler: ClearCase;
   private m_model: Model;
@@ -61,6 +61,7 @@ export class ccScmProvider {
 
         this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
         this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
+        this.m_ccScm.quickDiffProvider = this;
 
         this.m_model = new Model();
         this.m_model.onWorkspaceCreated(this.handleChangeFiles, this, this.m_disposables);
@@ -76,7 +77,7 @@ export class ccScmProvider {
         this.m_isUpdatingUntracked = false;
 
         this.updateCheckedOutList();
-        this.updateUntrackedList();
+        //this.updateUntrackedList();
       }
     });
   }
@@ -332,7 +333,7 @@ export class ccScmProvider {
     this.m_disposables.push(
       commands.registerCommand('extension.ccRefreshFileList', () => {
         this.updateCheckedOutList();
-        this.updateUntrackedList();
+        //this.updateUntrackedList();
       }, this));
 
     this.m_disposables.push(
@@ -351,8 +352,8 @@ export class ccScmProvider {
     );
 
     this.configHandler.onDidChangeConfiguration((vals: string[]) => {
-      if (vals.indexOf("viewPrivateFileSuffixes") !== -1)
-        this.updateUntrackedList();
+      /*if (vals.indexOf("viewPrivateFileSuffixes") !== -1)
+        this.updateUntrackedList();*/        
     });
   }
 
@@ -410,6 +411,16 @@ export class ccScmProvider {
     this.updateCheckedOutList();
     this.m_windowChangedEvent.fire();
   }
+
+	public provideOriginalResource(uri: Uri): Uri | undefined {
+		if (uri.scheme !== "file") {
+			return;
+		}
+
+		return uri.with({
+			scheme: "ccase"
+		});
+  }  
 
   dispose(): void {
     this.m_disposables.forEach(d => d.dispose());
