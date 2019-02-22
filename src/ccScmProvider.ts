@@ -1,26 +1,28 @@
-import { SourceControl, QuickDiffProvider, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem } from "vscode";
-import { ccScmResource, ResourceGroupType } from "./ccScmResource";
-import { ccScmStatus } from "./ccScmStatus";
-import { ClearCase, EventArgs } from "./clearcase";
-import { LocalizeFunc, loadMessageBundle } from "vscode-nls";
-import { Model } from "./model";
-import { ccConfigHandler } from "./ccConfigHandler";
+import { exists, unlink } from "fs";
+import { join } from "path";
+import { commands, Disposable, Event, EventEmitter, ExtensionContext, languages, MessageItem, OutputChannel, scm, SourceControl, SourceControlResourceGroup, TextDocument, TextDocumentSaveReason, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextEditor, Uri, window, workspace } from "vscode";
+import { loadMessageBundle, LocalizeFunc } from "vscode-nls";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
-import { join } from "path";
-import { fstat, unlink, exists } from "fs";
+import { ccConfigHandler } from "./ccConfigHandler";
+import { ccScmResource, ResourceGroupType } from "./ccScmResource";
+import { ccScmStatus } from "./ccScmStatus";
+import { ccContentProvider } from "./ccContentProvider";
+import { ClearCase } from "./clearcase";
+import { Model } from "./model";
+import { toCcUri } from "./uri";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
 export class Lock {
   private m_count: number;
-  constructor(private m_accessCnt:number) {
+  constructor(private m_accessCnt: number) {
     this.m_count = 0;
   }
   public reserve(): boolean {
     let s = this.m_count;
     this.m_count++;
-    return (s<this.m_accessCnt);
+    return (s < this.m_accessCnt);
   }
 
   public release() {
@@ -28,8 +30,9 @@ export class Lock {
   }
 }
 
-export class ccScmProvider implements QuickDiffProvider {
+export class ccScmProvider {
 
+  private m_ccContentProvider: ccContentProvider;
   private m_ccHandler: ClearCase;
   private m_model: Model;
   private m_ccScm: SourceControl;
@@ -49,19 +52,20 @@ export class ccScmProvider implements QuickDiffProvider {
     this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
     this.m_windowChangedEvent = new EventEmitter<void>();
 
-    this.m_ccHandler.checkIsView(null).then(() => {
-      if (this.m_ccHandler.IsView) {
+    this.m_ccHandler.checkIsView(null).then((is_view) => {
+      if (is_view) {
         this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
         this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
         this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
         this.m_ccCheckedoutGrp.hideWhenEmpty = true;
         this.m_ccUntrackedGrp.hideWhenEmpty = true;
+        this.m_ccContentProvider = new ccContentProvider(this.m_ccHandler);
 
         this.m_context.subscriptions.push(this.m_ccScm);
 
         this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
         this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
-        this.m_ccScm.quickDiffProvider = this;
+        this.m_ccScm.quickDiffProvider = this.m_ccContentProvider;
 
         this.m_model = new Model();
         this.m_model.onWorkspaceCreated(this.handleChangeFiles, this, this.m_disposables);
@@ -98,21 +102,20 @@ export class ccScmProvider implements QuickDiffProvider {
 
   public async handleChangeFiles(fileObj: Uri) {
     let version = "";
-    if( this.m_listLock.reserve() )
-    {
+    if (this.m_listLock.reserve()) {
       try {
         version = await this.ClearCase.getVersionInformation(fileObj);
-        let changed: boolean[] = [false,false];
+        let changed: boolean[] = [false, false];
         let filteredUntracked = [];
-        let filteredCheckedout = this.m_ccCheckedoutGrp.resourceStates.filter((val,index) => {
-          if(val.resourceUri.fsPath !== fileObj.fsPath)
+        let filteredCheckedout = this.m_ccCheckedoutGrp.resourceStates.filter((val, index) => {
+          if (val.resourceUri.fsPath !== fileObj.fsPath)
             return val;
           else
             changed[0] = true;
         });
-        if( changed[0] = false ) {
-          filteredUntracked = this.m_ccUntrackedGrp.resourceStates.filter((val,index) => {
-            if(val.resourceUri.fsPath !== fileObj.fsPath)
+        if (changed[0] = false) {
+          filteredUntracked = this.m_ccUntrackedGrp.resourceStates.filter((val, index) => {
+            if (val.resourceUri.fsPath !== fileObj.fsPath)
               return val;
             else
               changed[1] = true;
@@ -131,10 +134,10 @@ export class ccScmProvider implements QuickDiffProvider {
             changed[1] = true;
           }
         }
-        if( changed[0] ) {
+        if (changed[0]) {
           this.m_ccCheckedoutGrp.resourceStates = filteredCheckedout;
         }
-        if( changed[1] ) {
+        if (changed[1]) {
           this.m_ccUntrackedGrp.resourceStates = filteredUntracked;
         }
       }
@@ -195,17 +198,17 @@ export class ccScmProvider implements QuickDiffProvider {
       { modal: true }, yes, no)
       .then((retVal: MessageItem) => {
 
-      if (retVal.title === yes.title) {
-        exists(fileObj.resourceUri.fsPath, (exists => {
-          if( exists === true )
-            unlink(fileObj.resourceUri.fsPath, (error => {
-              if(error)
-                this.outputChannel.appendLine(`Delete error: ${error.message}`);
-              this.handleDeleteFiles(fileObj.resourceUri);
-            }));
-        }))
-      }
-    });
+        if (retVal.title === yes.title) {
+          exists(fileObj.resourceUri.fsPath, (exists => {
+            if (exists === true)
+              unlink(fileObj.resourceUri.fsPath, (error => {
+                if (error)
+                  this.outputChannel.appendLine(`Delete error: ${error.message}`);
+                this.handleDeleteFiles(fileObj.resourceUri);
+              }));
+          }))
+        }
+      });
   }
 
   public get onWindowChanged(): Event<void> {
@@ -229,6 +232,12 @@ export class ccScmProvider implements QuickDiffProvider {
     );
 
     this.m_disposables.push(
+      commands.registerCommand('extension.ccEmbedDiff', (fileObj: Uri) => {
+        this.embedDiff(fileObj);
+      }, this)
+    );
+
+    this.m_disposables.push(
       commands.registerCommand('extension.ccFindModified', () => {
         var path = workspace.rootPath || workspace.workspaceFolders[0].uri.fsPath;
         if (path)
@@ -242,7 +251,7 @@ export class ccScmProvider implements QuickDiffProvider {
         if (path)
           this.ClearCase.findCheckoutsGui(path);
       }, this)
-    );    
+    );
 
     this.m_disposables.push(
       commands.registerCommand('extension.ccUpdateView', () => {
@@ -353,7 +362,7 @@ export class ccScmProvider implements QuickDiffProvider {
 
     this.configHandler.onDidChangeConfiguration((vals: string[]) => {
       /*if (vals.indexOf("viewPrivateFileSuffixes") !== -1)
-        this.updateUntrackedList();*/        
+        this.updateUntrackedList();*/
     });
   }
 
@@ -371,9 +380,9 @@ export class ccScmProvider implements QuickDiffProvider {
           this.ClearCase.checkoutAndSaveFile(event.document);
         } else {
           this.ClearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
-            if( state === true ) {
+            if (state === true) {
               this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
-                if( isCheckedOut === true )
+                if (isCheckedOut === true)
                   event.document.save();
               }).catch((error) => {
                 return;
@@ -406,21 +415,24 @@ export class ccScmProvider implements QuickDiffProvider {
     }
   }
 
+  public async embedDiff(fileObj: Uri) {
+    if (window) {
+
+      const opts: TextDocumentShowOptions = {
+        preview: true
+      };
+
+      let prev_uri = await this.m_ccContentProvider.provideOriginalResource(fileObj);
+
+      commands.executeCommand('vscode.diff', fileObj, prev_uri, "Previous Version", opts);
+    }
+  }
+
   public async onDidChangeTextEditor(editor: TextEditor) {
     await this.ClearCase.checkIsView(editor);
     this.updateCheckedOutList();
     this.m_windowChangedEvent.fire();
   }
-
-	public provideOriginalResource(uri: Uri): Uri | undefined {
-		if (uri.scheme !== "file") {
-			return;
-		}
-
-		return uri.with({
-			scheme: "ccase"
-		});
-  }  
 
   dispose(): void {
     this.m_disposables.forEach(d => d.dispose());
