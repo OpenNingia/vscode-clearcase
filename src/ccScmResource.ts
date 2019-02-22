@@ -64,4 +64,13 @@ export class ccScmResource implements SourceControlResourceState {
 		return { strikeThrough, faded, tooltip, light, dark};
 	}
 
+	public static sort( a:ccScmResource, b:ccScmResource)
+	{
+		if( a.resourceUri.fsPath < b.resourceUri.fsPath )
+			return -1;
+		if( a.resourceUri.fsPath > b.resourceUri.fsPath )
+			return 1;
+		return 0;
+	}
+
 }
