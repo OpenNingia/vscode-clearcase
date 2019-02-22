@@ -117,10 +117,10 @@ export class ccScmProvider {
           }
         }
         if (changed[0]) {
-          this.m_ccCheckedoutGrp.resourceStates = filteredCheckedout;
+          this.m_ccCheckedoutGrp.resourceStates = filteredCheckedout.sort(ccScmResource.sort);
         }
         if (changed[1]) {
-          this.m_ccUntrackedGrp.resourceStates = filteredUntracked;
+          this.m_ccUntrackedGrp.resourceStates = filteredUntracked.sort(ccScmResource.sort);
         }
       }
       catch (error) {
@@ -152,7 +152,7 @@ export class ccScmProvider {
       }).sort((val1, val2) => {
         return (val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath));
       });
-      this.m_ccCheckedoutGrp.resourceStates = checkedout;
+      this.m_ccCheckedoutGrp.resourceStates = checkedout.sort(ccScmResource.sort);
       this.m_isUpdatingUntracked = false;
     });
   }
@@ -170,7 +170,7 @@ export class ccScmProvider {
         viewPrv = viewPrv.concat(files.map((val) => {
           return new ccScmResource(ResourceGroupType.Untracked, Uri.file(join(root.fsPath, val)), ccScmStatus.UNTRACKED);
         }));
-        this.m_ccUntrackedGrp.resourceStates = viewPrv;
+        this.m_ccUntrackedGrp.resourceStates = viewPrv.sort(ccScmResource.sort);
       }
     }
   }
