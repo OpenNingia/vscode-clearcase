@@ -9,9 +9,9 @@ import {
 import { exec, spawn } from 'child_process'
 import * as fs from 'fs';
 import { dirname, join } from 'path';
-import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccAnnotationController } from './ccAnnotateController'
 import { ccConfigHandler } from './ccConfigHandler';
+import { FileIgnore } from './ccIgnoreHandler';
 
 export enum EventActions {
   Add = 0,
@@ -290,14 +290,16 @@ export class ClearCase {
    * Searching view private objects in all workspace folders of the current project.
    * The result is filtered by the configuration 'ViewPrivateFileSuffixes'
    */
-  public async findUntracked(folder: Uri): Promise<string[]> {
+  public async findUntracked(fileIgnore: FileIgnore): Promise<string[]> {
     let results: string[] = [];
     try {
-      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], folder.fsPath, (data: string[]) => {
-        let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
+      if( fileIgnore === null )
+        return [];
+
+      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], fileIgnore.Path.fsPath, (data: string[]) => {
         let res = data.filter((val) => {
-          if (val.match(regex) != null) {
-            val = join(folder.fsPath, val.trim());
+          val = join(fileIgnore.Path.fsPath, val.trim());
+          if (fileIgnore.Ignore.ignores(val) === false) {
             if (fs.existsSync(val))
               return val;
           }
