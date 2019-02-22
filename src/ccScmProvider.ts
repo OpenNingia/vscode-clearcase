@@ -159,6 +159,8 @@ export class ccScmProvider {
 
   public async updateUntrackedList() {
     let viewPrv: ccScmResource[] = [];
+    // reload .ccignore files
+    this.m_ignores.init();
     if (this.m_isUpdatingUntracked === false) {
       this.m_isUpdatingUntracked = true;
       for (let i = 0; i < workspace.workspaceFolders.length; i++) {

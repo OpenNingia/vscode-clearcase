@@ -4,9 +4,14 @@ import { join } from "path";
 import ignore from "ignore";
 
 export class IgnoreHandler {
-  fileIgnores: FileIgnore[] = [];
+  fileIgnores: FileIgnore[];
 
   constructor() {
+    this.init();
+  }
+  
+  public init() {
+    this.fileIgnores = [];
     workspace.workspaceFolders.forEach((folder: WorkspaceFolder) => {
       this.fileIgnores.push(new FileIgnore(folder.uri));
     });
