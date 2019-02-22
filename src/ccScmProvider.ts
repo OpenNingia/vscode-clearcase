@@ -1,3 +1,4 @@
+
 import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem, WorkspaceFolder } from "vscode";
 import { ccScmResource, ResourceGroupType } from "./ccScmResource";
 import { ccScmStatus } from "./ccScmStatus";
@@ -7,6 +8,7 @@ import { Model } from "./model";
 import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
+import { ccContentProvider } from "./ccContentProvider";
 import { join, dirname } from "path";
 import { unlink, exists } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
@@ -16,6 +18,7 @@ const localize: LocalizeFunc = loadMessageBundle();
 
 export class ccScmProvider {
 
+  private m_ccContentProvider: ccContentProvider;
   private m_ccHandler: ClearCase;
   private m_model: Model;
   private m_ccScm: SourceControl;
@@ -37,18 +40,20 @@ export class ccScmProvider {
     this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
     this.m_windowChangedEvent = new EventEmitter<void>();
 
-    this.m_ccHandler.checkIsView(null).then(() => {
-      if (this.m_ccHandler.IsView) {
+    this.m_ccHandler.checkIsView(null).then((is_view) => {
+      if (is_view) {
         this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
         this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
         this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
         this.m_ccCheckedoutGrp.hideWhenEmpty = true;
         this.m_ccUntrackedGrp.hideWhenEmpty = true;
+        this.m_ccContentProvider = new ccContentProvider(this.m_ccHandler);
 
         this.m_context.subscriptions.push(this.m_ccScm);
 
         this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
         this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
+        this.m_ccScm.quickDiffProvider = this.m_ccContentProvider;
 
         this.m_model = new Model();
         // this.m_model.onWorkspaceCreated(this.handleChangeFiles, this, this.m_disposables);
@@ -111,7 +116,7 @@ export class ccScmProvider {
         // file has no version information, so it is view private
         if (version == "") {
           let ign = this.m_ignores.getFolderIgnore(dirname(fileObj.fsPath));
-          if (ign!==null && ign.Ignore.ignores(fileObj.fsPath) === false) {
+          if (ign !== null && ign.Ignore.ignores(fileObj.fsPath) === false) {
             filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
             changed[1] = true;
           }
@@ -213,6 +218,12 @@ export class ccScmProvider {
     this.m_disposables.push(
       commands.registerCommand('extension.ccOpenResource', (fileObj: Uri) => {
         this.openResource(fileObj);
+      }, this)
+    );
+
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccEmbedDiff', (fileObj: Uri) => {
+        this.embedDiff(fileObj);
       }, this)
     );
 
@@ -323,7 +334,7 @@ export class ccScmProvider {
         this.updateCheckedOutList();
       }, this));
 
-      this.m_disposables.push(
+    this.m_disposables.push(
       commands.registerCommand('extension.ccRefreshViewPrivateFileList', () => {
         this.updateUntrackedList();
       }, this));
@@ -390,6 +401,19 @@ export class ccScmProvider {
     if (window) {
       let doc: TextDocument = await workspace.openTextDocument(fileObj);
       window.showTextDocument(doc);
+    }
+  }
+
+  public async embedDiff(fileObj: Uri) {
+    if (window) {
+
+      const opts: TextDocumentShowOptions = {
+        preview: true
+      };
+
+      let prev_uri = await this.m_ccContentProvider.provideOriginalResource(fileObj);
+
+      commands.executeCommand('vscode.diff', fileObj, prev_uri, "Previous Version", opts);
     }
   }
 

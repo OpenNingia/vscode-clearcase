@@ -369,6 +369,11 @@
                     "default": "-comment ${comment} ${filename}",
                     "description": "Clearcase checkout arguments. Ignored if useClearDlg is `true`."
                 },
+                "vscode-clearcase.findCheckoutsCommandArgs": {
+                    "type": "string",
+                    "default": "-me -cview -short -avobs",
+                    "description": "Clearcase lsco arguments."
+                },
                 "vscode-clearcase.checkinCommandArgs": {
                     "type": "string",
                     "default": "-comment ${comment} ${filename}",
@@ -434,12 +439,16 @@
     },
     "dependencies": {
         "child_process": "^1.0.2",
-        "vscode-nls": "^4.0.0",
-        "ignore": "^5.0.5"
+        "fs-promise": "^2.0.3",
+        "tmp": "0.0.33",
+        "ignore": "^5.0.5",
+        "vscode-nls": "^4.0.0"
     },
     "devDependencies": {
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.14.2",
+        "@types/fs-promise": "^1.0.3",
+        "@types/tmp": "0.0.34",
         "mocha": "^5.2.0",
         "typescript": "^2.9.2",
         "vscode": "^1.1.29",
