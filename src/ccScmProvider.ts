@@ -9,10 +9,11 @@ import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccContentProvider } from "./ccContentProvider";
-import { join, dirname } from "path";
+import { join, dirname, basename } from "path";
 import { unlink, exists } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
+import { fromCcUri } from "./uri";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -412,8 +413,10 @@ export class ccScmProvider {
       };
 
       let prev_uri = await this.m_ccContentProvider.provideOriginalResource(fileObj);
+      let fn = basename(fileObj.fsPath);
+      let { version } = fromCcUri(prev_uri);
 
-      commands.executeCommand('vscode.diff', fileObj, prev_uri, "Previous Version", opts);
+      commands.executeCommand('vscode.diff', fileObj, prev_uri, `${fn} <i>(WorkingDir)</i> - ${version}`, opts);
     }
   }
 
