@@ -18,7 +18,7 @@ export class ccScmResource implements SourceControlResourceState {
 
 	get command(): Command {
 		return {
-			command: 'extension.ccOpenResource',
+			command: 'extension.ccEmbedDiff',
 			title: "compare to previous",
 			arguments: [this.resourceUri]
 		};
