@@ -1,5 +1,11 @@
 ## Release Notes
 
+### 2.1.0
+* Added a button to search for View Private files, you can control which files are added to the view by placing a `.ccignore`
+  file on the root of your workspace. This file behaves in a similar way as `.gitignore`.
+* Added QuickDiff support for checked out files. Click on the gutter indicator to view the difference.
+* Clicking on a checked out file in the SCM view will now show the difference with the latest version in the embedded diff viewer.
+
 ### 2.0.3
 * Fixed regression, Find checkout command was not working.
 
