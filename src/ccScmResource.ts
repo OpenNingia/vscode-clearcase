@@ -18,7 +18,7 @@ export class ccScmResource implements SourceControlResourceState {
 
 	get command(): Command {
 		return {
-			command: 'extension.ccOpenResource',
+			command: 'extension.ccEmbedDiff',
 			title: "compare to previous",
 			arguments: [this.resourceUri]
 		};
@@ -62,6 +62,15 @@ export class ccScmResource implements SourceControlResourceState {
 		const color = this.color;
 
 		return { strikeThrough, faded, tooltip, light, dark};
+	}
+
+	public static sort( a:ccScmResource, b:ccScmResource)
+	{
+		if( a.resourceUri.fsPath < b.resourceUri.fsPath )
+			return -1;
+		if( a.resourceUri.fsPath > b.resourceUri.fsPath )
+			return 1;
+		return 0;
 	}
 
 }
