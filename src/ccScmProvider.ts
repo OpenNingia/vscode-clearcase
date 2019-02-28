@@ -428,7 +428,7 @@ export class ccScmProvider {
       let fn = basename(fileObj.fsPath);
       let { version } = fromCcUri(prev_uri);
 
-      commands.executeCommand('vscode.diff', fileObj, prev_uri, `${fn} <i>(WorkingDir)</i> - ${version}`, opts);
+      commands.executeCommand('vscode.diff', prev_uri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
     }
   }
 
