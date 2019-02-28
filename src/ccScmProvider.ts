@@ -217,8 +217,20 @@ export class ccScmProvider {
     this.registerCommand('extension.ccItemProperties', this.ClearCase.itemProperties);
 
     this.m_disposables.push(
-      commands.registerCommand('extension.ccOpenResource', (fileObj: Uri) => {
-        this.openResource(fileObj);
+      commands.registerCommand('extension.ccOpenResource', (fileObj: Uri | ccScmResource) => {
+        let file: Uri = null;
+        if (fileObj instanceof Uri)
+          file = fileObj;
+        if (fileObj instanceof ccScmResource)
+          file = fileObj.resourceUri;
+        if (file === null) {
+          if (window && window.activeTextEditor) {
+            file = window.activeTextEditor.document.uri;
+          }
+        }
+        if (file !== null) {
+          this.openResource(file);
+        }
       }, this)
     );
 

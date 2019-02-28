@@ -135,7 +135,7 @@
             },
             {
                 "command": "extension.ccOpenResource",
-                "title": "Open resource",
+                "title": "Open file",
                 "category": "Clearcase"
             },
             {
@@ -260,6 +260,11 @@
                 }
             ],
             "scm/resourceState/context": [
+                {
+                    "command": "extension.ccOpenResource",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled",
+                    "group": "cc_file"
+                },
                 {
                     "command": "extension.ccCheckin",
                     "when": "scmProvider == cc && vscode-clearcase:enabled",
