@@ -4,7 +4,7 @@ import { ccScmResource, ResourceGroupType } from "./ccScmResource";
 import { ccScmStatus } from "./ccScmStatus";
 import { ClearCase } from "./clearcase";
 import { LocalizeFunc, loadMessageBundle } from "vscode-nls";
-import { Model } from "./model";
+import { Model, ModelHandler } from "./model";
 import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
@@ -21,7 +21,7 @@ export class ccScmProvider {
 
   private m_ccContentProvider: ccContentProvider;
   private m_ccHandler: ClearCase;
-  private m_model: Model;
+  private m_ignoreFileEv: ModelHandler;
   private m_ccScm: SourceControl;
   private m_ccCheckedoutGrp: SourceControlResourceGroup;
   private m_ccUntrackedGrp: SourceControlResourceGroup;
@@ -37,10 +37,9 @@ export class ccScmProvider {
     private configHandler: ccConfigHandler) {
 
     this.m_listLock = new Lock(1);
-    this.m_ignores = new IgnoreHandler();
     this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
     this.m_windowChangedEvent = new EventEmitter<void>();
-
+    
     this.m_ccHandler.checkIsView(null).then((is_view) => {
       if (is_view) {
         this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
@@ -49,17 +48,16 @@ export class ccScmProvider {
         this.m_ccCheckedoutGrp.hideWhenEmpty = true;
         this.m_ccUntrackedGrp.hideWhenEmpty = true;
         this.m_ccContentProvider = new ccContentProvider(this.m_ccHandler);
-
+        
         this.m_context.subscriptions.push(this.m_ccScm);
-
+        
         this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
         this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
         this.m_ccScm.quickDiffProvider = this.m_ccContentProvider;
-
-        this.m_model = new Model();
-        // this.m_model.onWorkspaceCreated(this.handleChangeFiles, this, this.m_disposables);
-        // this.m_model.onWorkspaceChanged(this.handleChangeFiles, this, this.m_disposables);
-        // this.m_model.onWorkspaceDeleted(this.handleDeleteFiles, this, this.m_disposables);
+        
+        this.m_ignoreFileEv = new ModelHandler();
+        this.m_ignoreFileEv.init();
+        this.m_ignores = new IgnoreHandler(this.m_ignoreFileEv);
 
         this.ClearCase.onCommandExecuted((evArgs: Uri) => {
           this.handleChangeFiles(evArgs);
@@ -165,8 +163,6 @@ export class ccScmProvider {
 
   public async updateUntrackedList() {
     let viewPrv: ccScmResource[] = [];
-    // reload .ccignore files
-    this.m_ignores.init();
     if (this.m_isUpdatingUntracked === false) {
       this.m_isUpdatingUntracked = true;
       for (let i = 0; i < workspace.workspaceFolders.length; i++) {
