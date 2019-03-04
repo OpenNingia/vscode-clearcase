@@ -648,6 +648,12 @@ export class ClearCase {
 
   private runCleartoolCommand(cmd: string[], cwd: string, onData: (data: string[]) => void, onFinished?: () => void): Promise<void> {
     let self: ClearCase = this;
+    try{
+      fs.accessSync(cwd, fs.constants.F_OK);
+    } catch(err) {
+      self.outputChannel.appendLine(`CWD (${cwd}) not found`);
+      return Promise.reject();
+    }
     // tslint:disable-next-line:typedef
     return new Promise<void>(function (resolve, reject): void {
       self.outputChannel.appendLine(cmd.reduce(((val) => { return val + " " })));
