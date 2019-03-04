@@ -1,17 +1,15 @@
 'use strict';
-// The module ' contains the VS Code extensibility API
-// Import the module and reference it with the alias in your code below
-import {
-  ExtensionContext, window, workspace, Uri,
-  TextEditor, TextDocument,
-  EventEmitter, Event, QuickPickItem, OutputChannel
-} from 'vscode'
-import { exec, spawn } from 'child_process'
+import { exec, spawn } from 'child_process';
 import * as fs from 'fs';
+import * as fsPromise from 'fs-promise';
 import { dirname, join } from 'path';
-import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
-import { ccAnnotationController } from './ccAnnotateController'
+
+import * as tmp from 'tmp';
+import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace } from 'vscode';
+import { ccAnnotationController } from './ccAnnotateController';
 import { ccConfigHandler } from './ccConfigHandler';
+import { FileIgnore } from './ccIgnoreHandler';
+
 
 export enum EventActions {
   Add = 0,
@@ -36,7 +34,7 @@ export class ClearCase {
   private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
 
 
-  private m_isCCView: boolean;
+  private m_isCCView: boolean = false;
   private m_viewType: ViewType;
   private m_updateEvent: EventEmitter<Uri>;
 
@@ -65,22 +63,28 @@ export class ClearCase {
    *
    * @param editor current editor instance
    */
-  public async checkIsView(editor: TextEditor) {
+  public async checkIsView(editor: TextEditor): Promise<boolean> {
+    let is_view: boolean = false;
     if (editor !== null && editor !== undefined && editor.document !== undefined) {
       try {
-        this.m_isCCView = await this.isClearcaseObject(editor.document.uri);
-        if (this.m_isCCView === false)
-          this.m_isCCView = await this.hasConfigspec();
+        is_view = await this.isClearcaseObject(editor.document.uri);
       }
       catch (error) {
+        is_view = false;
         // can happen i.e. with a new file which has not been save yet
-        this.m_isCCView = await this.hasConfigspec();
+        //this.m_isCCView = await this.hasConfigspec();
       }
     }
-    else {
-      this.m_isCCView = await this.hasConfigspec();
-    }
-    this.m_viewType = await this.detectViewType();
+
+    if (!is_view)
+      is_view = await this.hasConfigspec();
+
+    if (is_view)
+      this.m_viewType = await this.detectViewType();
+
+    this.m_isCCView = is_view;
+
+    return is_view;
   }
 
   public execOnSCMFile(doc: Uri, func: (string) => void) {
@@ -268,15 +272,17 @@ export class ClearCase {
   public diffWithPrevious(doc: Uri) {
     var path = doc.fsPath;
     exec("cleartool diff -graph -pred \"" + path + "\"");
-  }  
+  }
 
   /**
    * Searching checkout files in all vobs of the current view
    */
   public async findCheckouts(): Promise<string[]> {
+    let lscoArgTmpl = this.configHandler.configuration.FindCheckoutsCommand.Value;
     let results: string[] = [];
     try {
-      await this.runCleartoolCommand(["lsco", "-me", "-cview", "-short", "-avobs"], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+      let cmdOpts = lscoArgTmpl.split(' ');
+      await this.runCleartoolCommand(["lsco"].concat(cmdOpts), workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
         results = results.concat(data);
       });
     }
@@ -290,14 +296,16 @@ export class ClearCase {
    * Searching view private objects in all workspace folders of the current project.
    * The result is filtered by the configuration 'ViewPrivateFileSuffixes'
    */
-  public async findUntracked(folder: Uri): Promise<string[]> {
+  public async findUntracked(fileIgnore: FileIgnore): Promise<string[]> {
     let results: string[] = [];
     try {
-      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], folder.fsPath, (data: string[]) => {
-        let regex: RegExp = new RegExp(this.configHandler.configuration.ViewPrivateFileSuffixes.Value, "i");
+      if( fileIgnore === null )
+        return [];
+
+      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], fileIgnore.Path.fsPath, (data: string[]) => {
         let res = data.filter((val) => {
-          if (val.match(regex) != null) {
-            val = join(folder.fsPath, val.trim());
+          val = join(fileIgnore.Path.fsPath, val.trim());
+          if (fileIgnore.Ignore.ignores(val) === false) {
             if (fs.existsSync(val))
               return val;
           }
@@ -313,7 +321,7 @@ export class ClearCase {
 
   public findCheckoutsGui(path: string) {
     exec("clearfindco \"" + path + "\"");
-  }  
+  }
 
   public findModified(path: string) {
     exec("clearviewupdate -pname \"" + path + "\" -modified");
@@ -331,7 +339,7 @@ export class ClearCase {
     try {
       if (workspace.workspaceFolders.length > 0) {
         await this.runCleartoolCommand(["catcs"], workspace.workspaceFolders[0].uri.fsPath, (data) => {
-          
+
         });
         return true;
       }
@@ -364,7 +372,7 @@ export class ClearCase {
    * @param iUri the uri of the file object to be checked
    * @returns Promise<string>
    */
-  public async getVersionInformation(iUri: Uri): Promise<string> {
+  public async getVersionInformation(iUri: Uri, normalize: boolean = true): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       if (iUri === undefined)
         reject("");
@@ -377,7 +385,7 @@ export class ClearCase {
             reject(stderr);
         }
         else {
-          let version: string = this.getVersionString(stdout)
+          let version: string = this.getVersionString(stdout, normalize)
           resolve(version);
         }
       });
@@ -408,11 +416,11 @@ export class ClearCase {
    * @param iFileInfo a string with filename and version information
    * @returns string
    */
-  public getVersionString(iFileInfo: string) {
+  public getVersionString(iFileInfo: string, normalize: boolean) {
     if (iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "") {
       let res = iFileInfo.split("@@");
       if (res.length > 1) {
-        return res[1].replace(/\\/g, "/").trim();
+        return normalize ? res[1].replace(/\\/g, "/").trim() : res[1].trim();
       }
     }
     return "";
@@ -620,6 +628,22 @@ export class ClearCase {
             resolve(stdout);
       });
     });
+  }
+
+  public async getFileAtVersion(fsPath: string, version: string): Promise<Uri | null> {
+    let pname = fsPath + "@@" + version;
+    let ret = Uri.file(tmp.tmpNameSync());
+    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {}, () => {});
+    return ret;
+  }
+
+  public async readFileAtVersion(fsPath: string, version: string): Promise<string> {
+    // cannot call getFileAtVersion because the temp file is automatically removed
+    let pname = fsPath + "@@" + version;
+    let ret = Uri.file(tmp.tmpNameSync());
+    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {}, () => {});
+
+    return await fsPromise.readFile(ret.fsPath, { encoding: 'utf-8' });
   }
 
   private runCleartoolCommand(cmd: string[], cwd: string, onData: (data: string[]) => void, onFinished?: () => void): Promise<void> {

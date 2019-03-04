@@ -107,11 +107,20 @@
             },
             {
                 "command": "extension.ccRefreshFileList",
-                "title": "Refresh file list",
+                "title": "Refresh checkedout file list",
                 "category": "Clearcase",
                 "icon": {
                     "light": "icons/light/open-change-head.svg",
                     "dark": "icons/dark/open-change-head.svg"
+                }
+            },
+            {
+                "command": "extension.ccRefreshViewPrivateFileList",
+                "title": "Refresh view private file list",
+                "category": "Clearcase",
+                "icon": {
+                    "light": "icons/light/open-change-base.svg",
+                    "dark": "icons/dark/open-change-base.svg"
                 }
             },
             {
@@ -126,7 +135,7 @@
             },
             {
                 "command": "extension.ccOpenResource",
-                "title": "Open resource",
+                "title": "Open file",
                 "category": "Clearcase"
             },
             {
@@ -198,7 +207,7 @@
                 {
                     "command": "extension.ccUpdateFile",
                     "group": "cc",
-                    "when": "vscode-clearcase:enabled"
+                    "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView"
                 }
             ],
             "editor/context": [
@@ -243,9 +252,19 @@
                     "command": "extension.ccRefreshFileList",
                     "group": "navigation",
                     "when": "scmProvider == cc && vscode-clearcase:enabled"
+                },
+                {
+                    "command": "extension.ccRefreshViewPrivateFileList",
+                    "group": "navigation",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled"
                 }
             ],
             "scm/resourceState/context": [
+                {
+                    "command": "extension.ccOpenResource",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled",
+                    "group": "cc_file"
+                },
                 {
                     "command": "extension.ccCheckin",
                     "when": "scmProvider == cc && vscode-clearcase:enabled",
@@ -355,6 +374,11 @@
                     "default": "-comment ${comment} ${filename}",
                     "description": "Clearcase checkout arguments. Ignored if useClearDlg is `true`."
                 },
+                "vscode-clearcase.findCheckoutsCommandArgs": {
+                    "type": "string",
+                    "default": "-me -cview -short -avobs",
+                    "description": "Clearcase lsco arguments."
+                },
                 "vscode-clearcase.checkinCommandArgs": {
                     "type": "string",
                     "default": "-comment ${comment} ${filename}",
@@ -420,14 +444,19 @@
     },
     "dependencies": {
         "child_process": "^1.0.2",
+        "fs-promise": "^2.0.3",
+        "tmp": "0.0.33",
+        "ignore": "^5.0.5",
         "vscode-nls": "^4.0.0"
     },
     "devDependencies": {
-        "vscode": "^1.1.29",
-        "vscode-nls-dev": "^2.1.2",
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.14.2",
+        "@types/fs-promise": "^1.0.3",
+        "@types/tmp": "0.0.34",
         "mocha": "^5.2.0",
-        "typescript": "^2.9.2"
+        "typescript": "^2.9.2",
+        "vscode": "^1.1.29",
+        "vscode-nls-dev": "^2.1.2"
     }
 }

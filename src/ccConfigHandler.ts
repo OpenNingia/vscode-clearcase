@@ -39,6 +39,7 @@ export class ccConfigHandler {
 			this.setChangeConfigDate<string>(config, "annotationFormatString", this.m_configuration.AnnotationFormatString);
 			this.setChangeConfigDate<boolean>(config, "useClearDlg", this.m_configuration.UseClearDlg);
 			this.setChangeConfigDate<string>(config, "checkoutCommandArgs", this.m_configuration.CheckoutCommand);
+			this.setChangeConfigDate<string>(config, "findCheckoutsCommandArgs", this.m_configuration.FindCheckoutsCommand);
 			this.setChangeConfigDate<string>(config, "checkinCommandArgs", this.m_configuration.CheckinCommand);
 			this.setChangeConfigDate<string>(config, "defaultComment", this.m_configuration.DefaultComment);
 			this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.m_configuration.ViewPrivateFileSuffixes);
