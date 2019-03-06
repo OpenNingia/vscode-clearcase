@@ -1,14 +1,21 @@
-import { workspace, WorkspaceFolder, Uri } from "vscode";
+import { workspace, WorkspaceFolder, Uri, EventEmitter } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import ignore from "ignore";
 import { Model, ModelHandler } from "./model";
 
 export class IgnoreHandler {
-  fileIgnores: FileIgnore[];
+  private fileIgnores: FileIgnore[];
+  private m_onFilterRefreshed: EventEmitter<void>;
+
 
   constructor(private m_fsWatch: ModelHandler) {
+    this.m_onFilterRefreshed = new EventEmitter<void>();
     this.init();
+  }
+
+  get OnFilterRefreshed(): EventEmitter<void> {
+    return this.m_onFilterRefreshed;
   }
   
   public init() {
@@ -41,10 +48,12 @@ export class IgnoreHandler {
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if(this.fileIgnores[i].Path.fsPath == dir) {
         this.fileIgnores[i] = new FileIgnore(Uri.file(dir));
+        this.m_onFilterRefreshed.fire();
         return;
       }
     }
     this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
+    this.m_onFilterRefreshed.fire();
   }
 
   public removeFilter(fileObj:Uri) {
@@ -52,10 +61,10 @@ export class IgnoreHandler {
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if(this.fileIgnores[i].Path.fsPath == dir) {
         this.fileIgnores.splice(i, 1);
+        this.m_onFilterRefreshed.fire();
         return;
       }
     }
-    this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
   }
 }
 

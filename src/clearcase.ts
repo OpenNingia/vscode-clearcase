@@ -8,8 +8,6 @@ import * as tmp from 'tmp';
 import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace } from 'vscode';
 import { ccAnnotationController } from './ccAnnotateController';
 import { ccConfigHandler } from './ccConfigHandler';
-import { FileIgnore } from './ccIgnoreHandler';
-
 
 export enum EventActions {
   Add = 0,
@@ -28,21 +26,97 @@ export enum ViewType {
   SNAPSHOT
 }
 
+export class MappedList {
+  private m_untrackedList: Map<string, string[]>;
+
+  public constructor() {
+    this.m_untrackedList = null;
+    if (workspace.workspaceFolders.length > 0) {
+      this.m_untrackedList = new Map<string, string[]>();
+      workspace.workspaceFolders.forEach(val => {
+        this.m_untrackedList.set(val.uri.fsPath, []);
+      });
+    }
+  }
+
+  public exists(i_val: string): boolean {
+    if (this.m_untrackedList !== null) {
+      const keys = this.m_untrackedList.keys();
+      for (let key of keys) {
+        if (i_val.indexOf(key) > -1) {
+          let v = this.m_untrackedList.get(key);
+          if( v.indexOf(i_val) > -1 )
+            return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public addString(i_val: string) {
+    if (this.m_untrackedList !== null) {
+      let i = 0;
+      for (; i < workspace.workspaceFolders.length; i++) {
+        if (i_val.indexOf(workspace.workspaceFolders[i].uri.fsPath) > -1) {
+          break;
+        }
+      }
+      if (i < workspace.workspaceFolders.length) {
+        let v = this.m_untrackedList.get(workspace.workspaceFolders[i].uri.fsPath);
+        v.push(i_val);
+        this.m_untrackedList.set(workspace.workspaceFolders[i].uri.fsPath, v);
+      }
+    }
+  }
+
+  public addStringByKey(i_val: string, i_key: string) {
+    if (this.m_untrackedList !== null) {
+      if (this.m_untrackedList.get(i_key) !== undefined) {
+        let v = this.m_untrackedList.get(i_key);
+        if (v.indexOf(i_val) === -1) {
+          v.push(i_val);
+          this.m_untrackedList.set(i_key, v);
+        }
+      }
+    }
+  }
+
+  public getStringsByKey(i_key: string): string[] {
+    if (this.m_untrackedList !== null) {
+      if (this.m_untrackedList.get(i_key) !== undefined) {
+        return this.m_untrackedList.get(i_key);
+      }
+    }
+    return [];
+  }
+
+  public clearStringsOfKey(i_key: string) {
+    if (this.m_untrackedList !== null) {
+      if (this.m_untrackedList.get(i_key) !== undefined) {
+        this.m_untrackedList.set(i_key, []);
+      }
+    }
+  }
+}
+
+
 export class ClearCase {
   private readonly LS_VIEW: string[] = ['lsview', '-cview', '-long'];
 
   private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
 
-
   private m_isCCView: boolean = false;
   private m_viewType: ViewType;
   private m_updateEvent: EventEmitter<Uri>;
+
+  private m_untrackedList: MappedList;
 
   public constructor(private m_context: ExtensionContext,
     private configHandler: ccConfigHandler,
     private outputChannel: OutputChannel) {
     this.m_updateEvent = new EventEmitter<Uri>();
     this.m_viewType = ViewType.UNKNOWN;
+    this.m_untrackedList = new MappedList();
   }
 
   public get IsView(): boolean {
@@ -55,6 +129,10 @@ export class ClearCase {
 
   public get onCommandExecuted(): Event<Uri> {
     return this.m_updateEvent.event;
+  }
+
+  public get UntrackedList(): MappedList {
+    return this.m_untrackedList;
   }
 
   /**
@@ -296,27 +374,23 @@ export class ClearCase {
    * Searching view private objects in all workspace folders of the current project.
    * The result is filtered by the configuration 'ViewPrivateFileSuffixes'
    */
-  public async findUntracked(fileIgnore: FileIgnore): Promise<string[]> {
-    let results: string[] = [];
+  public async findUntracked(pathObj: Uri): Promise<void> {
     try {
-      if( fileIgnore === null )
-        return [];
+      if (pathObj === null)
+        return;
 
-      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], fileIgnore.Path.fsPath, (data: string[]) => {
-        let res = data.filter((val) => {
-          val = join(fileIgnore.Path.fsPath, val.trim());
-          if (fileIgnore.Ignore.ignores(val) === false) {
-            if (fs.existsSync(val))
-              return val;
-          }
+      this.UntrackedList.clearStringsOfKey(pathObj.fsPath);
+
+      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], pathObj.fsPath, (data: string[]) => {
+        data.forEach((val) => {
+          let p = join(pathObj.fsPath, val);
+          this.UntrackedList.addStringByKey(p, pathObj.fsPath);
         });
-        results = results.concat(res);
       });
     }
     catch (error) {
       this.outputChannel.appendLine(error);
     }
-    return results;
   }
 
   public findCheckoutsGui(path: string) {
@@ -633,7 +707,7 @@ export class ClearCase {
   public async getFileAtVersion(fsPath: string, version: string): Promise<Uri | null> {
     let pname = fsPath + "@@" + version;
     let ret = Uri.file(tmp.tmpNameSync());
-    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {}, () => {});
+    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => { }, () => { });
     return ret;
   }
 
@@ -641,7 +715,7 @@ export class ClearCase {
     // cannot call getFileAtVersion because the temp file is automatically removed
     let pname = fsPath + "@@" + version;
     let ret = Uri.file(tmp.tmpNameSync());
-    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {}, () => {});
+    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => { }, () => { });
 
     return await fsPromise.readFile(ret.fsPath, { encoding: 'utf-8' });
   }

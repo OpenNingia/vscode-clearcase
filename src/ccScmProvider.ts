@@ -1,5 +1,5 @@
 
-import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem, WorkspaceFolder } from "vscode";
+import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem, WorkspaceFolder, ProgressLocation, Progress } from "vscode";
 import { ccScmResource, ResourceGroupType } from "./ccScmResource";
 import { ccScmStatus } from "./ccScmStatus";
 import { ClearCase } from "./clearcase";
@@ -58,6 +58,9 @@ export class ccScmProvider {
         this.m_ignoreFileEv = new ModelHandler();
         this.m_ignoreFileEv.init();
         this.m_ignores = new IgnoreHandler(this.m_ignoreFileEv);
+        this.m_ignores.OnFilterRefreshed.event(() => {
+          this.filterUntrackedList();
+        }, this);
 
         this.ClearCase.onCommandExecuted((evArgs: Uri) => {
           this.handleChangeFiles(evArgs);
@@ -114,6 +117,9 @@ export class ccScmProvider {
         }
         // file has no version information, so it is view private
         if (version == "") {
+          if( this.ClearCase.UntrackedList.exists(fileObj.fsPath) === false ) {
+            this.ClearCase.UntrackedList.addString(fileObj.fsPath);
+          }
           let ign = this.m_ignores.getFolderIgnore(dirname(fileObj.fsPath));
           if (ign !== null && ign.Ignore.ignores(fileObj.fsPath) === false) {
             filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
@@ -162,19 +168,48 @@ export class ccScmProvider {
   }
 
   public async updateUntrackedList() {
-    let viewPrv: ccScmResource[] = [];
-    if (this.m_isUpdatingUntracked === false) {
-      this.m_isUpdatingUntracked = true;
-      for (let i = 0; i < workspace.workspaceFolders.length; i++) {
-        let root = workspace.workspaceFolders[i].uri;
-        let ign = this.m_ignores.getFolderIgnore(root);
-        let files = await this.ClearCase.findUntracked(ign);
-        viewPrv = viewPrv.concat(files.map((val) => {
-          return new ccScmResource(ResourceGroupType.Untracked, Uri.file(join(root.fsPath, val)), ccScmStatus.UNTRACKED);
-        }));
-        this.m_ccUntrackedGrp.resourceStates = viewPrv.sort(ccScmResource.sort);
+    await window.withProgress(
+      {
+        location: ProgressLocation.SourceControl,
+        title: 'Search untracked files',
+        cancellable: false
+      },
+      async (process) => {
+        if (this.m_isUpdatingUntracked === false) {
+          this.m_isUpdatingUntracked = true;
+          let l_len = workspace.workspaceFolders.length;
+          let l_step = ((l_len > 0) ? 100/l_len : 100);
+          for (let i = 0; i < l_len; i++) {
+            let root = workspace.workspaceFolders[i].uri;
+            await this.ClearCase.findUntracked(root);
+            process.report({
+              message: `Folder ${root} checked!`,
+              increment: (l_step*(1+i))
+            });
+          }
+          this.filterUntrackedList();
+          this.m_isUpdatingUntracked = false;
+        }
       }
+    );
+  }
+
+  public filterUntrackedList() {
+    let viewPrv: ccScmResource[] = [];
+    for (let i = 0; i < workspace.workspaceFolders.length; i++) {
+      let root = workspace.workspaceFolders[i].uri;
+      let ign = this.m_ignores.getFolderIgnore(root);
+      let d = this.ClearCase.UntrackedList.getStringsByKey(root.fsPath).filter((val) => {
+        if( ign !== null && ign.Ignore.ignores(val) === false )
+        {
+          return val;
+        }
+      });
+      viewPrv = viewPrv.concat(d.map((val) => {
+        return new ccScmResource(ResourceGroupType.Untracked, Uri.file(val), ccScmStatus.UNTRACKED);
+      }));
     }
+    this.m_ccUntrackedGrp.resourceStates = viewPrv.sort(ccScmResource.sort);
   }
 
   public deleteViewPrivateFile(fileObj: ccScmResource) {
