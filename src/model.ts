@@ -41,6 +41,23 @@ export function anyEvent<T>(...events: Event<T>[]): Event<T> {
     };
 }
 
+export class ModelHandler {
+    private m_models: Model[];
+
+    public constructor() {}
+
+    public init() {
+        this.m_models = [];
+    }
+
+    public addWatcher(filter: string = '**'): Model {
+        let l_m = new Model();
+        l_m.init(filter);
+        this.m_models.push(l_m);
+        return l_m;
+    }
+}
+
 export class Model implements Disposable {
 
     private disposables: Disposable[] = [];
@@ -59,7 +76,10 @@ export class Model implements Disposable {
     }
 
     constructor() {
-        const fsWatcher = workspace.createFileSystemWatcher('**');
+    }
+
+    public init(filter: string = '**') {
+        const fsWatcher = workspace.createFileSystemWatcher(filter);
         this._onWorkspaceCreated = fsWatcher.onDidCreate;
         this._onWorkspaceChanged = fsWatcher.onDidChange;
         this._onWorkspaceDeleted = fsWatcher.onDidDelete;
