@@ -142,6 +142,11 @@
                 "command": "extension.ccDeleteViewPrivate",
                 "title": "Delete file",
                 "category": "Clearcase"
+            },
+            {
+                "command": "extension.ccMkElement",
+                "title": "Create versioned object",
+                "category": "Clearcase"
             }
         ],
         "menus": {
@@ -201,6 +206,10 @@
                 {
                     "command": "extension.ccSelectActv",
                     "when": "vscode-clearcase:enabled"
+                },
+                {
+                    "command": "extension.ccMkElement",
+                    "when": "vscode-clearcase:enabled"
                 }
             ],
             "explorer/context": [
@@ -227,13 +236,18 @@
                     "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 },
                 {
-                    "command": "extension.ccComparePrevious",
+                    "command": "extension.ccMkElement",
                     "group": "cc@4",
                     "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 },
                 {
-                    "command": "extension.ccVersionTree",
+                    "command": "extension.ccComparePrevious",
                     "group": "cc@5",
+                    "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+                },
+                {
+                    "command": "extension.ccVersionTree",
+                    "group": "cc@6",
                     "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
                 }
             ],
@@ -272,6 +286,11 @@
                 },
                 {
                     "command": "extension.ccUndoCheckout",
+                    "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
+                    "group": "cc_file"
+                },
+                {
+                    "command": "extension.ccMkElement",
                     "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
                     "group": "cc_file"
                 },
