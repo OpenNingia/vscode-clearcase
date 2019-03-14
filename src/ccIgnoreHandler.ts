@@ -1,6 +1,6 @@
 import { workspace, WorkspaceFolder, Uri, EventEmitter } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { join, dirname } from "path";
+import { join, dirname, sep } from "path";
 import ignore from "ignore";
 import { Model, ModelHandler } from "./model";
 
@@ -44,9 +44,11 @@ export class IgnoreHandler {
   }
 
   public refreshFilter(fileObj:Uri) {
-    const dir = dirname(fileObj.fsPath);
+    let dir = dirname(fileObj.fsPath);
+    if( dir.substr(-1, 1) !== sep )
+      dir += sep;
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      if(this.fileIgnores[i].Path.fsPath == dir) {
+      if(this.fileIgnores[i].PathStr == dir) {
         this.fileIgnores[i] = new FileIgnore(Uri.file(dir));
         this.m_onFilterRefreshed.fire();
         return;
@@ -57,9 +59,11 @@ export class IgnoreHandler {
   }
 
   public removeFilter(fileObj:Uri) {
-    const dir = dirname(fileObj.fsPath);
+    let dir = dirname(fileObj.fsPath);
+    if( dir.substr(-1, 1) !== sep )
+      dir += sep;
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      if(this.fileIgnores[i].Path.fsPath == dir) {
+      if(this.fileIgnores[i].PathStr == dir) {
         this.fileIgnores.splice(i, 1);
         this.m_onFilterRefreshed.fire();
         return;
@@ -88,6 +92,12 @@ export class FileIgnore {
 
   public get Path(): Uri {
     return this.path;
+  }
+
+  public get PathStr(): string {
+    let p = this.Path.fsPath;
+    p = p.substr(-1, 1) !== sep ? p+sep : p;
+    return p;
   }
 
   public get Ignore(): any {
