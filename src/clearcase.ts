@@ -8,8 +8,7 @@ import * as tmp from 'tmp';
 import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace } from 'vscode';
 import { ccAnnotationController } from './ccAnnotateController';
 import { ccConfigHandler } from './ccConfigHandler';
-import { FileIgnore } from './ccIgnoreHandler';
-
+import { MappedList } from './mappedlist';
 
 export enum EventActions {
   Add = 0,
@@ -33,16 +32,18 @@ export class ClearCase {
 
   private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
 
-
   private m_isCCView: boolean = false;
   private m_viewType: ViewType;
   private m_updateEvent: EventEmitter<Uri>;
+
+  private m_untrackedList: MappedList;
 
   public constructor(private m_context: ExtensionContext,
     private configHandler: ccConfigHandler,
     private outputChannel: OutputChannel) {
     this.m_updateEvent = new EventEmitter<Uri>();
     this.m_viewType = ViewType.UNKNOWN;
+    this.m_untrackedList = new MappedList();
   }
 
   public get IsView(): boolean {
@@ -55,6 +56,10 @@ export class ClearCase {
 
   public get onCommandExecuted(): Event<Uri> {
     return this.m_updateEvent.event;
+  }
+
+  public get UntrackedList(): MappedList {
+    return this.m_untrackedList;
   }
 
   /**
@@ -195,6 +200,13 @@ export class ClearCase {
     });
   }
 
+  public createVersionedObject(doc: Uri) {
+    var path = doc.fsPath;
+    exec("cleartool mkelem -mkp -nc \"" + path + "\"", (error, stdout, stderr) => {
+      this.m_updateEvent.fire(doc);
+    });
+  }
+
   public async checkinFile(doc: Uri) {
     var path = doc.fsPath;
     let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
@@ -296,27 +308,23 @@ export class ClearCase {
    * Searching view private objects in all workspace folders of the current project.
    * The result is filtered by the configuration 'ViewPrivateFileSuffixes'
    */
-  public async findUntracked(fileIgnore: FileIgnore): Promise<string[]> {
-    let results: string[] = [];
+  public async findUntracked(pathObj: Uri): Promise<void> {
     try {
-      if( fileIgnore === null )
-        return [];
+      if (pathObj === null)
+        return;
 
-      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], fileIgnore.Path.fsPath, (data: string[]) => {
-        let res = data.filter((val) => {
-          val = join(fileIgnore.Path.fsPath, val.trim());
-          if (fileIgnore.Ignore.ignores(val) === false) {
-            if (fs.existsSync(val))
-              return val;
-          }
+      this.UntrackedList.clearStringsOfKey(pathObj.fsPath);
+
+      await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], pathObj.fsPath, (data: string[]) => {
+        data.forEach((val) => {
+          let p = join(pathObj.fsPath, val);
+          this.UntrackedList.addStringByKey(p, pathObj.fsPath);
         });
-        results = results.concat(res);
       });
     }
     catch (error) {
       this.outputChannel.appendLine(error);
     }
-    return results;
   }
 
   public findCheckoutsGui(path: string) {
@@ -633,7 +641,7 @@ export class ClearCase {
   public async getFileAtVersion(fsPath: string, version: string): Promise<Uri | null> {
     let pname = fsPath + "@@" + version;
     let ret = Uri.file(tmp.tmpNameSync());
-    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {}, () => {});
+    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => { }, () => { });
     return ret;
   }
 
@@ -641,13 +649,19 @@ export class ClearCase {
     // cannot call getFileAtVersion because the temp file is automatically removed
     let pname = fsPath + "@@" + version;
     let ret = Uri.file(tmp.tmpNameSync());
-    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {}, () => {});
+    await this.runCleartoolCommand(['get', '-to', ret.fsPath, pname], workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => { }, () => { });
 
     return await fsPromise.readFile(ret.fsPath, { encoding: 'utf-8' });
   }
 
   private runCleartoolCommand(cmd: string[], cwd: string, onData: (data: string[]) => void, onFinished?: () => void): Promise<void> {
     let self: ClearCase = this;
+    try{
+      fs.accessSync(cwd, fs.constants.F_OK);
+    } catch(err) {
+      self.outputChannel.appendLine(`CWD (${cwd}) not found`);
+      return Promise.reject();
+    }
     // tslint:disable-next-line:typedef
     return new Promise<void>(function (resolve, reject): void {
       self.outputChannel.appendLine(cmd.reduce(((val) => { return val + " " })));
