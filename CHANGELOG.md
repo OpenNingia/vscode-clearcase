@@ -1,5 +1,10 @@
 ## Release Notes
 
+### 2.2.0
+* Added mkelem command to check-in a file into source control
+* Improved untracked files handling
+* Other fixes and error handling
+
 ### 2.1.0
 * Added a button to search for View Private files, you can control which files are added to the view by placing a `.ccignore`
   file on the root of your workspace. This file behaves in a similar way as `.gitignore`.
