@@ -1,6 +1,6 @@
 ## Release Notes
 
-### 2.2.0
+### 2.3.0
 * Added mkelem command to check-in a file into source control
 * Improved untracked files handling
 * Other fixes and error handling
