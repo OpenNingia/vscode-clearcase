@@ -200,6 +200,13 @@ export class ClearCase {
     });
   }
 
+  public createVersionedObject(doc: Uri) {
+    var path = doc.fsPath;
+    exec("cleartool mkelem -mkp -nc \"" + path + "\"", (error, stdout, stderr) => {
+      this.m_updateEvent.fire(doc);
+    });
+  }
+
   public async checkinFile(doc: Uri) {
     var path = doc.fsPath;
     let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;

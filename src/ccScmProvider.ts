@@ -246,6 +246,7 @@ export class ccScmProvider {
     this.registerCommand('extension.ccVersionTree', this.ClearCase.versionTree);
     this.registerCommand('extension.ccComparePrevious', this.ClearCase.diffWithPrevious);
     this.registerCommand('extension.ccItemProperties', this.ClearCase.itemProperties);
+    this.registerCommand('extension.ccMkElement', this.ClearCase.createVersionedObject);
 
     this.m_disposables.push(
       commands.registerCommand('extension.ccOpenResource', (fileObj: Uri | ccScmResource) => {
