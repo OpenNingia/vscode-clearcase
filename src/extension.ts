@@ -52,7 +52,8 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
       new vscode.Disposable(() => vscode.Disposable.from(...disposables).dispose())
     );
-    if( vscode.workspace.workspaceFolders.length > 0 )
+    if( vscode.workspace.workspaceFolders !== undefined &&
+        vscode.workspace.workspaceFolders.length > 0 )
     {
         await _activate(context, disposables).catch(err => console.error(err));
     }
