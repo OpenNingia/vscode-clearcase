@@ -385,7 +385,7 @@ export class ClearCase {
       if (iUri === undefined)
         reject("");
 
-      exec(`cleartool ls -short ${iUri.fsPath}`, (error, stdout, stderr) => {
+      exec(`cleartool ls -d -short ${iUri.fsPath}`, (error, stdout, stderr) => {
         if (error || stderr) {
           if (error)
             reject(error.message);
