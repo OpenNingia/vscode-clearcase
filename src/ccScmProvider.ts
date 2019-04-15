@@ -10,7 +10,7 @@ import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccContentProvider } from "./ccContentProvider";
 import { join, dirname, basename } from "path";
-import { unlink, exists } from "fs";
+import { unlink, exists, statSync } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
@@ -42,6 +42,10 @@ export class ccScmProvider {
     
     this.m_ccHandler.checkIsView(null).then((is_view) => {
       if (is_view) {
+
+        let fileList = m_context.workspaceState.get('untrackedfilecache', []);
+        this.ClearCase.UntrackedList.parse(fileList);
+
         this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
         this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
         this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
@@ -71,6 +75,7 @@ export class ccScmProvider {
         this.m_isUpdatingUntracked = false;
 
         this.updateCheckedOutList();
+        this.filterUntrackedList();
       }
     });
   }
@@ -119,6 +124,7 @@ export class ccScmProvider {
         if (version == "") {
           if( this.ClearCase.UntrackedList.exists(fileObj.fsPath) === false ) {
             this.ClearCase.UntrackedList.addString(fileObj.fsPath);
+            this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
           }
           let ign = this.m_ignores.getFolderIgnore(dirname(fileObj.fsPath));
           if (ign !== null && ign.Ignore.ignores(fileObj.fsPath) === false) {
@@ -187,6 +193,7 @@ export class ccScmProvider {
               increment: (l_step*(1+i))
             });
           }
+          this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
           this.filterUntrackedList();
           this.m_isUpdatingUntracked = false;
         }
@@ -200,7 +207,8 @@ export class ccScmProvider {
       let root = workspace.workspaceFolders[i].uri;
       let ign = this.m_ignores.getFolderIgnore(root);
       let d = this.ClearCase.UntrackedList.getStringsByKey(root.fsPath).filter((val) => {
-        if( ign !== null && ign.Ignore.ignores(val) === false )
+        // if no .ccignore file is present, show all files
+        if( ign === null || ign.Ignore.ignores(val) === false )
         {
           return val;
         }
@@ -261,7 +269,10 @@ export class ccScmProvider {
           }
         }
         if (file !== null) {
-          this.openResource(file);
+          let st = statSync(file.fsPath);
+          if( st.isDirectory() === false ) {
+            this.openResource(file);
+          }
         }
       }, this)
     );
@@ -457,10 +468,12 @@ export class ccScmProvider {
       };
 
       let prev_uri = await this.m_ccContentProvider.provideOriginalResource(fileObj);
-      let fn = basename(fileObj.fsPath);
-      let { version } = fromCcUri(prev_uri);
+      if( prev_uri !== undefined ) {
+        let fn = basename(fileObj.fsPath);
+        let { version } = fromCcUri(prev_uri);
 
-      commands.executeCommand('vscode.diff', prev_uri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
+        commands.executeCommand('vscode.diff', prev_uri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
+      }
     }
   }
 

@@ -40,11 +40,13 @@ export class ccContentProvider implements TextDocumentContentProvider, QuickDiff
         if (uri.scheme !== "file")
           return;
 
-        let current_version = await this.m_ccHandler.getVersionInformation(uri, false);
-        let is_checked_out = current_version.match("\\b(CHECKEDOUT)\\b$");
-        
-        if (is_checked_out)
-          return toCcUri(uri, current_version.replace("CHECKEDOUT", "LATEST"));
+				let current_version = await this.m_ccHandler.getVersionInformation(uri, false);
+				if( current_version !== "" ) {
+					let is_checked_out = current_version.match("\\b(CHECKEDOUT)\\b$");
+					
+					if (is_checked_out)
+						return toCcUri(uri, current_version.replace("CHECKEDOUT", "LATEST"));
+				}
         return;
       }    
 

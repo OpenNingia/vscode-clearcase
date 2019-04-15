@@ -71,4 +71,25 @@ export class MappedList {
       }
     }
   }
+
+  public parse(filelist: string[]) {
+    if( filelist !== null && (this.m_untrackedList !== null) ) {
+      for(let i=0; i < filelist.length; i=i+2) {
+        this.m_untrackedList.set(filelist[i], filelist[i+1].split(";"));
+      }
+    }
+  }
+
+  public stringify() : string[] {
+    let f = [];
+    if( this.m_untrackedList !== null ) {
+      const keys = this.m_untrackedList.keys();
+      for (let key of keys) {
+        let objs = this.m_untrackedList.get(key).join(";");
+        f.push(key);
+        f.push(objs);
+      }
+    }
+    return f;
+  }
 }

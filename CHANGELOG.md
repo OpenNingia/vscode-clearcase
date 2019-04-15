@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 2.4.0
+* Improved handling of untracked files
+* Fixed a crash when opening a window that doesn't contain workspace folders
+
 ### 2.3.0
 * Added mkelem command to check-in a file into source control
 * Improved untracked files handling
