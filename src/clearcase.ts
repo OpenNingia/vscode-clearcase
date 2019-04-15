@@ -313,14 +313,29 @@ export class ClearCase {
       if (pathObj === null)
         return;
 
-      this.UntrackedList.clearStringsOfKey(pathObj.fsPath);
+      let newList = [];
 
       await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], pathObj.fsPath, (data: string[]) => {
         data.forEach((val) => {
-          let p = join(pathObj.fsPath, val);
-          this.UntrackedList.addStringByKey(p, pathObj.fsPath);
+          let f = val;
+          if( val.match(/@@/g) !== null ) {
+            let p = val.split("@@");
+            if( p[1].match(/checkedout/gi) === null )
+            {
+              f = p[0];
+            }
+            else
+            {
+              f = "";
+            }
+          }
+          if( f !== "" ) {
+            let p = join(pathObj.fsPath, f);
+            newList.push(p);
+          }
         });
       });
+      this.UntrackedList.addStringsByKey(newList, pathObj.fsPath);
     }
     catch (error) {
       this.outputChannel.appendLine(error);
