@@ -313,8 +313,6 @@ export class ClearCase {
       if (pathObj === null)
         return;
 
-      let newList = [];
-
       await this.runCleartoolCommand(["ls", "-view_only", "-short", "-r"], pathObj.fsPath, (data: string[]) => {
         data.forEach((val) => {
           let f = val;
@@ -331,11 +329,10 @@ export class ClearCase {
           }
           if( f !== "" ) {
             let p = join(pathObj.fsPath, f);
-            newList.push(p);
+            this.UntrackedList.addStringByKey(p, pathObj.fsPath);
           }
         });
       });
-      this.UntrackedList.addStringsByKey(newList, pathObj.fsPath);
     }
     catch (error) {
       this.outputChannel.appendLine(error);

@@ -183,6 +183,7 @@ export class ccScmProvider {
       async (process) => {
         if (this.m_isUpdatingUntracked === false) {
           this.m_isUpdatingUntracked = true;
+          this.ClearCase.UntrackedList.resetFoundState();
           let l_len = workspace.workspaceFolders.length;
           let l_step = ((l_len > 0) ? 100/l_len : 100);
           for (let i = 0; i < l_len; i++) {
@@ -193,6 +194,7 @@ export class ccScmProvider {
               increment: (l_step*(1+i))
             });
           }
+          this.ClearCase.UntrackedList.cleanMap();
           this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
           this.filterUntrackedList();
           this.m_isUpdatingUntracked = false;
@@ -484,9 +486,20 @@ export class ccScmProvider {
     }
   }
 
+  public async updateUntrackedListWFile(fileObj:Uri) {
+    let isViewPrv = await this.ClearCase.isClearcaseObject(fileObj);
+    if( isViewPrv === false ) {
+      let wsf = workspace.getWorkspaceFolder(fileObj);
+      this.ClearCase.UntrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
+      this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
+      this.filterUntrackedList();
+    }
+  }
+
   public async onDidChangeTextEditor(editor: TextEditor) {
     await this.ClearCase.checkIsView(editor);
     this.updateCheckedOutList();
+    this.updateUntrackedListWFile(editor.document.uri);
     this.m_windowChangedEvent.fire();
   }
 
