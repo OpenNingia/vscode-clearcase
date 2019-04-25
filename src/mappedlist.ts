@@ -55,6 +55,14 @@ export class MappedList {
     }
   }
 
+  public addStringsByKey(i_val: string[], i_key: string) {
+    if (this.m_untrackedList !== null) {
+      if (this.m_untrackedList.get(i_key) !== undefined) {
+        this.m_untrackedList.set(i_key, i_val);
+      }
+    }
+  }
+
   public getStringsByKey(i_key: string): string[] {
     if (this.m_untrackedList !== null) {
       if (this.m_untrackedList.get(i_key) !== undefined) {
