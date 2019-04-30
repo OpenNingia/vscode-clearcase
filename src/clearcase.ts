@@ -5,7 +5,7 @@ import * as fsPromise from 'fs-promise';
 import { dirname, join } from 'path';
 
 import * as tmp from 'tmp';
-import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace } from 'vscode';
+import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace, DebugAdapterExecutable } from 'vscode';
 import { ccAnnotationController } from './ccAnnotateController';
 import { ccConfigHandler } from './ccConfigHandler';
 import { MappedList } from './mappedlist';
@@ -24,19 +24,49 @@ export class EventArgs {
 export enum ViewType {
   UNKNOWN,
   DYNAMIC,
-  SNAPSHOT
+  SNAPSHOT,
+  WEBVIEW
+}
+
+export interface CleartoolIf {
+  executable(): string;
+}
+
+export class Cleartool implements CleartoolIf{
+  private m_executable: string = "cleartool";
+  public constructor() {
+  }
+
+  executable(): string {
+    return this.m_executable;
+  }
+
+
+}
+
+export class RCleartool implements CleartoolIf{
+  private m_executable: string = "rcleartool";
+  public constructor() {
+  }
+
+  executable(): string {
+    return this.m_executable;
+  }
+
 }
 
 export class ClearCase {
   private readonly LS_VIEW: string[] = ['lsview', '-cview', '-long'];
 
   private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
+  private readonly rxViewAttr = new RegExp('(view atrributes\:)([\,\t \w\d]*)(webview)', 'i');
 
   private m_isCCView: boolean = false;
   private m_viewType: ViewType;
   private m_updateEvent: EventEmitter<Uri>;
 
   private m_untrackedList: MappedList;
+  private m_execCmd: CleartoolIf;
 
   public constructor(private m_context: ExtensionContext,
     private configHandler: ccConfigHandler,
@@ -44,6 +74,7 @@ export class ClearCase {
     this.m_updateEvent = new EventEmitter<Uri>();
     this.m_viewType = ViewType.UNKNOWN;
     this.m_untrackedList = new MappedList();
+    this.m_execCmd = new Cleartool();
   }
 
   public get IsView(): boolean {
@@ -84,10 +115,17 @@ export class ClearCase {
     if (!is_view)
       is_view = await this.hasConfigspec();
 
-    if (is_view)
+    if (is_view) {
       this.m_viewType = await this.detectViewType();
+      if( this.m_viewType == ViewType.WEBVIEW && this.m_execCmd instanceof Cleartool )
+      {
+        this.m_execCmd = new RCleartool();
+        this.m_viewType = ViewType.SNAPSHOT;
+      }
+    }
 
     this.m_isCCView = is_view;
+
 
     return is_view;
   }
@@ -95,7 +133,7 @@ export class ClearCase {
   public execOnSCMFile(doc: Uri, func: (string) => void) {
     var path = doc.fsPath;
     var self = this;
-    exec("cleartool ls \"" + path + "\"", (error, stdout, stderr) => {
+    exec(this.m_execCmd.executable() + " ls \"" + path + "\"", (error, stdout, stderr) => {
       if (error) {
         this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
         window.showErrorMessage(`${path} is not a valid ClearCase object.`);
@@ -195,14 +233,14 @@ export class ClearCase {
 
   public undoCheckoutFile(doc: Uri) {
     var path = doc.fsPath;
-    exec("cleartool unco -rm \"" + path + "\"", (error, stdout, stderr) => {
+    exec(this.m_execCmd.executable() + " unco -rm \"" + path + "\"", (error, stdout, stderr) => {
       this.m_updateEvent.fire(doc);
     });
   }
 
   public createVersionedObject(doc: Uri) {
     var path = doc.fsPath;
-    exec("cleartool mkelem -mkp -nc \"" + path + "\"", (error, stdout, stderr) => {
+    exec(this.m_execCmd.executable() + " mkelem -mkp -nc \"" + path + "\"", (error, stdout, stderr) => {
       this.m_updateEvent.fire(doc);
     });
   }
@@ -278,12 +316,12 @@ export class ClearCase {
 
   public versionTree(doc: Uri) {
     var path = doc.fsPath;
-    exec("cleartool lsvtree -graphical \"" + path + "\"");
+    exec(this.m_execCmd.executable() + " lsvtree -graphical \"" + path + "\"");
   }
 
   public diffWithPrevious(doc: Uri) {
     var path = doc.fsPath;
-    exec("cleartool diff -graph -pred \"" + path + "\"");
+    exec(this.m_execCmd.executable() + " diff -graph -pred \"" + path + "\"");
   }
 
   /**
@@ -400,7 +438,7 @@ export class ClearCase {
       if (iUri === undefined)
         reject("");
 
-      exec(`cleartool ls -d -short ${iUri.fsPath}`, (error, stdout, stderr) => {
+      exec(this.m_execCmd.executable() + ` ls -d -short ${iUri.fsPath}`, (error, stdout, stderr) => {
         if (error || stderr) {
           if (error)
             reject(error.message);
@@ -420,7 +458,7 @@ export class ClearCase {
     return new Promise<string>(
       // tslint:disable-next-line:typedef
       function (resolve, reject): void {
-        exec('cleartool -verAll', (err: Error, output: string) => {
+        exec(this.m_execCmd.executable() + ' -verAll', (err: Error, output: string) => {
           if (err) {
             let msg = 'ClearCase not found!';
             self.outputChannel.appendLine(msg);
@@ -488,7 +526,7 @@ export class ClearCase {
       if (path !== "") {
         path = "\"" + path + "\"";
       }
-      let cmd = "cleartool update " + path;
+      let cmd = this.m_execCmd.executable() + " update " + path;
 
       return new Promise<string>((resolve, reject) => {
         exec(cmd, (error, stdout, stderr) => {
@@ -529,7 +567,7 @@ export class ClearCase {
     let fmt = this.configHandler.configuration.AnnotationFormatString.Value;
     let sep = " | ";
     let param = "\"" + filePath + "\"";
-    let cmd = "cleartool annotate -out - -nhe -fmt \"" + fmt + sep + "\" " + param;
+    let cmd = this.m_execCmd.executable() + " annotate -out - -nhe -fmt \"" + fmt + sep + "\" " + param;
 
     return new Promise<string>((resolve, reject) => {
       exec(cmd, { maxBuffer: 10485760 }, (error, stdout, stderr) => {
@@ -556,7 +594,7 @@ export class ClearCase {
   }
 
   async getCurrentActivity(): Promise<string> {
-    let cmd = 'cleartool lsactivity -cac -fmt "%n"';
+    let cmd = this.m_execCmd.executable() + ' lsactivity -cac -fmt "%n"';
 
     return new Promise<string>((resolve, reject) => {
       exec(cmd, { cwd: workspace.rootPath }, (error, stdout, stderr) => {
@@ -573,7 +611,7 @@ export class ClearCase {
 
   // return view activities as QuickPickItem list
   async getQuickPickActivities(currentAcvtId: string): Promise<QuickPickItem[]> {
-    let cmd = "cleartool lsactivity";
+    let cmd = this.m_execCmd.executable() + " lsactivity";
 
     return new Promise<QuickPickItem[]>((resolve, reject) => {
       exec(cmd, { maxBuffer: 10485760, cwd: workspace.rootPath }, (error, stdout, stderr) => {
@@ -634,7 +672,7 @@ export class ClearCase {
   }
 
   public setViewActivity(actvID: String): Promise<string> {
-    var cmd = 'cleartool setactivity ';
+    var cmd = this.m_execCmd.executable() + ' setactivity ';
     if (actvID)
       cmd += actvID;
     else
@@ -680,7 +718,7 @@ export class ClearCase {
     // tslint:disable-next-line:typedef
     return new Promise<void>(function (resolve, reject): void {
       self.outputChannel.appendLine(cmd.reduce(((val) => { return val + " " })));
-      const command = spawn("cleartool", cmd, { cwd: cwd, env: process.env });
+      const command = spawn(self.m_execCmd.executable(), cmd, { cwd: cwd, env: process.env });
 
       command.stdout.on('data', (data) => {
         if (typeof data === 'string') {
@@ -732,6 +770,9 @@ export class ClearCase {
         return false;
       }
       let ma: RegExpMatchArray | null = l.match(this.rxViewType);
+      if( ma === null || ma.length === 0 ) {
+        ma = l.match(this.rxViewAttr);
+      }
       return !!ma && (ma.length > 0);
     };
 
@@ -746,6 +787,9 @@ export class ClearCase {
         viewType = ViewType.DYNAMIC;
       } else {
         viewType = ViewType.SNAPSHOT;
+        if( resLines.length > 1 && resLines[1].match(/webview/i) ) {
+          viewType = ViewType.WEBVIEW;
+        }
       }
     });
 
