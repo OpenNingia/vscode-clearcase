@@ -183,6 +183,7 @@ export class ccScmProvider {
       async (process) => {
         if (this.m_isUpdatingUntracked === false) {
           this.m_isUpdatingUntracked = true;
+          this.ClearCase.UntrackedList.resetFoundState();
           let l_len = workspace.workspaceFolders.length;
           let l_step = ((l_len > 0) ? 100/l_len : 100);
           for (let i = 0; i < l_len; i++) {
@@ -193,6 +194,7 @@ export class ccScmProvider {
               increment: (l_step*(1+i))
             });
           }
+          this.ClearCase.UntrackedList.cleanMap();
           this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
           this.filterUntrackedList();
           this.m_isUpdatingUntracked = false;
@@ -208,7 +210,7 @@ export class ccScmProvider {
       let ign = this.m_ignores.getFolderIgnore(root);
       let d = this.ClearCase.UntrackedList.getStringsByKey(root.fsPath).filter((val) => {
         // if no .ccignore file is present, show all files
-        if( ign === null || ign.Ignore.ignores(val) === false )
+        if( ign === null || (val !== "" && ign.Ignore.ignores(val) === false) )
         {
           return val;
         }
@@ -375,14 +377,21 @@ export class ccScmProvider {
   public bindScmCommand() {
     this.m_disposables.push(
       commands.registerCommand('extension.ccCheckinAll', () => {
-        let fileObjs: Uri[] = this.m_ccCheckedoutGrp.resourceStates.map(val => {
-          return val.resourceUri;
-        });
-        let checkinComment = this.m_ccScm.inputBox.value;
-        this.ClearCase.checkinFiles(fileObjs, checkinComment).then(() => {
+        window.withProgress({
+          location: ProgressLocation.SourceControl,
+          title: "Checkin all files",
+          cancellable: false
+        },
+        async (process) => {
+          let fileObjs: Uri[] = this.m_ccCheckedoutGrp.resourceStates.map(val => {
+            return val.resourceUri;
+          });
+          let checkinComment = this.m_ccScm.inputBox.value;
+          await this.ClearCase.checkinFiles(fileObjs, checkinComment);
           this.m_ccScm.inputBox.value = "";
           this.updateCheckedOutList();
-        });
+          process.report({message: "Checkin finished."});
+      });
       }, this));
 
     this.m_disposables.push(
@@ -477,9 +486,20 @@ export class ccScmProvider {
     }
   }
 
+  public async updateUntrackedListWFile(fileObj:Uri) {
+    let isViewPrv = await this.ClearCase.isClearcaseObject(fileObj);
+    if( isViewPrv === false ) {
+      let wsf = workspace.getWorkspaceFolder(fileObj);
+      this.ClearCase.UntrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
+      this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
+      this.filterUntrackedList();
+    }
+  }
+
   public async onDidChangeTextEditor(editor: TextEditor) {
     await this.ClearCase.checkIsView(editor);
     this.updateCheckedOutList();
+    this.updateUntrackedListWFile(editor.document.uri);
     this.m_windowChangedEvent.fire();
   }
 
