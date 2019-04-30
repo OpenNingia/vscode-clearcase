@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 2.4.1
+* More improvement on untracked files' handling
+* Show progress information in SCM view when checkin all is triggered
+
 ### 2.4.0
 * Improved handling of untracked files
 * Fixed a crash when opening a window that doesn't contain workspace folders
