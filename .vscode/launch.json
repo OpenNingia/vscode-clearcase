@@ -10,8 +10,9 @@
             "args": ["--extensionDevelopmentPath=${workspaceRoot}" ],
             "stopOnEntry": false,
             "sourceMaps": true,
-            "outDir": "${workspaceRoot}/out/src",
-            "preLaunchTask": "npm"
+            "outFiles": ["${workspaceRoot}/dist/vscode-clearcase.js",
+                         "${workspaceRoot}/dist/vscode-clearcase.js.map"],
+            "preLaunchTask": "npm: compile"
         },
         {
             "name": "Launch Tests",
@@ -22,7 +23,7 @@
             "stopOnEntry": false,
             "sourceMaps": true,
             "outDir": "${workspaceRoot}/out/test",
-            "preLaunchTask": "npm"
+            "preLaunchTask": "npm: test-compile"
         }
     ]
 }
