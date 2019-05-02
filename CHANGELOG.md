@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 2.4.2
+* Security update
+
 ### 2.4.1
 * More improvement on untracked files' handling
 * Show progress information in SCM view when checkin all is triggered

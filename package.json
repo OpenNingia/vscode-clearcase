@@ -464,13 +464,13 @@
         "vscode-nls": "^4.0.0"
     },
     "devDependencies": {
+        "@types/fs-promise": "^1.0.3",
         "@types/mocha": "^2.2.32",
         "@types/node": "^6.14.2",
-        "@types/fs-promise": "^1.0.3",
         "@types/tmp": "0.0.34",
         "mocha": "^5.2.0",
         "typescript": "^2.9.2",
-        "vscode": "^1.1.29",
+        "vscode": "^1.1.33",
         "vscode-nls-dev": "^2.1.2"
     }
 }
