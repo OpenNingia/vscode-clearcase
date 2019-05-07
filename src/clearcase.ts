@@ -67,6 +67,7 @@ export class ClearCase {
 
   private m_untrackedList: MappedList;
   private m_execCmd: CleartoolIf;
+  private m_retryViewDetection = true;
 
   public constructor(private m_context: ExtensionContext,
     private configHandler: ccConfigHandler,
@@ -74,7 +75,7 @@ export class ClearCase {
     this.m_updateEvent = new EventEmitter<Uri>();
     this.m_viewType = ViewType.UNKNOWN;
     this.m_untrackedList = new MappedList();
-    this.m_execCmd = new Cleartool();
+    this.m_execCmd = new RCleartool();
   }
 
   public get IsView(): boolean {
@@ -100,34 +101,16 @@ export class ClearCase {
    * @param editor current editor instance
    */
   public async checkIsView(editor: TextEditor): Promise<boolean> {
-    let is_view: boolean = false;
-    if (editor !== null && editor !== undefined && editor.document !== undefined) {
-      try {
-        is_view = await this.isClearcaseObject(editor.document.uri);
-      }
-      catch (error) {
-        is_view = false;
-        // can happen i.e. with a new file which has not been save yet
-        //this.m_isCCView = await this.hasConfigspec();
-      }
+    this.m_retryViewDetection = true;
+    this.m_viewType = await this.detectViewType();
+    if( this.m_viewType == ViewType.WEBVIEW && this.m_execCmd instanceof Cleartool )
+    {
+      this.m_execCmd = new RCleartool();
+      this.m_viewType = ViewType.SNAPSHOT;
     }
 
-    if (!is_view)
-      is_view = await this.hasConfigspec();
-
-    if (is_view) {
-      this.m_viewType = await this.detectViewType();
-      if( this.m_viewType == ViewType.WEBVIEW && this.m_execCmd instanceof Cleartool )
-      {
-        this.m_execCmd = new RCleartool();
-        this.m_viewType = ViewType.SNAPSHOT;
-      }
-    }
-
-    this.m_isCCView = is_view;
-
-
-    return is_view;
+    this.m_isCCView = (this.m_viewType!==ViewType.UNKNOWN);
+    return this.m_isCCView;
   }
 
   public execOnSCMFile(doc: Uri, func: (string) => void) {
@@ -732,10 +715,10 @@ export class ClearCase {
         } else {
           msg = data.toString();
         }
-        msg = `ClearCase error: ClearCase error: ${msg}`;
+        msg = `${msg}`;
         self.outputChannel.appendLine(msg);
-        if (msg.match(/clearcase error/i) !== null)
-          reject();
+        if (msg.match(/cleartool\: error/i) !== null)
+          reject(msg);
       });
 
       command.on('close', (code) => {
@@ -773,22 +756,43 @@ export class ClearCase {
       return !!ma && (ma.length > 0);
     };
 
-    await this.runCleartoolCommand(this.LS_VIEW, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-      lines = lines.concat(data);
-    }, () => {
-      let resLines: string[] = lines.filter(filterGlobalPathLines);
-      if (resLines.length === 0) {
-        return;
-      }
-      if (resLines[0].endsWith('.vws')) {
-        viewType = ViewType.DYNAMIC;
-      } else {
-        viewType = ViewType.SNAPSHOT;
-        if( resLines.length > 1 && resLines[1].match(/webview/i) ) {
-          viewType = ViewType.WEBVIEW;
+    try {
+      await this.runCleartoolCommand(this.LS_VIEW, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+        lines = lines.concat(data);
+      }, () => {
+        let resLines: string[] = lines.filter(filterGlobalPathLines);
+        if (resLines.length === 0) {
+          return;
+        }
+        if (resLines[0].endsWith('.vws')) {
+          viewType = ViewType.DYNAMIC;
+        } else {
+          viewType = ViewType.SNAPSHOT;
+          if( resLines.length > 1 && resLines[1].match(/webview/i) ) {
+            viewType = ViewType.WEBVIEW;
+          }
+        }
+      });
+    } catch(err) {
+      if( this.m_retryViewDetection === true ) {
+        this.m_retryViewDetection = false;
+        // error wihle checking view type
+        // if current executable is cleartool, switch to rcleartool and try again
+        this.outputChannel.appendLine(`Error while getting view type ${err}`);
+        if( this.m_execCmd instanceof Cleartool ) {
+          this.outputChannel.appendLine(`Creating a new rcleartool instance and try again`);
+          this.m_execCmd = new RCleartool();
+        } else {
+          this.outputChannel.appendLine(`Creating a new cleartool instance and try again`);
+          this.m_execCmd = new Cleartool();
+        }
+        try {
+          viewType = await this.detectViewType();
+        } catch(err) {
+          this.outputChannel.appendLine(`Error while getting view type with rcleartool ${err}`);
         }
       }
-    });
+    }
 
     return viewType;
   }

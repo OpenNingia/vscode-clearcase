@@ -2,7 +2,7 @@
 import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem, WorkspaceFolder, ProgressLocation, Progress } from "vscode";
 import { ccScmResource, ResourceGroupType } from "./ccScmResource";
 import { ccScmStatus } from "./ccScmStatus";
-import { ClearCase } from "./clearcase";
+import { ClearCase, ViewType } from "./clearcase";
 import { LocalizeFunc, loadMessageBundle } from "vscode-nls";
 import { Model, ModelHandler } from "./model";
 import { ccConfigHandler } from "./ccConfigHandler";
@@ -42,6 +42,9 @@ export class ccScmProvider {
     
     this.m_ccHandler.checkIsView(null).then((is_view) => {
       if (is_view) {
+
+        commands.executeCommand('setContext', 'vscode-clearcase:enabled', is_view);
+        commands.executeCommand('setContext', 'vscode-clearcase:DynView', this.ClearCase.ViewType==ViewType.DYNAMIC);
 
         let fileList = m_context.workspaceState.get('untrackedfilecache', []);
         this.ClearCase.UntrackedList.parse(fileList);
@@ -488,19 +491,23 @@ export class ccScmProvider {
 
   public async updateUntrackedListWFile(fileObj:Uri) {
     let isViewPrv = await this.ClearCase.isClearcaseObject(fileObj);
-    if( isViewPrv === false ) {
+    if( isViewPrv === false && fileObj !== undefined ) {
       let wsf = workspace.getWorkspaceFolder(fileObj);
-      this.ClearCase.UntrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
-      this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
-      this.filterUntrackedList();
+      if( wsf !== undefined ) {
+        this.ClearCase.UntrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
+        this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
+        this.filterUntrackedList();
+      }
     }
   }
 
   public async onDidChangeTextEditor(editor: TextEditor) {
-    await this.ClearCase.checkIsView(editor);
-    this.updateCheckedOutList();
-    this.updateUntrackedListWFile(editor.document.uri);
-    this.m_windowChangedEvent.fire();
+    if( editor ) {
+      await this.ClearCase.isClearcaseObject(editor.document.uri);
+      this.updateCheckedOutList();
+      this.updateUntrackedListWFile(editor.document.uri);
+      this.m_windowChangedEvent.fire();
+    }
   }
 
   dispose(): void {

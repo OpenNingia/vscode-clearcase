@@ -26,11 +26,6 @@ async function _activate(context: vscode.ExtensionContext, disposables: vscode.D
     provider.bindEvents();
     provider.bindCommands();
 
-    provider.updateIsView().then((is:boolean) => {
-        vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', is);
-        vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
-    })
-
     provider.onWindowChanged(() => {
         vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.ClearCase.IsView);
         vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
