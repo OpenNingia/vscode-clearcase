@@ -39,6 +39,7 @@ export class ccConfiguration
 	private m_checkinCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
 	private m_defaultComment: ConfigurationProperty<string> = new ConfigurationProperty(null);
 	private m_viewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
+	private m_cleartoolExecutable: ConfigurationProperty<string> = new ConfigurationProperty('cleartool');
 
 	public get ShowStatusbar() : ConfigurationProperty<boolean> {
 		return this.m_showStatusbar;
@@ -82,5 +83,9 @@ export class ccConfiguration
 
 	public get ViewPrivateFileSuffixes(): ConfigurationProperty<string> {
 		return this.m_viewPrivateFiles;
+	}
+
+	public get CleartoolExecutable(): ConfigurationProperty<string> {
+		return this.m_cleartoolExecutable;
 	}
 }

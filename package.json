@@ -18,7 +18,7 @@
         "vscode": "^1.31.0"
     },
     "categories": [
-        "Languages",
+        "Programming Languages",
         "Other"
     ],
     "keywords": [
@@ -402,6 +402,11 @@
                     "type": "string",
                     "default": null,
                     "description": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`."
+                },
+                "vscode-clearcase.cleartoolExecutable": {
+                    "type": "string",
+                    "default": "cleartool",
+                    "description": "Set the path to the cleartool executable you want to use."
                 },
                 "vscode-clearcase.viewPrivateFileSuffixes": {
                     "type": "string",

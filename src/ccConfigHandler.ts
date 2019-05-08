@@ -43,6 +43,7 @@ export class ccConfigHandler {
 			this.setChangeConfigDate<string>(config, "checkinCommandArgs", this.m_configuration.CheckinCommand);
 			this.setChangeConfigDate<string>(config, "defaultComment", this.m_configuration.DefaultComment);
 			this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.m_configuration.ViewPrivateFileSuffixes);
+			this.setChangeConfigDate<string>(config, "cleartoolExecutable", this.m_configuration.CleartoolExecutable);
 			return true;
 		}
 		return false;
