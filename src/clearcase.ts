@@ -30,20 +30,33 @@ export enum ViewType {
 
 export interface CleartoolIf {
   Executable(val?:string|undefined): string;
+  Credentials(): string[];
 }
 
 export class Cleartool implements CleartoolIf{
+  private m_username: string;
+  private m_password: string;
+  private m_address: string;
   private m_executable: string;
-  public constructor() {
+  public constructor(u:string="",p:string="",a:string="") {
+    this.m_address = a;
+    this.m_password = p;
+    this.m_username = u;
     this.m_executable = "";
     this.Executable("cleartool");
   }
 
-  Executable(val?:string|undefined): string {
+  public Executable(val?:string|undefined): string {
     if( val !== undefined ) {
       this.m_executable = val;
     }
     return this.m_executable;
+  }
+
+  public Credentials(): string[] {
+    if( this.m_address !== "" )
+      return ["-username", this.m_username, "-pass", this.m_password, "-server", this.m_address];
+    return [];
   }
 }
 
@@ -61,20 +74,36 @@ export class ClearCase {
   private m_execCmd: CleartoolIf;
   private m_retryViewDetection = true;
 
+  private m_webviewPassword: string = "";
+
   public constructor(private m_context: ExtensionContext,
     private configHandler: ccConfigHandler,
     private outputChannel: OutputChannel) {
     this.m_updateEvent = new EventEmitter<Uri>();
     this.m_viewType = ViewType.UNKNOWN;
     this.m_untrackedList = new MappedList();
-    this.m_execCmd = new Cleartool();
+    if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
+      this.m_execCmd = new Cleartool(this.configHandler.configuration.WebviewUsername.Value,
+                                     this.m_webviewPassword,
+                                     this.configHandler.configuration.WebviewAddress.Value);
+    } else {
+      this.m_execCmd = new Cleartool();
+    }
     this.m_execCmd.Executable(this.configHandler.configuration.CleartoolExecutable.Value);
     
     this.configHandler.onDidChangeConfiguration((datas: string[]) => {
-      let hasChanged = datas.find((val) => {
+      let hasChangedUseRemote = datas.find((val) => {
+        return (val === "useRemoteClient");
+      });
+
+      let hasChangedExec = datas.find((val) => {
         return (val === "cleartoolExecutable");
       });
-      if( hasChanged !== undefined )
+      if( hasChangedUseRemote !== undefined )
+      {
+        window.showWarningMessage("The usewebview config date has changed! Please reload window to set changes active.");
+      }
+      if( hasChangedExec !== undefined )
       {
         this.m_execCmd.Executable(this.configHandler.configuration.CleartoolExecutable.Value);
       }
@@ -95,6 +124,15 @@ export class ClearCase {
 
   public get UntrackedList(): MappedList {
     return this.m_untrackedList;
+  }
+
+  public set Password(val:string) {
+    this.m_webviewPassword = val;
+    if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
+      this.m_execCmd = new Cleartool(this.configHandler.configuration.WebviewUsername.Value,
+                                     this.m_webviewPassword,
+                                     this.configHandler.configuration.WebviewAddress.Value);
+    }
   }
 
   /**
@@ -118,7 +156,7 @@ export class ClearCase {
   public execOnSCMFile(doc: Uri, func: (string) => void) {
     var path = doc.fsPath;
     var self = this;
-    exec(this.m_execCmd.Executable() + " ls \"" + path + "\"", (error, stdout, stderr) => {
+    exec(this.m_execCmd.Executable() + " ls \"" + path + "\" " + this.m_execCmd.Credentials().join(" "), (error, stdout, stderr) => {
       if (error) {
         this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
         window.showErrorMessage(`${path} is not a valid ClearCase object.`);
@@ -218,14 +256,14 @@ export class ClearCase {
 
   public undoCheckoutFile(doc: Uri) {
     var path = doc.fsPath;
-    exec(this.m_execCmd.Executable() + " unco -rm \"" + path + "\"", (error, stdout, stderr) => {
+    exec(this.m_execCmd.Executable() + " unco -rm \"" + path + "\" " + this.m_execCmd.Credentials().join(" "), (error, stdout, stderr) => {
       this.m_updateEvent.fire(doc);
     });
   }
 
   public createVersionedObject(doc: Uri) {
     var path = doc.fsPath;
-    exec(this.m_execCmd.Executable() + " mkelem -mkp -nc \"" + path + "\"", (error, stdout, stderr) => {
+    exec(this.m_execCmd.Executable() + " mkelem -mkp -nc \"" + path + "\" " + this.m_execCmd.Credentials().join(" "), (error, stdout, stderr) => {
       this.m_updateEvent.fire(doc);
     });
   }
@@ -237,7 +275,7 @@ export class ClearCase {
     let defComment = this.configHandler.configuration.DefaultComment.Value;
 
     if (useClearDlg) {
-      exec("cleardlg /checkin \"" + path + "\"", (error, stdout, stderr) => {
+      exec("cleardlg /checkin \"" + path + "\" " + this.m_execCmd.Credentials().join(" "), (error, stdout, stderr) => {
         this.m_updateEvent.fire(doc);
       });
     } else {
@@ -301,12 +339,12 @@ export class ClearCase {
 
   public versionTree(doc: Uri) {
     var path = doc.fsPath;
-    exec(this.m_execCmd.Executable() + " lsvtree -graphical \"" + path + "\"");
+    exec(this.m_execCmd.Executable() + " lsvtree -graphical \"" + path + "\" " + this.m_execCmd.Credentials().join(" "));
   }
 
   public diffWithPrevious(doc: Uri) {
     var path = doc.fsPath;
-    exec(this.m_execCmd.Executable() + " diff -graph -pred \"" + path + "\"");
+    exec(this.m_execCmd.Executable() + " diff -graph -pred \"" + path + "\" " + this.m_execCmd.Credentials().join(" "));
   }
 
   /**
@@ -420,7 +458,7 @@ export class ClearCase {
       if (iUri === undefined)
         reject("");
 
-      exec(this.m_execCmd.Executable() + ` ls -d -short ${iUri.fsPath}`, (error, stdout, stderr) => {
+      exec(this.m_execCmd.Executable() + ` ls -d -short ${iUri.fsPath}` + this.m_execCmd.Credentials().join(" "), (error, stdout, stderr) => {
         if (error || stderr) {
           if (error)
             reject(error.message);
@@ -440,7 +478,7 @@ export class ClearCase {
     return new Promise<string>(
       // tslint:disable-next-line:typedef
       function (resolve, reject): void {
-        exec(this.m_execCmd.Executable() + ' -verAll', (err: Error, output: string) => {
+        exec(this.m_execCmd.Executable() + ' -verAll ' + this.m_execCmd.Credentials().join(" "), (err: Error, output: string) => {
           if (err) {
             let msg = 'ClearCase not found!';
             self.outputChannel.appendLine(msg);
@@ -508,7 +546,7 @@ export class ClearCase {
       if (path !== "") {
         path = "\"" + path + "\"";
       }
-      let cmd = this.m_execCmd.Executable() + " update " + path;
+      let cmd = this.m_execCmd.Executable() + " update " + path + " " + this.m_execCmd.Credentials().join(" ");
 
       return new Promise<string>((resolve, reject) => {
         exec(cmd, (error, stdout, stderr) => {
@@ -549,7 +587,7 @@ export class ClearCase {
     let fmt = this.configHandler.configuration.AnnotationFormatString.Value;
     let sep = " | ";
     let param = "\"" + filePath + "\"";
-    let cmd = this.m_execCmd.Executable() + " annotate -out - -nhe -fmt \"" + fmt + sep + "\" " + param;
+    let cmd = this.m_execCmd.Executable() + " annotate -out - -nhe -fmt \"" + fmt + sep + "\" " + param + " " + this.m_execCmd.Credentials().join(" ");
 
     return new Promise<string>((resolve, reject) => {
       exec(cmd, { maxBuffer: 10485760 }, (error, stdout, stderr) => {
@@ -576,7 +614,7 @@ export class ClearCase {
   }
 
   async getCurrentActivity(): Promise<string> {
-    let cmd = this.m_execCmd.Executable() + ' lsactivity -cac -fmt "%n"';
+    let cmd = this.m_execCmd.Executable() + ' lsactivity -cac -fmt "%n" ' + this.m_execCmd.Credentials().join(" ");
 
     return new Promise<string>((resolve, reject) => {
       exec(cmd, { cwd: workspace.rootPath }, (error, stdout, stderr) => {
@@ -593,7 +631,7 @@ export class ClearCase {
 
   // return view activities as QuickPickItem list
   async getQuickPickActivities(currentAcvtId: string): Promise<QuickPickItem[]> {
-    let cmd = this.m_execCmd.Executable() + " lsactivity";
+    let cmd = this.m_execCmd.Executable() + " lsactivity " + this.m_execCmd.Credentials().join(" ");
 
     return new Promise<QuickPickItem[]>((resolve, reject) => {
       exec(cmd, { maxBuffer: 10485760, cwd: workspace.rootPath }, (error, stdout, stderr) => {
@@ -659,6 +697,8 @@ export class ClearCase {
       cmd += actvID;
     else
       cmd += "-none";
+  
+    cmd += " " + this.m_execCmd.Credentials().join(" ");
 
     return new Promise<string>((resolve, reject) => {
       exec(cmd, { cwd: workspace.rootPath }, (error, stdout, stderr) => {
@@ -700,6 +740,7 @@ export class ClearCase {
     // tslint:disable-next-line:typedef
     return new Promise<void>(function (resolve, reject): void {
       self.outputChannel.appendLine(cmd.reduce(((val) => { return val + " " })));
+      cmd = cmd.concat(self.m_execCmd.Credentials());
       const command = spawn(self.m_execCmd.Executable(), cmd, { cwd: cwd, env: process.env });
 
       command.stdout.on('data', (data) => {

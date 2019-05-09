@@ -39,14 +39,24 @@ export class ccScmProvider {
     this.m_listLock = new Lock(1);
     this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
     this.m_windowChangedEvent = new EventEmitter<void>();
-    
+    if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
+      window.showInputBox({password:true,prompt:"Insert password for webview connection"}).then((passwd:string) => {
+        this.ClearCase.Password = passwd;
+        this.startExtension();
+      });
+    } else {
+      this.startExtension();
+    }
+  }
+
+  public startExtension() {
     this.m_ccHandler.checkIsView(null).then((is_view) => {
       if (is_view) {
 
         commands.executeCommand('setContext', 'vscode-clearcase:enabled', is_view);
         commands.executeCommand('setContext', 'vscode-clearcase:DynView', this.ClearCase.ViewType==ViewType.DYNAMIC);
 
-        let fileList = m_context.workspaceState.get('untrackedfilecache', []);
+        let fileList = this.m_context.workspaceState.get('untrackedfilecache', []);
         this.ClearCase.UntrackedList.parse(fileList);
 
         this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');

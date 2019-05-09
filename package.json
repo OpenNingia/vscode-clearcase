@@ -380,7 +380,7 @@
                 },
                 "vscode-clearcase.useClearDlg": {
                     "type": "boolean",
-                    "default": "true",
+                    "default": true,
                     "description": "Use clearDlg command for checkout and checking operations."
                 },
                 "vscode-clearcase.checkoutCommandArgs": {
@@ -403,10 +403,25 @@
                     "default": null,
                     "description": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`."
                 },
+                "vscode-clearcase.useRemoteClient": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable the rcleartool command usage."
+                },
                 "vscode-clearcase.cleartoolExecutable": {
                     "type": "string",
                     "default": "cleartool",
                     "description": "Set the path to the cleartool executable you want to use."
+                },
+                "vscode-clearcase.webviewUsername": {
+                    "type": "string",
+                    "default": "",
+                    "description": "The username to connect to the clearcase webview."
+                },
+                "vscode-clearcase.webviewAddress": {
+                    "type": "string",
+                    "default": "",
+                    "description": "The network address of the webview."
                 },
                 "vscode-clearcase.viewPrivateFileSuffixes": {
                     "type": "string",
