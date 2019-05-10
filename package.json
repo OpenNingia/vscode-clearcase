@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "2.4.1",
+    "version": "2.4.2-rc.5",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
@@ -413,15 +413,15 @@
                     "default": "cleartool",
                     "description": "Set the path to the cleartool executable you want to use."
                 },
-                "vscode-clearcase.webviewUsername": {
+                "vscode-clearcase.webserverUsername": {
                     "type": "string",
                     "default": "",
-                    "description": "The username to connect to the clearcase webview."
+                    "description": "The username to connect to the clearcase server."
                 },
-                "vscode-clearcase.webviewAddress": {
+                "vscode-clearcase.webserverAddress": {
                     "type": "string",
                     "default": "",
-                    "description": "The network address of the webview."
+                    "description": "The network address of the clearcase server."
                 },
                 "vscode-clearcase.viewPrivateFileSuffixes": {
                     "type": "string",

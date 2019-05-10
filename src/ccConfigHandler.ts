@@ -45,8 +45,8 @@ export class ccConfigHandler {
 			this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.m_configuration.ViewPrivateFileSuffixes);
 			this.setChangeConfigDate<string>(config, "cleartoolExecutable", this.m_configuration.CleartoolExecutable);
 			this.setChangeConfigDate<boolean>(config, "useRemoteClient", this.m_configuration.UseRemoteClient);
-			this.setChangeConfigDate<string>(config, "webviewUsername", this.m_configuration.WebviewUsername);
-			this.setChangeConfigDate<string>(config, "webviewAddress", this.m_configuration.WebviewAddress);
+			this.setChangeConfigDate<string>(config, "webviewUsername", this.m_configuration.WebserverUsername);
+			this.setChangeConfigDate<string>(config, "webviewAddress", this.m_configuration.WebserverAddress);
 			return true;
 		}
 		return false;

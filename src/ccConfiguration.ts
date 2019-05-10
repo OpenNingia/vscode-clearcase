@@ -41,8 +41,8 @@ export class ccConfiguration
 	private m_viewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
 	private m_cleartoolExecutable: ConfigurationProperty<string> = new ConfigurationProperty('cleartool');
 	private m_useRemoteClient: ConfigurationProperty<boolean> = new ConfigurationProperty(false);
-	private m_webviewUsername: ConfigurationProperty<string> = new ConfigurationProperty("");
-	private m_webviewAddress: ConfigurationProperty<string> = new ConfigurationProperty("");
+	private m_webserverUsername: ConfigurationProperty<string> = new ConfigurationProperty("");
+	private m_webserverAddress: ConfigurationProperty<string> = new ConfigurationProperty("");
 
 	public get ShowStatusbar() : ConfigurationProperty<boolean> {
 		return this.m_showStatusbar;
@@ -96,11 +96,11 @@ export class ccConfiguration
 		return this.m_useRemoteClient;
 	}
 
-	public get WebviewUsername(): ConfigurationProperty<string> {
-		return this.m_webviewUsername;
+	public get WebserverUsername(): ConfigurationProperty<string> {
+		return this.m_webserverUsername;
 	}
 
-	public get WebviewAddress(): ConfigurationProperty<string> {
-		return this.m_webviewAddress;
+	public get WebserverAddress(): ConfigurationProperty<string> {
+		return this.m_webserverAddress;
 	}
 }
