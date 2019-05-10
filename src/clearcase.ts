@@ -38,12 +38,15 @@ export class Cleartool implements CleartoolIf{
   private m_password: string;
   private m_address: string;
   private m_executable: string;
-  public constructor(u:string="",p:string="",a:string="") {
+  public constructor(u:string="",p:string="",a:string="",e:string="") {
     this.m_address = a;
     this.m_password = p;
     this.m_username = u;
-    this.m_executable = "";
-    this.Executable("cleartool");
+    if( e !== "" ) {
+      this.Executable(e);
+    } else {
+      this.Executable("cleartool");
+    }
   }
 
   public Executable(val?:string|undefined): string {
@@ -85,12 +88,11 @@ export class ClearCase {
     if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
       this.m_execCmd = new Cleartool(this.configHandler.configuration.WebserverUsername.Value,
                                      this.m_webviewPassword,
-                                     this.configHandler.configuration.WebserverAddress.Value);
+                                     this.configHandler.configuration.WebserverAddress.Value,
+                                     this.configHandler.configuration.CleartoolExecutable.Value);
     } else {
       this.m_execCmd = new Cleartool();
     }
-    this.m_execCmd.Executable(this.configHandler.configuration.CleartoolExecutable.Value);
-    
     this.configHandler.onDidChangeConfiguration((datas: string[]) => {
       let hasChangedUseRemote = datas.find((val) => {
         return (val === "useRemoteClient");
@@ -131,7 +133,8 @@ export class ClearCase {
     if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
       this.m_execCmd = new Cleartool(this.configHandler.configuration.WebserverUsername.Value,
                                      this.m_webviewPassword,
-                                     this.configHandler.configuration.WebserverAddress.Value);
+                                     this.configHandler.configuration.WebserverAddress.Value,
+                                     this.configHandler.configuration.CleartoolExecutable.Value);
     }
   }
 
