@@ -42,11 +42,8 @@ export class ccScmProvider {
     if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
       window.showInputBox({password:true,prompt:"Insert password for webview connection"}).then(async (passwd:string) => {
         this.ClearCase.Password = passwd;
-        if( true === await this.ClearCase.loginWebview() ) {
-          this.startExtension();
-        } else {
-          window.showWarningMessage("Could not login to webview. For more information see outputchannel");
-        }
+        await this.ClearCase.loginWebview();
+        this.startExtension();
       });
     } else {
       this.startExtension();

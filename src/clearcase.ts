@@ -67,7 +67,7 @@ export class ClearCase {
   private readonly LS_VIEW: string[] = ['lsview', '-cview', '-long'];
 
   private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
-  private readonly rxViewAttr = new RegExp('(view atrributes\:)([\,\t \w\d]*)(webview)', 'i');
+  private readonly rxViewAttr = new RegExp('(view attributes\\:)([\\,\\t \\w\\d]*)(webview)', 'i');
 
   private m_isCCView: boolean = false;
   private m_viewType: ViewType;
