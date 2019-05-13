@@ -146,14 +146,20 @@ export class ClearCase {
    */
   public async checkIsView(editor: TextEditor): Promise<boolean> {
     this.m_retryViewDetection = true;
-    this.m_viewType = await this.detectViewType();
-    if( this.m_viewType == ViewType.WEBVIEW )
-    {
-      this.m_viewType = ViewType.SNAPSHOT;
+    try {
+      this.m_viewType = await this.detectViewType();
+      if( this.m_viewType == ViewType.WEBVIEW )
+      {
+        this.m_viewType = ViewType.SNAPSHOT;
+      }
+      this.outputChannel.appendLine(`Detected view type ${this.m_viewType}`);
+      this.m_isCCView = (this.m_viewType!==ViewType.UNKNOWN);
+    } catch (err) {
+      this.outputChannel.appendLine("Error while testing for view type.");
+      this.m_isCCView === false;
     }
-
-    this.m_isCCView = (this.m_viewType!==ViewType.UNKNOWN);
     return this.m_isCCView;
+
   }
 
   public async loginWebview(): Promise<boolean> {
