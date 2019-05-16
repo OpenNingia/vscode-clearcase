@@ -293,7 +293,7 @@ export class ClearCase {
     let lscoArgTmpl = this.configHandler.configuration.FindCheckoutsCommand.Value;
     let results: string[] = [];
     let resNew: string[] = [];
-    let wsf: string[] = workspace.workspaceFolders[0].uri.fsPath;
+    let wsf = workspace.workspaceFolders[0].uri.fsPath;
     try {
       let cmdOpts = lscoArgTmpl.split(' ');
       await this.runCleartoolCommand(["lsco"].concat(cmdOpts), wsf, (data: string[]) => {
