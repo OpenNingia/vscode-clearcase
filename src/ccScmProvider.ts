@@ -14,6 +14,7 @@ import { unlink, exists, statSync } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
+import { exec, ChildProcess } from "child_process";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -243,6 +244,63 @@ export class ccScmProvider {
       });
   }
 
+  public async runEditConfigSpec() {
+    let wsf = workspace.workspaceFolders[0].uri.fsPath;
+    process.env.VISUAL = 'Code -r';
+    var options = {
+      cwd: wsf,
+      env: process.env
+    };
+    let child: ChildProcess;
+    let saveInput = window.createInputBox();
+    saveInput.title = 'Save ConfigSpec? [yes]';
+    saveInput.placeholder = 'yes';
+    saveInput.ignoreFocusOut = true;
+    let result = new Promise<string>((resolve, reject) => {
+      child = exec('cleartool edcs', options, (error, stdout, stderr) => {
+        if (error || stderr) {
+          if (error) {
+            this.outputChannel.appendLine(`cleartool edcs error: ${error.message}`);
+            reject(error.message);
+          } else {
+            this.outputChannel.appendLine(`cleartool edcs stderr: ${stderr}`);
+            reject(stderr);
+          }
+        } else {
+          resolve(stdout);
+        }
+      });
+    });
+    saveInput.show();
+    // Callback on promise:
+    result.then(function(results) {
+      this.outputChannel.appendLine(`cleartool edcs return: ${results}`);
+    });
+    result.catch(function (results) {
+      this.outputChannel.appendLine(`cleartool edcs error return: ${results}`);
+      saveInput.hide()
+    })
+    let answer = 'no';
+    // Callback on accept
+    saveInput.onDidAccept(function(event) {
+      if (saveInput.value === 'yes' || saveInput.value === '') {
+        answer = 'yes';
+      } else {
+        answer = 'no';
+      }
+      saveInput.hide()
+    })
+    saveInput.onDidHide(function(event) {
+      if (answer === 'yes') {
+        window.showInformationMessage('ConfigSpec saved.')
+      } else {
+        window.showInformationMessage('Config spec not saved.')
+      }
+      child.stdin.write(answer)
+      child.stdin.end()
+    })
+  }
+
   public get onWindowChanged(): Event<void> {
     return this.m_windowChangedEvent.event;
   }
@@ -407,6 +465,11 @@ export class ccScmProvider {
     this.m_disposables.push(
       commands.registerCommand('extension.ccDeleteViewPrivate', (fileObj: ccScmResource) => {
         this.deleteViewPrivateFile(fileObj);
+      }, this));
+    
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccEditConfigSpec', () => {
+        this.runEditConfigSpec();
       }, this));
   }
 
