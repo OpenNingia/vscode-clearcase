@@ -292,16 +292,25 @@ export class ClearCase {
   public async findCheckouts(): Promise<string[]> {
     let lscoArgTmpl = this.configHandler.configuration.FindCheckoutsCommand.Value;
     let results: string[] = [];
+    let resNew: string[] = [];
+    let wsf: string[] = workspace.workspaceFolders[0].uri.fsPath;
     try {
       let cmdOpts = lscoArgTmpl.split(' ');
-      await this.runCleartoolCommand(["lsco"].concat(cmdOpts), workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+      await this.runCleartoolCommand(["lsco"].concat(cmdOpts), wsf, (data: string[]) => {
         results = results.concat(data);
+      });
+      results.forEach((e) => {
+        if (e.startsWith("\\")) {
+          resNew.push(e.replace("\\", wsf.toUpperCase()[0] + ":\\"))
+        } else {
+          resNew.push(e)
+        }
       });
     }
     catch (error) {
       this.outputChannel.appendLine(error);
     }
-    return results;
+    return resNew;
   }
 
   /**
