@@ -243,6 +243,39 @@ export class ccScmProvider {
       });
   }
 
+  public async editConfigSpec() {
+    let wsf = workspace.workspaceFolders[0].uri.fsPath;
+    // create and configure input box:
+    let saveInput = window.createInputBox();
+    let answer = 'no';
+    saveInput.title = 'Save ConfigSpec? [yes]';
+    saveInput.placeholder = 'yes';
+    saveInput.ignoreFocusOut = true;
+    // Call cleartool:
+    let child = this.ClearCase.runClearTooledcs(wsf, saveInput);
+
+    saveInput.show();
+    // Callback on accept:
+    saveInput.onDidAccept(function(event) {
+      if (saveInput.value === 'yes' || saveInput.value === '') {
+        answer = 'yes';
+      } else {
+        answer = 'no';
+      }
+      saveInput.hide()
+    })
+    // Callback on ESC key:
+    saveInput.onDidHide(function(event) {
+      if (answer === 'yes') {
+        window.showInformationMessage('ConfigSpec saved.')
+      } else {
+        window.showInformationMessage('Config spec not saved.')
+      }
+      child.stdin.write(answer)
+      child.stdin.end()
+    })
+  }
+
   public get onWindowChanged(): Event<void> {
     return this.m_windowChangedEvent.event;
   }
@@ -407,6 +440,11 @@ export class ccScmProvider {
     this.m_disposables.push(
       commands.registerCommand('extension.ccDeleteViewPrivate', (fileObj: ccScmResource) => {
         this.deleteViewPrivateFile(fileObj);
+      }, this));
+    
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccEditConfigSpec', () => {
+        this.editConfigSpec();
       }, this));
   }
 
