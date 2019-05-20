@@ -1,11 +1,11 @@
 'use strict';
-import { exec, spawn } from 'child_process';
+import { exec, spawn, ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as fsPromise from 'fs-promise';
 import { dirname, join } from 'path';
 
 import * as tmp from 'tmp';
-import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace } from 'vscode';
+import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace, InputBox } from 'vscode';
 import { ccAnnotationController } from './ccAnnotateController';
 import { ccConfigHandler } from './ccConfigHandler';
 import { MappedList } from './mappedlist';
@@ -756,5 +756,44 @@ export class ClearCase {
     });
 
     return viewType;
+  }
+
+  /**
+   * Run the `ct edcs` command and return handles to answer with yes / no.
+   * @param baseFolder a string with the base folder for `ct edcs` operation
+   * @param dialogBox a reference to a vs code InputBox for problem handling
+   * @returns ChildProcess
+   */
+  public runClearTooledcs(baseFolder: string, dialogBox: InputBox): ChildProcess {
+    process.env.VISUAL = 'Code -r';
+    var options = {
+      cwd: baseFolder,
+      env: process.env
+    };
+    let child: ChildProcess;
+    let result = new Promise<string>((resolve, reject) => {
+      child = exec('cleartool edcs', options, (error, stdout, stderr) => {
+        if (error || stderr) {
+          if (error) {
+            this.outputChannel.appendLine(`cleartool edcs error: ${error.message}`);
+            reject(error.message);
+          } else {
+            this.outputChannel.appendLine(`cleartool edcs stderr: ${stderr}`);
+            reject(stderr);
+          }
+        } else {
+          resolve(stdout);
+        }
+      });
+    });
+    // Callbacks on promise:
+    result.then(function(results) {
+      this.outputChannel.appendLine(`cleartool edcs return: ${results}`);
+    });
+    result.catch(function (results) {
+      this.outputChannel.appendLine(`cleartool edcs error return: ${results}`);
+      dialogBox.hide()
+    })
+    return child;
   }
 }

@@ -14,7 +14,6 @@ import { unlink, exists, statSync } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
-import { exec, ChildProcess } from "child_process";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -244,44 +243,19 @@ export class ccScmProvider {
       });
   }
 
-  public async runEditConfigSpec() {
+  public async editConfigSpec() {
     let wsf = workspace.workspaceFolders[0].uri.fsPath;
-    process.env.VISUAL = 'Code -r';
-    var options = {
-      cwd: wsf,
-      env: process.env
-    };
-    let child: ChildProcess;
+    // create and configure input box:
     let saveInput = window.createInputBox();
+    let answer = 'no';
     saveInput.title = 'Save ConfigSpec? [yes]';
     saveInput.placeholder = 'yes';
     saveInput.ignoreFocusOut = true;
-    let result = new Promise<string>((resolve, reject) => {
-      child = exec('cleartool edcs', options, (error, stdout, stderr) => {
-        if (error || stderr) {
-          if (error) {
-            this.outputChannel.appendLine(`cleartool edcs error: ${error.message}`);
-            reject(error.message);
-          } else {
-            this.outputChannel.appendLine(`cleartool edcs stderr: ${stderr}`);
-            reject(stderr);
-          }
-        } else {
-          resolve(stdout);
-        }
-      });
-    });
+    // Call cleartool:
+    let child = this.ClearCase.runClearTooledcs(wsf, saveInput);
+
     saveInput.show();
-    // Callback on promise:
-    result.then(function(results) {
-      this.outputChannel.appendLine(`cleartool edcs return: ${results}`);
-    });
-    result.catch(function (results) {
-      this.outputChannel.appendLine(`cleartool edcs error return: ${results}`);
-      saveInput.hide()
-    })
-    let answer = 'no';
-    // Callback on accept
+    // Callback on accept:
     saveInput.onDidAccept(function(event) {
       if (saveInput.value === 'yes' || saveInput.value === '') {
         answer = 'yes';
@@ -290,6 +264,7 @@ export class ccScmProvider {
       }
       saveInput.hide()
     })
+    // Callback on ESC key:
     saveInput.onDidHide(function(event) {
       if (answer === 'yes') {
         window.showInformationMessage('ConfigSpec saved.')
@@ -469,7 +444,7 @@ export class ccScmProvider {
     
     this.m_disposables.push(
       commands.registerCommand('extension.ccEditConfigSpec', () => {
-        this.runEditConfigSpec();
+        this.editConfigSpec();
       }, this));
   }
 
