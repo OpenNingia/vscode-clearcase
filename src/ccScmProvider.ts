@@ -39,26 +39,28 @@ export class ccScmProvider {
   }
 
   public async init(): Promise<boolean> {
-    this.m_listLock = new Lock(1);
-    this.m_ccHandler = new ClearCase(this.m_context, this.configHandler, this.outputChannel);
-    this.m_windowChangedEvent = new EventEmitter<void>();
-    if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
-      window.showInputBox({password:true,prompt:"Insert password for webview connection"}).then(async (passwd:string) => {
-        this.ClearCase.Password = passwd;
-        await this.ClearCase.loginWebview();
+    return new Promise<boolean>(async (resolve, reject) => {
+      this.m_listLock = new Lock(1);
+      this.m_ccHandler = new ClearCase(this.m_context, this.configHandler, this.outputChannel);
+      this.m_windowChangedEvent = new EventEmitter<void>();
+      if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
+        window.showInputBox({password:true,prompt:"Insert password for webview connection",ignoreFocusOut:true}).then(async (passwd:string) => {
+          this.ClearCase.Password = passwd;
+          await this.ClearCase.loginWebview();
+          try {
+            resolve(await this.startExtension());
+          } catch(err) {
+            reject(false);
+          }
+        });
+      } else {
         try {
-          return await this.startExtension();
+          resolve(await this.startExtension());
         } catch(err) {
-          return false;
+          reject(false);
         }
-      });
-    } else {
-      try {
-        return await this.startExtension();
-      } catch(err) {
-        return false;
       }
-    }
+    });
   }
 
   public startExtension(): Promise<boolean> {
