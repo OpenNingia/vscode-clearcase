@@ -23,25 +23,29 @@ async function _activate(context: vscode.ExtensionContext, disposables: vscode.D
     let configHandler = new ccConfigHandler(context, disposables);
     
     let provider = new ccScmProvider(context, disposables, outputChannel, configHandler);
-    if( true === await provider.init() ) {
-        provider.bindEvents();
-        provider.bindCommands();
+    try {
+        if( true === await provider.init() ) {
+            provider.bindEvents();
+            provider.bindCommands();
 
-        provider.onWindowChanged(() => {
-            vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.ClearCase.IsView);
-            vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
-        }, provider);
+            provider.onWindowChanged(() => {
+                vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.ClearCase.IsView);
+                vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
+            }, provider);
 
-        let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.ClearCase);
-        uiInfo.createStatusbarItem();
-        uiInfo.bindEvents();
-        uiInfo.initialQuery();
-
-        provider.ClearCase.onCommandExecuted(() => {
+            let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.ClearCase);
+            uiInfo.createStatusbarItem();
+            uiInfo.bindEvents();
             uiInfo.initialQuery();
-        }, uiInfo);
-    } else {
-        vscode.window.showWarningMessage("VSCode-Clearcase extension could not be started");
+
+            provider.ClearCase.onCommandExecuted(() => {
+                uiInfo.initialQuery();
+            }, uiInfo);
+        } else {
+            vscode.window.showWarningMessage("VSCode-Clearcase extension could not be started");
+        }
+    } catch {
+        vscode.window.showWarningMessage("VSCode-Clearcase extension could not be started (catched)");
     }
 }
 
