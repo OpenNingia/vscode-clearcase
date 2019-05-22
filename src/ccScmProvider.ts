@@ -9,11 +9,12 @@ import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccContentProvider } from "./ccContentProvider";
-import { join, dirname, basename } from "path";
 import { unlink, exists, statSync } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
+
+import * as path from 'path';
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -35,62 +36,79 @@ export class ccScmProvider {
     private m_disposables: Disposable[],
     private outputChannel: OutputChannel,
     private configHandler: ccConfigHandler) {
+  }
 
+  public async init(): Promise<boolean> {
     this.m_listLock = new Lock(1);
-    this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
+    this.m_ccHandler = new ClearCase(this.m_context, this.configHandler, this.outputChannel);
     this.m_windowChangedEvent = new EventEmitter<void>();
     if( this.configHandler.configuration.UseRemoteClient.Value === true ) {
       window.showInputBox({password:true,prompt:"Insert password for webview connection"}).then(async (passwd:string) => {
         this.ClearCase.Password = passwd;
         await this.ClearCase.loginWebview();
-        this.startExtension();
+        try {
+          return await this.startExtension();
+        } catch(err) {
+          return false;
+        }
       });
     } else {
-      this.startExtension();
+      try {
+        return await this.startExtension();
+      } catch(err) {
+        return false;
+      }
     }
   }
 
-  public startExtension() {
-    this.m_ccHandler.checkIsView(null).then((is_view) => {
-      if (is_view) {
+  public startExtension(): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+      this.m_ccHandler.checkIsView(null).then((is_view) => {
+        if (is_view) {
 
-        commands.executeCommand('setContext', 'vscode-clearcase:enabled', is_view);
-        commands.executeCommand('setContext', 'vscode-clearcase:DynView', this.ClearCase.ViewType==ViewType.DYNAMIC);
+          commands.executeCommand('setContext', 'vscode-clearcase:enabled', is_view);
+          commands.executeCommand('setContext', 'vscode-clearcase:DynView', this.ClearCase.ViewType==ViewType.DYNAMIC);
 
-        let fileList = this.m_context.workspaceState.get('untrackedfilecache', []);
-        this.ClearCase.UntrackedList.parse(fileList);
+          let fileList = this.m_context.workspaceState.get('untrackedfilecache', []);
+          this.ClearCase.UntrackedList.parse(fileList);
 
-        this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
-        this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
-        this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
-        this.m_ccCheckedoutGrp.hideWhenEmpty = true;
-        this.m_ccUntrackedGrp.hideWhenEmpty = true;
-        this.m_ccContentProvider = new ccContentProvider(this.m_ccHandler);
-        
-        this.m_context.subscriptions.push(this.m_ccScm);
-        
-        this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
-        this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
-        this.m_ccScm.quickDiffProvider = this.m_ccContentProvider;
-        
-        this.m_ignoreFileEv = new ModelHandler();
-        this.m_ignoreFileEv.init();
-        this.m_ignores = new IgnoreHandler(this.m_ignoreFileEv);
-        this.m_ignores.OnFilterRefreshed.event(() => {
+          this.m_ccScm = scm.createSourceControl('cc', 'ClearCase');
+          this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
+          this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
+          this.m_ccCheckedoutGrp.hideWhenEmpty = true;
+          this.m_ccUntrackedGrp.hideWhenEmpty = true;
+          this.m_ccContentProvider = new ccContentProvider(this.m_ccHandler);
+          
+          this.m_context.subscriptions.push(this.m_ccScm);
+          
+          this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
+          this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
+          this.m_ccScm.quickDiffProvider = this.m_ccContentProvider;
+          
+          this.m_ignoreFileEv = new ModelHandler();
+          this.m_ignoreFileEv.init();
+          this.m_ignores = new IgnoreHandler(this.m_ignoreFileEv);
+          this.m_ignores.OnFilterRefreshed.event(() => {
+            this.filterUntrackedList();
+          }, this);
+
+          this.ClearCase.onCommandExecuted((evArgs: Uri) => {
+            this.handleChangeFiles(evArgs);
+          });
+
+          this.bindScmCommand();
+
+          this.m_isUpdatingUntracked = false;
+
+          this.updateCheckedOutList();
           this.filterUntrackedList();
-        }, this);
-
-        this.ClearCase.onCommandExecuted((evArgs: Uri) => {
-          this.handleChangeFiles(evArgs);
-        });
-
-        this.bindScmCommand();
-
-        this.m_isUpdatingUntracked = false;
-
-        this.updateCheckedOutList();
-        this.filterUntrackedList();
-      }
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      }).catch(() => {
+        reject(false);
+      });
     });
   }
 
@@ -140,7 +158,7 @@ export class ccScmProvider {
             this.ClearCase.UntrackedList.addString(fileObj.fsPath);
             this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
           }
-          let ign = this.m_ignores.getFolderIgnore(dirname(fileObj.fsPath));
+          let ign = this.m_ignores.getFolderIgnore(path.dirname(fileObj.fsPath));
           if (ign !== null && ign.Ignore.ignores(fileObj.fsPath) === false) {
             filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
             changed[1] = true;
@@ -224,7 +242,7 @@ export class ccScmProvider {
       let ign = this.m_ignores.getFolderIgnore(root);
       let d = this.ClearCase.UntrackedList.getStringsByKey(root.fsPath).filter((val) => {
         // if no .ccignore file is present, show all files
-        if( ign === null || (val !== "" && ign.Ignore.ignores(val) === false) )
+        if( ign === null || (val !== "" && ign.Ignore.ignores(path.relative(root.fsPath,val)) === false) )
         {
           return val;
         }
@@ -492,7 +510,7 @@ export class ccScmProvider {
 
       let prev_uri = await this.m_ccContentProvider.provideOriginalResource(fileObj);
       if( prev_uri !== undefined ) {
-        let fn = basename(fileObj.fsPath);
+        let fn = path.basename(fileObj.fsPath);
         let { version } = fromCcUri(prev_uri);
 
         commands.executeCommand('vscode.diff', prev_uri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
