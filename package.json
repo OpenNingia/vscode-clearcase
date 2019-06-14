@@ -115,6 +115,15 @@
                 }
             },
             {
+                "command": "extension.ccEditConfigSpec",
+                "title": "Edit config spec",
+                "category": "Clearcase",
+                "icon": {
+                    "light": "icons/light/icon-repo.svg",
+                    "dark": "icons/dark/icon-repo.svg"
+                }
+            },
+            {
                 "command": "extension.ccRefreshViewPrivateFileList",
                 "title": "Refresh view private file list",
                 "category": "Clearcase",
@@ -259,6 +268,11 @@
                 },
                 {
                     "command": "extension.ccRefreshFileList",
+                    "group": "navigation",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled"
+                },
+                {
+                    "command": "extension.ccEditConfigSpec",
                     "group": "navigation",
                     "when": "scmProvider == cc && vscode-clearcase:enabled"
                 },
