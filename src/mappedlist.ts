@@ -1,4 +1,5 @@
 import { workspace } from "vscode";
+import { fs } from "mz";
 
 class FileType {
   public constructor(
@@ -121,6 +122,23 @@ export class MappedList {
           val.found = false;
           return val;
         }));
+      }
+    }
+  }
+
+  public updateEntryExistsOnFileSystem() {
+    if( this.m_untrackedList !== null ) {
+      const keys = this.m_untrackedList.keys();
+      for (let key of keys) {
+        let objs = this.m_untrackedList.get(key).filter((val) => {
+          try {
+            fs.accessSync(val.name);
+            val.found = true;
+          } catch {
+            val.found = false;
+          }
+        });
+        this.m_untrackedList.set(key, objs);
       }
     }
   }
