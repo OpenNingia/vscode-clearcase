@@ -31,13 +31,15 @@ export class IgnoreHandler {
 
   public getFolderIgnore(path: Uri | string): FileIgnore | null {
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      if (typeof path == "string") {
-        if (path.indexOf(this.fileIgnores[i].Path.fsPath) == 0 && this.fileIgnores[i].HasIgnore === true)
-          return this.fileIgnores[i];
+      let p:string = "";
+      if (path instanceof Uri) {
+        p = path.fsPath;
+      } else {
+        p = path;
       }
-      else {
-        if (path.fsPath.indexOf(this.fileIgnores[i].Path.fsPath) == 0 && this.fileIgnores[i].HasIgnore === true)
-          return this.fileIgnores[i];
+      p += (p.substr(-1, 1) !== sep) ? sep : "";
+      if (p.indexOf(this.fileIgnores[i].Path.fsPath) == 0 && this.fileIgnores[i].HasIgnore === true) {
+        return this.fileIgnores[i];
       }
     }
     return null;
