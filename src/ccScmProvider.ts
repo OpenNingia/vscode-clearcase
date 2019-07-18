@@ -9,7 +9,7 @@ import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccContentProvider } from "./ccContentProvider";
-import { join, dirname, basename } from "path";
+import { join, dirname, basename, relative } from "path";
 import { unlink, exists, statSync } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
@@ -210,7 +210,8 @@ export class ccScmProvider {
       let ign = this.m_ignores.getFolderIgnore(root);
       let d = this.ClearCase.UntrackedList.getStringsByKey(root.fsPath).filter((val) => {
         // if no .ccignore file is present, show all files
-        if( ign === null || (val !== "" && ign.Ignore.ignores(val) === false) )
+        
+        if( ign === null || (val !== "" && ign.Ignore.ignores(relative(root.fsPath, val)) === false) )
         {
           return val;
         }
