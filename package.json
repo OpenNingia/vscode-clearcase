@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "2.4.1",
+    "version": "2.4.2",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
@@ -115,6 +115,15 @@
                 }
             },
             {
+                "command": "extension.ccEditConfigSpec",
+                "title": "Edit config spec",
+                "category": "Clearcase",
+                "icon": {
+                    "light": "icons/light/icon-repo.svg",
+                    "dark": "icons/dark/icon-repo.svg"
+                }
+            },
+            {
                 "command": "extension.ccRefreshViewPrivateFileList",
                 "title": "Refresh view private file list",
                 "category": "Clearcase",
@@ -217,6 +226,11 @@
                     "command": "extension.ccUpdateFile",
                     "group": "cc",
                     "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView"
+                },
+                {
+                    "command": "extension.ccMkElement",
+                    "group": "cc",
+                    "when": "vscode-clearcase:enabled"
                 }
             ],
             "editor/context": [
@@ -259,6 +273,11 @@
                 },
                 {
                     "command": "extension.ccRefreshFileList",
+                    "group": "navigation",
+                    "when": "scmProvider == cc && vscode-clearcase:enabled"
+                },
+                {
+                    "command": "extension.ccEditConfigSpec",
                     "group": "navigation",
                     "when": "scmProvider == cc && vscode-clearcase:enabled"
                 },

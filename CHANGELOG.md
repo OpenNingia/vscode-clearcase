@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 2.4.3
+* Fix handling of network drive paths in the scm panel.
+
 ### 2.4.2
 * Security update
 
