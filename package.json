@@ -2,7 +2,7 @@
     "name": "vscode-clearcase",
     "displayName": "Unofficial ClearCase SCM Commands",
     "description": "Unofficial support for IBM Rational ClearCase most common commands",
-    "version": "2.5.3",
+    "version": "2.5.4",
     "publisher": "OpenNingia",
     "license": "MIT",
     "repository": {
