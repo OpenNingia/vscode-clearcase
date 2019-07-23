@@ -226,6 +226,11 @@
                     "command": "extension.ccUpdateFile",
                     "group": "cc",
                     "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView"
+                },
+                {
+                    "command": "extension.ccMkElement",
+                    "group": "cc",
+                    "when": "vscode-clearcase:enabled"
                 }
             ],
             "editor/context": [
