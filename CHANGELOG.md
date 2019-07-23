@@ -1,6 +1,6 @@
 ## Release Notes
 
-### 2.4.4
+### 2.5.0
 * Improved handling of untracked files
 * Added new Context entry `create versioned object`
 * Added command + button to edit configspec of current view
