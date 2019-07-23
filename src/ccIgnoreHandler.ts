@@ -1,5 +1,5 @@
 import { workspace, WorkspaceFolder, Uri, EventEmitter } from "vscode";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, statSync } from "fs";
 import { join, dirname, sep } from "path";
 import ignore from "ignore";
 import { Model, ModelHandler } from "./model";
@@ -25,20 +25,21 @@ export class IgnoreHandler {
       l_m.onWorkspaceChanged(this.refreshFilter, this);
       l_m.onWorkspaceCreated(this.refreshFilter, this);
       l_m.onWorkspaceDeleted(this.removeFilter, this);
-      this.fileIgnores.push(new FileIgnore(folder.uri));
+      let dir = this.appendSeparator(folder.uri.fsPath);
+      this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
     });
   }
 
   public getFolderIgnore(path: Uri | string): FileIgnore | null {
     for (let i = 0; i < this.fileIgnores.length; i++) {
       let p:string = "";
-      if (path instanceof Uri) {
-        p = path.fsPath;
-      } else {
-        p = path;
+      if (typeof path == "string") {
+        let t = this.appendSeparator(path);
       }
-      p += (p.substr(-1, 1) !== sep) ? sep : "";
-      if (p.indexOf(this.fileIgnores[i].Path.fsPath) == 0 && this.fileIgnores[i].HasIgnore === true) {
+      else {
+        let t = this.appendSeparator(path.fsPath);
+      }
+      if (t.indexOf(this.fileIgnores[i].PathStr) == 0 && this.fileIgnores[i].HasIgnore === true)
         return this.fileIgnores[i];
       }
     }
@@ -46,9 +47,7 @@ export class IgnoreHandler {
   }
 
   public refreshFilter(fileObj:Uri) {
-    let dir = dirname(fileObj.fsPath);
-    if( dir.substr(-1, 1) !== sep )
-      dir += sep;
+    let dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if(this.fileIgnores[i].PathStr == dir) {
         this.fileIgnores[i] = new FileIgnore(Uri.file(dir));
@@ -61,9 +60,7 @@ export class IgnoreHandler {
   }
 
   public removeFilter(fileObj:Uri) {
-    let dir = dirname(fileObj.fsPath);
-    if( dir.substr(-1, 1) !== sep )
-      dir += sep;
+    let dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if(this.fileIgnores[i].PathStr == dir) {
         this.fileIgnores.splice(i, 1);
@@ -71,6 +68,15 @@ export class IgnoreHandler {
         return;
       }
     }
+  }
+
+  public appendSeparator(path:string): string {
+    const ps = statSync(path);
+    if( ps.isFile() === true )
+      path = dirname(path);
+    if( path.substr(-1, 1) !== sep )
+      return path + sep;
+    return path;
   }
 }
 
