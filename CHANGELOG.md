@@ -1,5 +1,10 @@
 ## Release Notes
 
+### 2.4.4
+* Improved handling of untracked files
+* Added new Context entry `create versioned object`
+* Added command + button to edit configspec of current view
+
 ### 2.4.3
 * Fix handling of network drive paths in the scm panel.
 
