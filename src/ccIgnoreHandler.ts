@@ -38,9 +38,9 @@ export class IgnoreHandler {
       }
       else {
         let t = this.appendSeparator(path.fsPath);
-      }
-      if (t.indexOf(this.fileIgnores[i].PathStr) == 0 && this.fileIgnores[i].HasIgnore === true)
-        return this.fileIgnores[i];
+      
+        if (t.indexOf(this.fileIgnores[i].PathStr) == 0 && this.fileIgnores[i].HasIgnore === true)
+            return this.fileIgnores[i];
       }
     }
     return null;
