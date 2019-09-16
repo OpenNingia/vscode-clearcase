@@ -9,11 +9,12 @@ import { ccConfigHandler } from "./ccConfigHandler";
 import { ccAnnotationController } from "./ccAnnotateController";
 import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
 import { ccContentProvider } from "./ccContentProvider";
-import { join, dirname, basename } from "path";
 import { unlink, exists, statSync } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
+
+import * as path from 'path';
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -126,7 +127,7 @@ export class ccScmProvider {
             this.ClearCase.UntrackedList.addString(fileObj.fsPath);
             this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
           }
-          let ign = this.m_ignores.getFolderIgnore(dirname(fileObj.fsPath));
+          let ign = this.m_ignores.getFolderIgnore(path.dirname(fileObj.fsPath));
           if (ign !== null && ign.Ignore.ignores(fileObj.fsPath) === false) {
             filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
             changed[1] = true;
@@ -144,6 +145,11 @@ export class ccScmProvider {
       }
     }
     this.m_listLock.release();
+  }
+
+  public async cleanUntrackedList() {
+    this.ClearCase.UntrackedList.updateEntryExistsOnFileSystem();
+    this.ClearCase.UntrackedList.cleanMap();
   }
 
   public async handleDeleteFiles(fileObj: Uri) {
@@ -210,7 +216,7 @@ export class ccScmProvider {
       let ign = this.m_ignores.getFolderIgnore(root);
       let d = this.ClearCase.UntrackedList.getStringsByKey(root.fsPath).filter((val) => {
         // if no .ccignore file is present, show all files
-        if( ign === null || (val !== "" && ign.Ignore.ignores(val) === false) )
+        if( ign === null || (val !== "" && ign.Ignore.ignores(path.relative(root.fsPath,val)) === false) )
         {
           return val;
         }
@@ -241,6 +247,39 @@ export class ccScmProvider {
           }))
         }
       });
+  }
+
+  public async editConfigSpec() {
+    let wsf = workspace.workspaceFolders[0].uri.fsPath;
+    // create and configure input box:
+    let saveInput = window.createInputBox();
+    let answer = 'no';
+    saveInput.title = 'Save ConfigSpec? [yes]';
+    saveInput.placeholder = 'yes';
+    saveInput.ignoreFocusOut = true;
+    // Call cleartool:
+    let child = this.ClearCase.runClearTooledcs(wsf, saveInput);
+
+    saveInput.show();
+    // Callback on accept:
+    saveInput.onDidAccept(function(event) {
+      if (saveInput.value === 'yes' || saveInput.value === '') {
+        answer = 'yes';
+      } else {
+        answer = 'no';
+      }
+      saveInput.hide()
+    })
+    // Callback on ESC key:
+    saveInput.onDidHide(function(event) {
+      if (answer === 'yes') {
+        window.showInformationMessage('ConfigSpec saved.')
+      } else {
+        window.showInformationMessage('Config spec not saved.')
+      }
+      child.stdin.write(answer)
+      child.stdin.end()
+    })
   }
 
   public get onWindowChanged(): Event<void> {
@@ -408,6 +447,11 @@ export class ccScmProvider {
       commands.registerCommand('extension.ccDeleteViewPrivate', (fileObj: ccScmResource) => {
         this.deleteViewPrivateFile(fileObj);
       }, this));
+    
+    this.m_disposables.push(
+      commands.registerCommand('extension.ccEditConfigSpec', () => {
+        this.editConfigSpec();
+      }, this));
   }
 
   public bindEvents() {
@@ -478,7 +522,7 @@ export class ccScmProvider {
 
       let prev_uri = await this.m_ccContentProvider.provideOriginalResource(fileObj);
       if( prev_uri !== undefined ) {
-        let fn = basename(fileObj.fsPath);
+        let fn = path.basename(fileObj.fsPath);
         let { version } = fromCcUri(prev_uri);
 
         commands.executeCommand('vscode.diff', prev_uri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
@@ -487,8 +531,8 @@ export class ccScmProvider {
   }
 
   public async updateUntrackedListWFile(fileObj:Uri) {
-    let isViewPrv = await this.ClearCase.isClearcaseObject(fileObj);
-    if( isViewPrv === false ) {
+    let isCCObject = await this.ClearCase.isClearcaseObject(fileObj);
+    if( isCCObject === false ) {
       let wsf = workspace.getWorkspaceFolder(fileObj);
       this.ClearCase.UntrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
       this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
