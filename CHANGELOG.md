@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 2.5.4
+* Fixed api to work with vscode 1.39.0, due to some changes in implementation now the extension only works with the first opened workspace
+
 ### 2.5.3
 * Improved handling of untracked files
 * Added new Context entry `create versioned object`
