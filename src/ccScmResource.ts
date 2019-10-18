@@ -58,8 +58,6 @@ export class ccScmResource implements SourceControlResourceState {
 		const tooltip = this.tooltip;
 		const strikeThrough = undefined;
 		const faded = false;
-		const letter = this.letter;
-		const color = this.color;
 
 		return { strikeThrough, faded, tooltip, light, dark};
 	}

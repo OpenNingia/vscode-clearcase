@@ -764,7 +764,7 @@ export class ClearCase {
    * @param dialogBox a reference to a vs code InputBox for problem handling
    * @returns ChildProcess
    */
-  public runClearTooledcs(baseFolder: string, dialogBox: InputBox): ChildProcess {
+  public runClearTooledcs(baseFolder: string): ChildProcess {
     process.env.VISUAL = 'Code -r';
     var options = {
       cwd: baseFolder,
@@ -792,7 +792,6 @@ export class ClearCase {
     });
     result.catch(function (results) {
       this.outputChannel.appendLine(`cleartool edcs error return: ${results}`);
-      dialogBox.hide()
     })
     return child;
   }
