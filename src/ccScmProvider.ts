@@ -252,34 +252,18 @@ export class ccScmProvider {
   public async editConfigSpec() {
     let wsf = workspace.workspaceFolders[0].uri.fsPath;
     // create and configure input box:
-    let saveInput = window.createInputBox();
-    let answer = 'no';
-    saveInput.title = 'Save ConfigSpec? [yes]';
-    saveInput.placeholder = 'yes';
-    saveInput.ignoreFocusOut = true;
+    let saveInput = window.showInformationMessage("Save Configspec?", "Yes", "No");
     // Call cleartool:
-    let child = this.ClearCase.runClearTooledcs(wsf, saveInput);
-
-    saveInput.show();
+    let child = this.ClearCase.runClearTooledcs(wsf);
     // Callback on accept:
-    saveInput.onDidAccept(function(event) {
-      if (saveInput.value === 'yes' || saveInput.value === '') {
+    saveInput.then((ev) => {
+      let answer = 'no';
+      if (ev === 'Yes') {
         answer = 'yes';
-      } else {
-        answer = 'no';
-      }
-      saveInput.hide()
-    })
-    // Callback on ESC key:
-    saveInput.onDidHide(function(event) {
-      if (answer === 'yes') {
-        window.showInformationMessage('ConfigSpec saved.')
-      } else {
-        window.showInformationMessage('Config spec not saved.')
       }
       child.stdin.write(answer)
       child.stdin.end()
-    })
+    });
   }
 
   public get onWindowChanged(): Event<void> {
