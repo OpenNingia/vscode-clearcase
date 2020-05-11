@@ -36,6 +36,7 @@ export class ccConfiguration
 	private m_useClearDlg: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
 	private m_checkoutCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
 	private m_findCheckoutsCommand: ConfigurationProperty<string> = new ConfigurationProperty("-me -cview -short -avobs");
+	private m_uncoKeepFile: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
 	private m_checkinCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
 	private m_defaultComment: ConfigurationProperty<string> = new ConfigurationProperty(null);
 	private m_viewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
@@ -74,6 +75,10 @@ export class ccConfiguration
 
 	public get FindCheckoutsCommand() : ConfigurationProperty<string> {
 		return this.m_findCheckoutsCommand;
+	}
+
+	public get UncoKeepFile() : ConfigurationProperty<boolean> {
+		return this.m_uncoKeepFile;
 	}
 
 	public get DefaultComment(): ConfigurationProperty<string> {

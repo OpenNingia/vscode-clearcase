@@ -195,9 +195,17 @@ export class ClearCase {
 
   public undoCheckoutFile(doc: Uri) {
     var path = doc.fsPath;
-    exec("cleartool unco -rm \"" + path + "\"", (error, stdout, stderr) => {
-      this.m_updateEvent.fire(doc);
-    });
+    let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
+    if (useClearDlg) {
+      exec("cleardlg /uncheckout \"" + path + "\"", (error, stdout, stderr) => {
+        this.m_updateEvent.fire(doc);
+      });
+    } else {
+      let uncoKeepFile = this.configHandler.configuration.UncoKeepFile.Value;
+      exec(`cleartool unco ${uncoKeepFile ? "-keep" : "-rm"} \\"${path}\\"`, (error, stdout, stderr) => {
+        this.m_updateEvent.fire(doc);
+      });
+    }
   }
 
   public createVersionedObject(doc: Uri) {
