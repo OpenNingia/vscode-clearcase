@@ -3,8 +3,12 @@
 out/test/**
 test/**
 src/**
+src/
+out/
 **/*.map
 .gitignore
 tsconfig.json
 vsc-extension-quickstart.md
 icon_source
+webpack.config.json
+node_modules

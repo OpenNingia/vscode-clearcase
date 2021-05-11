@@ -1,5 +1,41 @@
 ## Release Notes
 
+### 2.7.0
+* Option to keep file when undo checkout
+
+### 2.6.0
+* Fixed api to work with vscode 1.39.0, due to some changes in implementation now the extension only works with the first opened workspace
+
+### 2.5.3
+* Improved handling of untracked files
+* Added new Context entry `create versioned object`
+* Added command + button to edit configspec of current view
+
+### 2.4.3
+* Fix handling of network drive paths in the scm panel.
+
+### 2.4.2
+* Security update
+
+### 2.4.1
+* More improvement on untracked files' handling
+* Show progress information in SCM view when checkin all is triggered
+
+### 2.4.0
+* Improved handling of untracked files
+* Fixed a crash when opening a window that doesn't contain workspace folders
+
+### 2.3.0
+* Added mkelem command to check-in a file into source control
+* Improved untracked files handling
+* Other fixes and error handling
+
+### 2.1.0
+* Added a button to search for View Private files, you can control which files are added to the view by placing a `.ccignore`
+  file on the root of your workspace. This file behaves in a similar way as `.gitignore`.
+* Added QuickDiff support for checked out files. Click on the gutter indicator to view the difference.
+* Clicking on a checked out file in the SCM view will now show the difference with the latest version in the embedded diff viewer.
+
 ### 2.0.3
 * Fixed regression, Find checkout command was not working.
 
