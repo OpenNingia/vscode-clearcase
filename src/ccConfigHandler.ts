@@ -10,6 +10,8 @@ export class ccConfigHandler {
 
 	public constructor(private context: vscode.ExtensionContext,
 		private disposables: vscode.Disposable[]) {
+		
+		this.m_changeIdents = [];
 		this.m_configChanged = new vscode.EventEmitter<string[]>();
 		this.m_configuration = new ccConfiguration();
 
@@ -43,6 +45,9 @@ export class ccConfigHandler {
 			this.setChangeConfigDate<string>(config, "checkinCommandArgs", this.m_configuration.CheckinCommand);
 			this.setChangeConfigDate<string>(config, "defaultComment", this.m_configuration.DefaultComment);
 			this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.m_configuration.ViewPrivateFileSuffixes);
+			this.setChangeConfigDate<string>(config, "executable", this.m_configuration.Executable);
+			this.setChangeConfigDate<string>(config, "tempDir", this.m_configuration.TempDir);
+			this.setChangeConfigDate<boolean>(config, "uncoKeepFile", this.m_configuration.UncoKeepFile);
 			return true;
 		}
 		return false;

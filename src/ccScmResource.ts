@@ -1,4 +1,4 @@
-import { SourceControlResourceState, Uri, ThemeColor, SourceControlResourceDecorations, Command } from "vscode";
+import { SourceControlResourceState, Uri, ThemeColor, SourceControlResourceDecorations, Command, SourceControlResourceThemableDecorations } from "vscode";
 import { ccScmStatus } from "./ccScmStatus";
 
 
@@ -9,8 +9,22 @@ export const enum ResourceGroupType {
 	Untracked
 }
 
+class ccScmResourceThemableDecorations implements SourceControlResourceThemableDecorations {
+	iconPath: string = "";
+}
+
+class ccScmResourceDecorations implements SourceControlResourceDecorations {
+	strikeThrough: boolean = false;
+	faded: boolean = false;
+	tooltip: string = "";
+	light: SourceControlResourceThemableDecorations = new ccScmResourceThemableDecorations();
+	dark: SourceControlResourceThemableDecorations = new ccScmResourceThemableDecorations();
+}
+
 
 export class ccScmResource implements SourceControlResourceState {
+
+	private decor: ccScmResourceDecorations;
 
 	get resourceUri(): Uri {
 		return this.m_resourceUri;
@@ -27,7 +41,10 @@ export class ccScmResource implements SourceControlResourceState {
 	constructor(
 		private m_resourceGrpType: ResourceGroupType,
 		private m_resourceUri: Uri,
-		private m_type: ccScmStatus) {}
+		private m_type: ccScmStatus) {
+		this.decor = new ccScmResourceDecorations();
+		this.decor.tooltip = this.tooltip;
+	}
 
 	get type(): ccScmStatus { return this.m_type; }
 
@@ -52,14 +69,8 @@ export class ccScmResource implements SourceControlResourceState {
 		}
 	}
 
-	get decorations(): SourceControlResourceDecorations {
-		const light = undefined;
-		const dark = undefined;
-		const tooltip = this.tooltip;
-		const strikeThrough = undefined;
-		const faded = false;
-
-		return { strikeThrough, faded, tooltip, light, dark};
+	get decorations(): ccScmResourceDecorations {
+		return this.decor;
 	}
 
 	public static sort( a:ccScmResource, b:ccScmResource)

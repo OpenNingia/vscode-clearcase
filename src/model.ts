@@ -42,7 +42,7 @@ export function anyEvent<T>(...events: Event<T>[]): Event<T> {
 }
 
 export class ModelHandler {
-    private m_models: Model[];
+    private m_models: Model[]|undefined;
 
     public constructor() {}
 
@@ -53,7 +53,7 @@ export class ModelHandler {
     public addWatcher(filter: string = '**'): Model {
         let l_m = new Model();
         l_m.init(filter);
-        this.m_models.push(l_m);
+        this.m_models?.push(l_m);
         return l_m;
     }
 }
@@ -61,9 +61,9 @@ export class ModelHandler {
 export class Model implements Disposable {
 
     private disposables: Disposable[] = [];
-    private _onWorkspaceCreated: Event<Uri>;
-    private _onWorkspaceChanged: Event<Uri>;
-    private _onWorkspaceDeleted: Event<Uri>;
+    private _onWorkspaceCreated!: Event<Uri>;
+    private _onWorkspaceChanged!: Event<Uri>;
+    private _onWorkspaceDeleted!: Event<Uri>;
 
     public get onWorkspaceCreated(): Event<Uri> {
         return this._onWorkspaceCreated;

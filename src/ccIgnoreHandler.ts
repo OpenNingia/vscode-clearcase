@@ -11,6 +11,7 @@ export class IgnoreHandler {
 
   constructor(private m_fsWatch: ModelHandler) {
     this.m_onFilterRefreshed = new EventEmitter<void>();
+    this.fileIgnores = [];
     this.init();
   }
 
@@ -20,7 +21,7 @@ export class IgnoreHandler {
   
   public init() {
     this.fileIgnores = [];
-    workspace.workspaceFolders.forEach((folder: WorkspaceFolder) => {
+    workspace.workspaceFolders?.forEach((folder: WorkspaceFolder) => {
       let l_m = this.m_fsWatch.addWatcher(join(folder.uri.fsPath, '.ccignore'));
       l_m.onWorkspaceChanged(this.refreshFilter, this);
       l_m.onWorkspaceCreated(this.refreshFilter, this);
@@ -30,17 +31,19 @@ export class IgnoreHandler {
     });
   }
 
-  public getFolderIgnore(path: Uri | string): FileIgnore | null {
+  public getFolderIgnore(path: Uri | string|undefined): FileIgnore | null {
     for (let i = 0; i < this.fileIgnores.length; i++) {
       let p:string = "";
       if (typeof path == "string") {
         let t = this.appendSeparator(path);
       }
       else {
-        let t = this.appendSeparator(path.fsPath);
-      
-        if (t.indexOf(this.fileIgnores[i].PathStr) == 0 && this.fileIgnores[i].HasIgnore === true)
-            return this.fileIgnores[i];
+        if(path !== undefined) {
+          let t = this.appendSeparator(path.fsPath);
+        
+          if (t.indexOf(this.fileIgnores[i].PathStr) == 0 && this.fileIgnores[i].HasIgnore === true)
+              return this.fileIgnores[i];
+        }
       }
     }
     return null;
@@ -81,7 +84,7 @@ export class IgnoreHandler {
 }
 
 export class FileIgnore {
-  private path: Uri;
+  private path: Uri|null = null;
   private hasIgnore: boolean = false;
   private ignore: any = null;
   constructor(path: Uri) {
@@ -98,12 +101,12 @@ export class FileIgnore {
     }
   }
 
-  public get Path(): Uri {
+  public get Path(): Uri|null {
     return this.path;
   }
 
   public get PathStr(): string {
-    let p = this.Path.fsPath;
+    let p = this.Path?.fsPath||"";
     p = p.substr(-1, 1) !== sep ? p+sep : p;
     return p;
   }

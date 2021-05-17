@@ -7,16 +7,17 @@ import { ClearCase } from './clearcase';
 import { existsSync } from 'fs';
 
 export class UIInformation {
-	private m_statusbar: vscode.StatusBarItem;
+	private m_statusbar: vscode.StatusBarItem|null;
 	private m_isActive: boolean;
 
 	public constructor(private m_context: vscode.ExtensionContext,
 		private m_disposables: vscode.Disposable[],
 		private m_configHandler: ccConfigHandler,
-		private m_editor: vscode.TextEditor,
+		private m_editor: vscode.TextEditor|undefined,
 		private m_clearcase: ClearCase) {
 		this.m_isActive = true;
 		this.handleConfigState();
+		this.m_statusbar = null
 	}
 
 	public createStatusbarItem() {
@@ -54,7 +55,7 @@ export class UIInformation {
 		}
 	}
 
-	public receiveEditor(event: vscode.TextEditor) {
+	public receiveEditor(event: vscode.TextEditor|undefined) {
 		if (event && this.m_isActive) {
 			this.m_editor = event;
 			this.queryVersionInformation(event.document.uri);
@@ -65,7 +66,7 @@ export class UIInformation {
 		this.m_isActive = this.m_configHandler.configuration.ShowStatusbar.Value;
 
 		if (this.m_isActive === false) {
-			this.m_statusbar.hide();
+			this.m_statusbar?.hide();
 		}
 		else {
 			this.initialQuery();
@@ -92,19 +93,20 @@ export class UIInformation {
 				let version = "view private";
 				if (iFileInfo !== "")
 					version = iFileInfo;
-				this.m_statusbar.text = "[" + version + "]";
-				this.m_statusbar.show();
+				if(this.m_statusbar !== null)
+					this.m_statusbar.text = "[" + version + "]";
+				this.m_statusbar?.show();
 			}
 			else {
-				this.m_statusbar.hide();
+				this.m_statusbar?.hide();
 			}
 		}
 		else {
-			this.m_statusbar.hide();
+			this.m_statusbar?.hide();
 		}
 	}
 
 	public dispose() {
-		this.m_statusbar.dispose();
+		this.m_statusbar?.dispose();
 	}
 }

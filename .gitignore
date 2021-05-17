@@ -1,5 +1,6 @@
-node_modules
 out
 dist
-npm-debug.log
+node_modules
+.vscode-test/
 *.vsix
+npm-debug.log

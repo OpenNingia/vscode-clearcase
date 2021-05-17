@@ -38,8 +38,10 @@ export class ccConfiguration
 	private m_findCheckoutsCommand: ConfigurationProperty<string> = new ConfigurationProperty("-me -cview -short -avobs");
 	private m_uncoKeepFile: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
 	private m_checkinCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
-	private m_defaultComment: ConfigurationProperty<string> = new ConfigurationProperty(null);
+	private m_defaultComment: ConfigurationProperty<string> = new ConfigurationProperty("");
 	private m_viewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
+	private m_executable: ConfigurationProperty<string> = new ConfigurationProperty('cleartool.exe');
+	private m_tempDir: ConfigurationProperty<string> = new ConfigurationProperty('c:\\Temp');
 
 	public get ShowStatusbar() : ConfigurationProperty<boolean> {
 		return this.m_showStatusbar;
@@ -87,5 +89,13 @@ export class ccConfiguration
 
 	public get ViewPrivateFileSuffixes(): ConfigurationProperty<string> {
 		return this.m_viewPrivateFiles;
+	}
+
+	public get Executable(): ConfigurationProperty<string> {
+		return this.m_executable;
+	}
+
+	public get TempDir(): ConfigurationProperty<string> {
+		return this.m_tempDir;
 	}
 }

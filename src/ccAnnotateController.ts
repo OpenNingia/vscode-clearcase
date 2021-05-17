@@ -30,7 +30,7 @@ export class ccAnnotationController {
 		this.m_configuration = this.configHandler.configuration;
 	}
 
-	onActiveEditorChange(event: vscode.TextEditor) {
+	onActiveEditorChange(event: vscode.TextEditor|undefined): any {
 		if (event) {
 			this.m_isActive = false;
 			this.editor = event;
@@ -75,11 +75,15 @@ export class ccAnnotationController {
 		return deco;
 	}
 
-	private createLineDecoration(iLinePart: string, iLineNr: number, iCharStart: number, iWidth): vscode.DecorationOptions {
+	private createLineDecoration(iLinePart: string, iLineNr: number, iCharStart: number, iWidth: number): vscode.DecorationOptions {
 		let charLen = iLinePart.length;
+		let range = vscode.window.activeTextEditor?.document.validateRange(new vscode.Range(iLineNr, iCharStart, iLineNr, charLen));
+		if( range === undefined ) {
+			range = new vscode.Range(0,0,0,0);
+		}
 		return {
 			hoverMessage: "",
-			range: vscode.window.activeTextEditor.document.validateRange(new vscode.Range(iLineNr, iCharStart, iLineNr, charLen)),
+			range: range,
 			renderOptions: {
 				before: {
 					color: this.m_configuration.AnnotationColor.Value,
