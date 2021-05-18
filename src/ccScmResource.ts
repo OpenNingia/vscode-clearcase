@@ -1,33 +1,33 @@
 import { SourceControlResourceState, Uri, ThemeColor, SourceControlResourceDecorations, Command, SourceControlResourceThemableDecorations } from "vscode";
-import { ccScmStatus } from "./ccScmStatus";
+import { CCScmStatus } from "./ccScmStatus";
 
 
 export const enum ResourceGroupType {
-	Merge,
-	Index,
-	WorkingTree,
-	Untracked
+	merge,
+	index,
+	workingTree,
+	untracked
 }
 
-class ccScmResourceThemableDecorations implements SourceControlResourceThemableDecorations {
+class CCScmResourceThemableDecorations implements SourceControlResourceThemableDecorations {
 	iconPath: string = "";
 }
 
-class ccScmResourceDecorations implements SourceControlResourceDecorations {
+class CCScmResourceDecorations implements SourceControlResourceDecorations {
 	strikeThrough: boolean = false;
 	faded: boolean = false;
 	tooltip: string = "";
-	light: SourceControlResourceThemableDecorations = new ccScmResourceThemableDecorations();
-	dark: SourceControlResourceThemableDecorations = new ccScmResourceThemableDecorations();
+	light: SourceControlResourceThemableDecorations = new CCScmResourceThemableDecorations();
+	dark: SourceControlResourceThemableDecorations = new CCScmResourceThemableDecorations();
 }
 
 
-export class ccScmResource implements SourceControlResourceState {
+export class CCScmResource implements SourceControlResourceState {
 
-	private decor: ccScmResourceDecorations;
+	private decor: CCScmResourceDecorations;
 
 	get resourceUri(): Uri {
-		return this.m_resourceUri;
+		return this.mResourceUri;
 	}
 
 	get command(): Command {
@@ -39,46 +39,48 @@ export class ccScmResource implements SourceControlResourceState {
 	}
 
 	constructor(
-		private m_resourceGrpType: ResourceGroupType,
-		private m_resourceUri: Uri,
-		private m_type: ccScmStatus) {
-		this.decor = new ccScmResourceDecorations();
+		private mResourceGrpType: ResourceGroupType,
+		private mResourceUri: Uri,
+		private mType: CCScmStatus) {
+		this.decor = new CCScmResourceDecorations();
 		this.decor.tooltip = this.tooltip;
 	}
 
-	get type(): ccScmStatus { return this.m_type; }
+	get type(): CCScmStatus { return this.mType; }
 
 	get letter(): string {
 		switch (this.type) {
-			case ccScmStatus.MODIFIED: return 'M';
-			case ccScmStatus.UNTRACKED: return 'U';
+			case CCScmStatus.modified: return 'M';
+			case CCScmStatus.untracked: return 'U';
 		}
 	}
 
 	get tooltip(): string {
 		switch (this.type) {
-			case ccScmStatus.MODIFIED: return 'modified';
-			case ccScmStatus.UNTRACKED: return 'untracked';
+			case CCScmStatus.modified: return 'modified';
+			case CCScmStatus.untracked: return 'untracked';
 		}
 	}
 
 	get color(): ThemeColor {
 		switch (this.type) {
-			case ccScmStatus.MODIFIED: return new ThemeColor('ccDecoration.modifiedResourceForeground');
-			case ccScmStatus.UNTRACKED: return new ThemeColor('ccDecoration.untrackedResourceForeground');
+			case CCScmStatus.modified: return new ThemeColor('ccDecoration.modifiedResourceForeground');
+			case CCScmStatus.untracked: return new ThemeColor('ccDecoration.untrackedResourceForeground');
 		}
 	}
 
-	get decorations(): ccScmResourceDecorations {
+	get decorations(): CCScmResourceDecorations {
 		return this.decor;
 	}
 
-	public static sort( a:ccScmResource, b:ccScmResource)
+	public static sort( a:CCScmResource, b:CCScmResource)
 	{
-		if( a.resourceUri.fsPath < b.resourceUri.fsPath )
+		if( a.resourceUri.fsPath < b.resourceUri.fsPath ) {
 			return -1;
-		if( a.resourceUri.fsPath > b.resourceUri.fsPath )
+		}
+		if( a.resourceUri.fsPath > b.resourceUri.fsPath ) {
 			return 1;
+		}
 		return 0;
 	}
 

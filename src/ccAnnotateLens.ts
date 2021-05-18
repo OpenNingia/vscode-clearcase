@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 
-export class ccAnnotateLens extends vscode.CodeLens
+export class CCAnnotateLens extends vscode.CodeLens
 {
 	constructor(public document: vscode.TextDocument, range: vscode.Range)
 	{

@@ -2,30 +2,30 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "3.0.0-beta.5",
+  "version": "3.0.0-beta.6",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
-      "type": "git",
-      "url": "https://github.com/OpenNingia/vscode-clearcase.git"
+    "type": "git",
+    "url": "https://github.com/OpenNingia/vscode-clearcase.git"
   },
   "galleryBanner": {
-      "color": "#FF524C",
-      "theme": "dark"
+    "color": "#FF524C",
+    "theme": "dark"
   },
   "icon": "Assets/images/icon.png",
   "engines": {
-      "vscode": "^1.56.0"
+    "vscode": "^1.56.0"
   },
   "categories": [
-      "Programming Languages",
-      "Other",
-      "SCM Providers"
+    "Programming Languages",
+    "Other",
+    "SCM Providers"
   ],
   "keywords": [
-      "scm",
-      "clearcase",
-      "keybindings"
+    "scm",
+    "clearcase",
+    "keybindings"
   ],
   "activationEvents": [
     "*"

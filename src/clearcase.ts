@@ -1,5 +1,5 @@
 'use strict';
-import { exec, spawn, ChildProcess, ExecException } from 'child_process';
+import { exec, spawn, ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import { type } from 'os';
 // import * as fsPromise from 'fs-promise';
@@ -7,13 +7,13 @@ import { dirname, join } from 'path';
 
 import * as tmp from 'tmp';
 import { Event, EventEmitter, ExtensionContext, OutputChannel, QuickPickItem, TextDocument, TextEditor, Uri, window, workspace, InputBox } from 'vscode';
-import { ccAnnotationController } from './ccAnnotateController';
-import { ccConfigHandler } from './ccConfigHandler';
+import { CCAnnotationController } from './ccAnnotateController';
+import { CCConfigHandler } from './ccConfigHandler';
 import { MappedList } from './mappedlist';
 
 export enum EventActions {
-  Add = 0,
-  Remove = 1
+  add = 0,
+  remove = 1
 }
 
 export class EventArgs {
@@ -23,9 +23,9 @@ export class EventArgs {
 }
 
 export enum ViewType {
-  UNKNOWN,
-  DYNAMIC,
-  SNAPSHOT
+  unknown,
+  dynamic,
+  snapshot
 }
 
 export class CCArgs {
@@ -34,8 +34,9 @@ export class CCArgs {
 
   public constructor(params: string[], file?:string) {
     this.params = [...params];
-    if(file)
+    if(file) {
       this.file = file;
+    }
   }
 
   public toString(): string {
@@ -43,45 +44,46 @@ export class CCArgs {
   }
 
   public getCmd(): string[] {
-    if(this.file)
+    if(this.file) {
       return [...this.params, this.file];
+    }
     return this.params;
   }
 }
 
 export class ClearCase {
-  private readonly LS_VIEW: string[] = ['lsview', '-cview', '-long'];
+  private readonly lsView: string[] = ['lsview', '-cview', '-long'];
 
   private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
 
-  private m_isCCView: boolean = false;
-  private m_viewType: ViewType;
-  private m_updateEvent: EventEmitter<Uri>;
+  private mIsCCView: boolean = false;
+  private mViewType: ViewType;
+  private mUpdateEvent: EventEmitter<Uri>;
 
-  private m_untrackedList: MappedList;
+  private mUntrackedList: MappedList;
 
-  public constructor(private m_context: ExtensionContext,
-    private configHandler: ccConfigHandler,
+  public constructor(private mContext: ExtensionContext,
+    private configHandler: CCConfigHandler,
     private outputChannel: OutputChannel) {
-    this.m_updateEvent = new EventEmitter<Uri>();
-    this.m_viewType = ViewType.UNKNOWN;
-    this.m_untrackedList = new MappedList();
+    this.mUpdateEvent = new EventEmitter<Uri>();
+    this.mViewType = ViewType.unknown;
+    this.mUntrackedList = new MappedList();
   }
 
-  public get IsView(): boolean {
-    return this.m_isCCView;
+  public get isView(): boolean {
+    return this.mIsCCView;
   }
 
-  public get ViewType(): ViewType {
-    return this.m_viewType;
+  public get viewType(): ViewType {
+    return this.mViewType;
   }
 
   public get onCommandExecuted(): Event<Uri> {
-    return this.m_updateEvent.event;
+    return this.mUpdateEvent.event;
   }
 
-  public get UntrackedList(): MappedList {
-    return this.m_untrackedList;
+  public get untrackedList(): MappedList {
+    return this.mUntrackedList;
   }
 
   /**
@@ -91,27 +93,28 @@ export class ClearCase {
    * @param editor current editor instance
    */
   public async checkIsView(editor: TextEditor|undefined): Promise<boolean> {
-    let is_view: boolean = false;
+    let isView: boolean = false;
     if (editor !== undefined && editor.document !== undefined) {
       try {
-        is_view = await this.isClearcaseObject(editor.document.uri);
+        isView = await this.isClearcaseObject(editor.document.uri);
       }
       catch (error) {
-        is_view = false;
+        isView = false;
         // can happen i.e. with a new file which has not been save yet
         //this.m_isCCView = await this.hasConfigspec();
       }
     }
 
-    if (!is_view)
-      is_view = await this.hasConfigspec();
+    if (!isView) {
+      isView = await this.hasConfigspec();
+    }
+    if (isView) {
+      this.mViewType = await this.detectViewType();
+    }
 
-    if (is_view)
-      this.m_viewType = await this.detectViewType();
+    this.mIsCCView = isView;
 
-    this.m_isCCView = is_view;
-
-    return is_view;
+    return isView;
   }
 
   public async execOnSCMFile(doc: Uri, func: (arg: Uri) => void) {
@@ -130,20 +133,6 @@ export class ClearCase {
         window.showErrorMessage(`${path} is not a valid ClearCase object.`);
       }
     );
-
-    // var executable = this.configHandler.configuration.Executable.Value;
-    // exec(`${executable} ls "${path}"`, (error, stdout, stderr) => {
-    //   if (error) {
-    //     this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
-    //     window.showErrorMessage(`${path} is not a valid ClearCase object.`);
-    //     return;
-    //   }
-    //   func.apply(self, [doc]);
-    //   if (stderr)
-    //     this.outputChannel.appendLine(`clearcase, stderr: ${stderr}`);
-    //   else
-    //     this.outputChannel.appendLine(`clearcase, stdout: ${stdout}`);
-    // });
   }
 
   public runClearCaseExplorer(doc: Uri) {
@@ -153,13 +142,13 @@ export class ClearCase {
 
   public async checkoutFile(doc: Uri): Promise<boolean> {
     var path = doc.fsPath;
-    let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
-    let coArgTmpl = this.configHandler.configuration.CheckoutCommand.Value;
-    let defComment = this.configHandler.configuration.DefaultComment.Value;
+    let useClearDlg = this.configHandler.configuration.useClearDlg.value;
+    let coArgTmpl = this.configHandler.configuration.checkoutCommand.value;
+    let defComment = this.configHandler.configuration.defaultComment.value;
 
     if (useClearDlg) {
       exec("cleardlg /checkout \"" + path + "\"", (error, stdout, stderr) => {
-        this.m_updateEvent.fire(doc);
+        this.mUpdateEvent.fire(doc);
       });
       return true;
     } else {
@@ -168,9 +157,9 @@ export class ClearCase {
       let cmdOpts = coArgTmpl.trim().split(/\s+/);
       let idx = cmdOpts.indexOf("${comment}");
       if (idx > -1) {
-        if (defComment)
+        if (defComment) {
           comment = defComment;
-        else {
+        } else {
           comment = await window.showInputBox(
             {
               ignoreFocusOut: true,
@@ -190,8 +179,9 @@ export class ClearCase {
           cmdOpts.splice(pI, 1);
         }
         pI = cmdOpts.indexOf("-nc");
-        if (pI == -1)
+        if (pI === -1) {
           cmdOpts.push("-nc");
+        }
       }
       let cmd: CCArgs = new CCArgs(["co"]);
       cmd.params = cmd.params.concat(cmdOpts);
@@ -205,7 +195,7 @@ export class ClearCase {
       try {
         await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
         });
-        this.m_updateEvent.fire(doc);
+        this.mUpdateEvent.fire(doc);
       }
       catch (error) {
         this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + error);
@@ -223,7 +213,7 @@ export class ClearCase {
       // retriggered because of that save.
       if (this.isReadOnly(doc) === false) {
         doc.save();
-        this.m_updateEvent.fire(doc.uri);
+        this.mUpdateEvent.fire(doc.uri);
       } else {
         window.showErrorMessage('Could not save file.');
       }
@@ -232,19 +222,19 @@ export class ClearCase {
 
   public async undoCheckoutFile(doc: Uri) {
     var path = doc.fsPath;
-    let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
+    let useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       exec("cleardlg /uncheckout \"" + path + "\"", (error, stdout, stderr) => {
-        this.m_updateEvent.fire(doc);
+        this.mUpdateEvent.fire(doc);
       });
     } else {
-      let uncoKeepFile = this.configHandler.configuration.UncoKeepFile.Value;
+      let uncoKeepFile = this.configHandler.configuration.uncoKeepFile.value;
       let rm = "-rm";
-      if( uncoKeepFile )
+      if( uncoKeepFile ) {
         rm ="-keep";
-
+      }
       await this.runCleartoolCommand(new CCArgs(["unco", rm], path), dirname(path), (data: string[]) => {
-        this.m_updateEvent.fire(doc);
+        this.mUpdateEvent.fire(doc);
       });
     }
   }
@@ -252,19 +242,19 @@ export class ClearCase {
   public async createVersionedObject(doc: Uri) {
     var path = doc.fsPath;
     await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], path), dirname(path), (data: string[]) => {
-      this.m_updateEvent.fire(doc);
+      this.mUpdateEvent.fire(doc);
     });
   }
 
   public async checkinFile(doc: Uri) {
     var path = doc.fsPath;
-    let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
-    let ciArgTmpl = this.configHandler.configuration.CheckinCommand.Value;
-    let defComment = this.configHandler.configuration.DefaultComment.Value;
+    let useClearDlg = this.configHandler.configuration.useClearDlg.value;
+    let ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
+    let defComment = this.configHandler.configuration.defaultComment.value;
 
     if (useClearDlg) {
       exec("cleardlg /checkin \"" + path + "\"", (error, stdout, stderr) => {
-        this.m_updateEvent.fire(doc);
+        this.mUpdateEvent.fire(doc);
       });
     } else {
 
@@ -273,9 +263,9 @@ export class ClearCase {
       let idx = cmdOpts.indexOf("${comment}");
       if (idx > -1) {
 
-        if (defComment)
+        if (defComment) {
           comment = defComment;
-        else {
+        } else {
           comment = await window.showInputBox(
             {
               ignoreFocusOut: true,
@@ -295,8 +285,9 @@ export class ClearCase {
           cmdOpts.splice(pI, 1);
         }
         pI = cmdOpts.indexOf("-nc");
-        if (pI == -1)
+        if (pI === -1) {
           cmdOpts.push("-nc");
+        }
       }
 
       let cmd: CCArgs = new CCArgs(["ci"], path);
@@ -310,7 +301,7 @@ export class ClearCase {
       }
 
       await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
-        this.m_updateEvent.fire(doc);
+        this.mUpdateEvent.fire(doc);
       });
     }
   }
@@ -318,7 +309,7 @@ export class ClearCase {
   public async checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
     for (let i = 0; i < fileObjs.length; i++) {
       let cmd: CCArgs = new CCArgs(["ci", "-nc"], fileObjs[i].fsPath);
-      if (comment != "") {
+      if (comment !== "") {
         cmd.params = ["ci", "-c", comment];
       }
       if( workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0 ) {
@@ -343,7 +334,7 @@ export class ClearCase {
    * Searching checkout files in all vobs of the current view
    */
   public async findCheckouts(): Promise<string[]> {
-    let lscoArgTmpl = this.configHandler.configuration.FindCheckoutsCommand.Value;
+    let lscoArgTmpl = this.configHandler.configuration.findCheckoutsCommand.value;
     let resNew: string[] = [];
     let wsf = "";
     if( workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0 ) {
@@ -381,8 +372,9 @@ export class ClearCase {
    */
   public async findUntracked(pathObj: Uri|undefined): Promise<void> {
     try {
-      if (pathObj === undefined)
+      if (pathObj === undefined) {
         return;
+      }
       let cmd: CCArgs = new CCArgs(["ls", "-view_only", "-short", "-r"]);
       await this.runCleartoolCommand(cmd, pathObj.fsPath, (data: string[]) => {
         data.forEach((val) => {
@@ -400,7 +392,7 @@ export class ClearCase {
           }
           if( f !== "" ) {
             let p = join(pathObj.fsPath, f);
-            this.UntrackedList.addStringByKey(p, pathObj.fsPath);
+            this.untrackedList.addStringByKey(p, pathObj.fsPath);
           }
         });
       });
@@ -547,7 +539,7 @@ export class ClearCase {
         new CCArgs(["update"], path),
         dirname(path),
         (data: string[]) => {
-          this.m_updateEvent.fire(filePath);
+          this.mUpdateEvent.fire(filePath);
         },
         (result: string) => {
           resultOut = result;
@@ -569,7 +561,7 @@ export class ClearCase {
     exec("cleardescribe \"" + path + "\"");
   }
 
-  async annotate(fileUri: Uri, ctrl: ccAnnotationController): Promise<any> {
+  async annotate(fileUri: Uri, ctrl: CCAnnotationController): Promise<any> {
     try {
       let content = await this.getAnnotatedFileContent(fileUri.fsPath);
       ctrl.setAnnotationInText(content);
@@ -584,9 +576,9 @@ export class ClearCase {
     let resultOut: string = "";
     if (workspace.workspaceFolders !== undefined) {
       let errorRes: string = "";
-      let fmt = this.configHandler.configuration.AnnotationFormatString.Value;
+      let fmt = this.configHandler.configuration.annotationFormatString.value;
       let sep = " | ";
-      let fileP = await this.wslPath(filePath, false)
+      let fileP = await this.wslPath(filePath, false);
 
       await this.runCleartoolCommand(
         new CCArgs(["annotate", "-out", "-", "-nhe", "-fmt", `"${fmt}${sep}"`, `${fileP}`]),
@@ -653,19 +645,19 @@ export class ClearCase {
           for (let index = 0; index < lines.length; index++) {
             let parts = lines[index].split(" ");
             if (parts.length >= 7) {
-              let actv_id = parts[2];
-              let actv_lb = parts.slice(7).join(" ");
+              let actvId = parts[2];
+              let actvLb = parts.slice(7).join(" ");
 
-              if (actv_id === currentAcvtId) {
-                actv_lb = '\u2713 ' + actv_lb;
+              if (actvId === currentAcvtId) {
+                actvLb = '\u2713 ' + actvLb;
               } else {
-                actv_lb = '\u2610 ' + actv_lb;
+                actvLb = '\u2610 ' + actvLb;
               }
 
               resultOut.push({
-                label: actv_lb,
+                label: actvLb,
                 description: "",
-                detail: actv_id
+                detail: actvId
               });
             }
           }
@@ -689,10 +681,11 @@ export class ClearCase {
       );
 
       if (userChoose) {
-        if (currentActv == userChoose.detail)
+        if (currentActv === userChoose.detail) {
           this.setViewActivity(undefined);
-        else
+        } else {
           this.setViewActivity(userChoose.detail);
+        }
       }
     }
     catch (error) {
@@ -706,9 +699,9 @@ export class ClearCase {
     if (workspace.workspaceFolders !== undefined) {
       let errorRes: string = "";
       let id:string = "-none";
-      if (actvID !== undefined)
+      if (actvID !== undefined) {
         id = actvID;
-
+      }
       await this.runCleartoolCommand(
         new CCArgs(["setactivity", `${id}`]),
         workspace.workspaceFolders[0].uri.fsPath,
@@ -729,7 +722,7 @@ export class ClearCase {
 
   public async readFileAtVersion(fsPath: string, version: string): Promise<string> {
     // cannot call getFileAtVersion because the temp file is automatically removed
-    let tempDir = this.configHandler.configuration.TempDir.Value;
+    let tempDir = this.configHandler.configuration.tempDir.value;
     let tempFile = "";
     let ret = undefined;
     let pname = fsPath + "@@" + version;
@@ -757,7 +750,7 @@ export class ClearCase {
 
   private runCleartoolCommand(cmd: CCArgs, cwd: string, onData: ((data: string[]) => void)|null, onFinished?: (result:string) => void, onError?: (result:string) => void): Promise<void> {
     let self: ClearCase = this;
-    let executable = this.configHandler.configuration.Executable.Value;
+    let executable = this.configHandler.configuration.executable.value;
     try{
       fs.accessSync(cwd, fs.constants.F_OK);
     } catch(err) {
@@ -806,8 +799,9 @@ export class ClearCase {
           msg = `ClearCase error: ClearCase error: ${msg}`;
           self.outputChannel.appendLine(msg);
         }
-        if (msg.match(/clearcase error/i) !== null)
+        if (msg.match(/clearcase error/i) !== null) {
           reject();
+        }
       });
 
       command.on('close', (code) => {
@@ -833,7 +827,7 @@ export class ClearCase {
 
   private async detectViewType(): Promise<ViewType> {
     let lines: string[] = [];
-    let viewType: ViewType = ViewType.UNKNOWN;
+    let viewType: ViewType = ViewType.unknown;
 
     let filterGlobalPathLines = (l: string) => {
       if (l.length === 0) {
@@ -844,7 +838,7 @@ export class ClearCase {
     };
     if( workspace.workspaceFolders !== undefined )
     {
-      await this.runCleartoolCommand(new CCArgs(this.LS_VIEW), workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+      await this.runCleartoolCommand(new CCArgs(this.lsView), workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
         // lines = lines.concat(data);
       }, (result: string) => {
         lines = result.split(/\r\n|\r|\n/).filter(s => s.length>0);
@@ -853,9 +847,9 @@ export class ClearCase {
           return;
         }
         if (resLines[0].endsWith('.vws')) {
-          viewType = ViewType.DYNAMIC;
+          viewType = ViewType.dynamic;
         } else {
-          viewType = ViewType.SNAPSHOT;
+          viewType = ViewType.snapshot;
         }
       });
     }
@@ -883,7 +877,7 @@ export class ClearCase {
    * @returns ChildProcess
    */
   public async runClearTooledcs(baseFolder: string): Promise<ChildProcess>{
-    let executable = this.configHandler.configuration.Executable.Value;
+    let executable = this.configHandler.configuration.executable.value;
     process.env.VISUAL = 'code -r';
     var options = {
       cwd: baseFolder,

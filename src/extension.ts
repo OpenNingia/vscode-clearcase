@@ -1,8 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { ccConfigHandler } from './ccConfigHandler';
-import { ccScmProvider } from './ccScmProvider';
+import { CCConfigHandler } from './ccConfigHandler';
+import { CCScmProvider } from './ccScmProvider';
 import { ViewType } from './clearcase';
 import { UIInformation } from './uiinformation';
 
@@ -19,28 +19,28 @@ async function _activate(context: vscode.ExtensionContext, disposables: vscode.D
 	// The commandId parameter must match the command field in package.json
 	let outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel("Clearcase SCM");
 
-	let configHandler = new ccConfigHandler(context, disposables);
+	let configHandler = new CCConfigHandler(context, disposables);
 	
-	let provider = new ccScmProvider(context, disposables, outputChannel, configHandler);
+	let provider = new CCScmProvider(context, disposables, outputChannel, configHandler);
 	provider.bindEvents();
 	provider.bindCommands();
 
 	provider.updateIsView().then((is:boolean) => {
 			vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', is);
-			vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
-	})
+			vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.clearCase.viewType===ViewType.dynamic);
+	});
 
 	provider.onWindowChanged(() => {
-			vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.ClearCase.IsView);
-			vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.ClearCase.ViewType==ViewType.DYNAMIC);
+			vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.clearCase.isView);
+			vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.clearCase.viewType===ViewType.dynamic);
 	}, provider);
 
-	let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.ClearCase);
+	let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.clearCase);
 	uiInfo.createStatusbarItem();
 	uiInfo.bindEvents();
 	uiInfo.initialQuery();
 
-	provider.ClearCase.onCommandExecuted(() => {
+	provider.clearCase.onCommandExecuted(() => {
 			uiInfo.initialQuery();
 	}, uiInfo);
 }
