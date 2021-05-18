@@ -42,6 +42,7 @@ export class CCConfiguration
 	private mViewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
 	private mExecutable: ConfigurationProperty<string> = new ConfigurationProperty('cleartool.exe');
 	private mTempDir: ConfigurationProperty<string> = new ConfigurationProperty('c:\\Temp');
+	private mIsWslEnv: ConfigurationProperty<boolean> = new ConfigurationProperty(false);
 
 	public get showStatusbar() : ConfigurationProperty<boolean> {
 		return this.mShowStatusbar;
@@ -97,5 +98,9 @@ export class CCConfiguration
 
 	public get tempDir(): ConfigurationProperty<string> {
 		return this.mTempDir;
+	}
+
+	public get isWslEnv(): ConfigurationProperty<boolean> {
+		return this.mIsWslEnv;
 	}
 }

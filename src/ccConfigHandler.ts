@@ -46,6 +46,7 @@ export class CCConfigHandler {
 			this.setChangeConfigDate<string>(config, "defaultComment", this.mConfiguration.defaultComment);
 			this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);
 			this.setChangeConfigDate<string>(config, "executable", this.mConfiguration.executable);
+			this.setChangeConfigDate<boolean>(config, "isWslEnv", this.mConfiguration.isWslEnv);
 			this.setChangeConfigDate<string>(config, "tempDir", this.mConfiguration.tempDir);
 			this.setChangeConfigDate<boolean>(config, "uncoKeepFile", this.mConfiguration.uncoKeepFile);
 			return true;

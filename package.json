@@ -433,6 +433,11 @@
           "default": "cleartool.exe",
           "description": "The path to the cleartool executable"
         },
+        "vscode-clearcase.isWslEnv": {
+          "type": "boolean",
+          "default": "false",
+          "description": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation"
+        },
         "vscode-clearcase.tempDir": {
           "type": "string",
           "default": "c:\\Temp",

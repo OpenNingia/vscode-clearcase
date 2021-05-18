@@ -187,7 +187,7 @@ export class ClearCase {
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        cmd.params[idx] = await this.wslPath(path, false);
+        cmd.params[idx] = this.wslPath(path, false);
       }
       else {
         cmd.file = path;
@@ -294,7 +294,7 @@ export class ClearCase {
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        cmd.params[idx] = await this.wslPath(path, false);
+        cmd.params[idx] = this.wslPath(path, false);
       }
       else {
         cmd.file = path;
@@ -341,7 +341,7 @@ export class ClearCase {
       wsf = workspace.workspaceFolders[0].uri.fsPath;
     }
     try {
-      let runInWsl = await this.isRunningInWsl();
+      let runInWsl = this.isRunningInWsl();
       let cmdOpts = lscoArgTmpl.split(' ');
       let cmd: CCArgs = new CCArgs(["lsco", ...cmdOpts]);
       await this.runCleartoolCommand(cmd, wsf, null, (result: string) => {
@@ -578,7 +578,7 @@ export class ClearCase {
       let errorRes: string = "";
       let fmt = this.configHandler.configuration.annotationFormatString.value;
       let sep = " | ";
-      let fileP = await this.wslPath(filePath, false);
+      let fileP = this.wslPath(filePath, false);
 
       await this.runCleartoolCommand(
         new CCArgs(["annotate", "-out", "-", "-nhe", "-fmt", `"${fmt}${sep}"`, `${fileP}`]),
@@ -726,12 +726,12 @@ export class ClearCase {
     let tempFile = "";
     let ret = undefined;
     let pname = fsPath + "@@" + version;
-    let isWsl = await this.isRunningInWsl();
+    let isWsl = this.isRunningInWsl();
     if( isWsl === true ) {
-      tempDir = await this.wslPath(tempDir, true, isWsl);
+      tempDir = this.wslPath(tempDir, true, isWsl);
       tempFile = tmp.tmpNameSync({tmpdir: tempDir});
       ret = Uri.file(tempFile);
-      tempFile = await this.wslPath(tempFile, false, isWsl);
+      tempFile = this.wslPath(tempFile, false, isWsl);
     } else {
       tempFile = tmp.tmpNameSync({tmpdir: tempDir});
       ret = Uri.file(tempFile);
@@ -764,7 +764,7 @@ export class ClearCase {
       if( cmd.file ) {
         // wsl mount point for external drives is /mnt
         // convert backslash to slash
-        cmd.file = await self.wslPath(cmd.file, false);
+        cmd.file = self.wslPath(cmd.file, false);
       }
 
       self.outputChannel.appendLine(cmd.toString());
@@ -856,7 +856,9 @@ export class ClearCase {
     return viewType;
   }
 
-  public async isRunningInWsl(): Promise<boolean> {
+  public isRunningInWsl(): boolean {
+    return this.configHandler.configuration.isWslEnv.value;
+
     if(type() !== "Windows_NT") {
       // check if wslpath executeable is available
       try{
@@ -901,9 +903,9 @@ export class ClearCase {
     });
   }
 
-  public async wslPath(path: string, toLinux:boolean=true, runInWsl?:boolean) {
+  public wslPath(path: string, toLinux:boolean=true, runInWsl?:boolean): string {
     if( runInWsl === undefined ) {
-      runInWsl = await this.isRunningInWsl();
+      runInWsl = this.isRunningInWsl();
     }
     if(runInWsl === true) {
       if( toLinux === true) {
