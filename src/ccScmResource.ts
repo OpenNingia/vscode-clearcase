@@ -1,6 +1,6 @@
 import { SourceControlResourceState, Uri, ThemeColor, SourceControlResourceDecorations, Command, SourceControlResourceThemableDecorations } from "vscode";
 import { CCScmStatus } from "./ccScmStatus";
-
+import * as path from 'path';
 
 export const enum ResourceGroupType {
 	merge,
@@ -9,22 +9,12 @@ export const enum ResourceGroupType {
 	untracked
 }
 
-class CCScmResourceThemableDecorations implements SourceControlResourceThemableDecorations {
-	iconPath: string = "";
+const iconRootPath = path.join(path.dirname(__dirname), "Assets", "icons");
+function getIconUri(iconName: string, theme: string) {
+	return Uri.file(path.join(iconRootPath, theme, `${iconName}.svg`));
 }
-
-class CCScmResourceDecorations implements SourceControlResourceDecorations {
-	strikeThrough: boolean = false;
-	faded: boolean = false;
-	tooltip: string = "";
-	light: SourceControlResourceThemableDecorations = new CCScmResourceThemableDecorations();
-	dark: SourceControlResourceThemableDecorations = new CCScmResourceThemableDecorations();
-}
-
 
 export class CCScmResource implements SourceControlResourceState {
-
-	private decor: CCScmResourceDecorations;
 
 	get resourceUri(): Uri {
 		return this.mResourceUri;
@@ -42,8 +32,6 @@ export class CCScmResource implements SourceControlResourceState {
 		private mResourceGrpType: ResourceGroupType,
 		private mResourceUri: Uri,
 		private mType: CCScmStatus) {
-		this.decor = new CCScmResourceDecorations();
-		this.decor.tooltip = this.tooltip;
 	}
 
 	get type(): CCScmStatus { return this.mType; }
@@ -64,13 +52,20 @@ export class CCScmResource implements SourceControlResourceState {
 
 	get color(): ThemeColor {
 		switch (this.type) {
-			case CCScmStatus.modified: return new ThemeColor('ccDecoration.modifiedResourceForeground');
-			case CCScmStatus.untracked: return new ThemeColor('ccDecoration.untrackedResourceForeground');
+			case CCScmStatus.modified:
+				return new ThemeColor('ccDecoration.modifiedResourceForeground');
+			case CCScmStatus.untracked:
+				return new ThemeColor('ccDecoration.untrackedResourceForeground');
 		}
 	}
 
-	get decorations(): CCScmResourceDecorations {
-		return this.decor;
+	get decorations(): SourceControlResourceDecorations {
+		const faded = false;
+		const strikeThrough = false;
+		const tooltip = this.tooltip;
+		const dark = {iconPath: getIconUri("status-modified", "dark")};
+		const light = {iconPath: getIconUri("status-modified", "light")};
+		return { strikeThrough, faded, tooltip, light, dark };
 	}
 
 	public static sort( a:CCScmResource, b:CCScmResource)

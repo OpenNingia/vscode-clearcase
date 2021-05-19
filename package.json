@@ -46,7 +46,11 @@
       {
         "command": "extension.ccCheckin",
         "title": "Checkin",
-        "category": "Clearcase"
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/light/check.svg",
+          "dark": "./Assets/icons/dark/check.svg"
+        }
       },
       {
         "command": "extension.ccCheckinAll",
@@ -70,7 +74,11 @@
       {
         "command": "extension.ccUndoCheckout",
         "title": "Undo Checkout",
-        "category": "Clearcase"
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/light/clean.svg",
+          "dark": "./Assets/icons/dark/clean.svg"
+        }
       },
       {
         "command": "extension.ccFindCheckouts",
@@ -146,7 +154,11 @@
       {
         "command": "extension.ccOpenResource",
         "title": "Open file",
-        "category": "Clearcase"
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/light/open-file.svg",
+          "dark": "./Assets/icons/dark/open-file.svg"
+        }
       },
       {
         "command": "extension.ccDeleteViewPrivate",
@@ -292,12 +304,27 @@
         {
           "command": "extension.ccOpenResource",
           "when": "scmProvider == cc && vscode-clearcase:enabled",
+          "group": "inline@1"
+        },
+        {
+          "command": "extension.ccOpenResource",
+          "when": "scmProvider == cc && vscode-clearcase:enabled",
           "group": "cc_file"
         },
         {
           "command": "extension.ccCheckin",
           "when": "scmProvider == cc && vscode-clearcase:enabled",
+          "group": "inline@2"
+        },
+        {
+          "command": "extension.ccCheckin",
+          "when": "scmProvider == cc && vscode-clearcase:enabled",
           "group": "cc_file"
+        },
+        {
+          "command": "extension.ccUndoCheckout",
+          "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
+          "group": "inline@3"
         },
         {
           "command": "extension.ccUndoCheckout",
