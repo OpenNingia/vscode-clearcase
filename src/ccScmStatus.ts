@@ -1,4 +1,4 @@
-export const enum ccScmStatus {
-	MODIFIED = 1,
-	UNTRACKED = 2
+export const enum CCScmStatus {
+	modified = 1,
+	untracked = 2
 }

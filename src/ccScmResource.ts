@@ -1,19 +1,23 @@
-import { SourceControlResourceState, Uri, ThemeColor, SourceControlResourceDecorations, Command } from "vscode";
-import { ccScmStatus } from "./ccScmStatus";
-
+import { SourceControlResourceState, Uri, ThemeColor, SourceControlResourceDecorations, Command, SourceControlResourceThemableDecorations } from "vscode";
+import { CCScmStatus } from "./ccScmStatus";
+import * as path from 'path';
 
 export const enum ResourceGroupType {
-	Merge,
-	Index,
-	WorkingTree,
-	Untracked
+	merge,
+	index,
+	workingTree,
+	untracked
 }
 
+const iconRootPath = path.join(path.dirname(__dirname), "Assets", "icons");
+function getIconUri(iconName: string, theme: string) {
+	return Uri.file(path.join(iconRootPath, theme, `${iconName}.svg`));
+}
 
-export class ccScmResource implements SourceControlResourceState {
+export class CCScmResource implements SourceControlResourceState {
 
 	get resourceUri(): Uri {
-		return this.m_resourceUri;
+		return this.mResourceUri;
 	}
 
 	get command(): Command {
@@ -25,49 +29,53 @@ export class ccScmResource implements SourceControlResourceState {
 	}
 
 	constructor(
-		private m_resourceGrpType: ResourceGroupType,
-		private m_resourceUri: Uri,
-		private m_type: ccScmStatus) {}
+		private mResourceGrpType: ResourceGroupType,
+		private mResourceUri: Uri,
+		private mType: CCScmStatus) {
+	}
 
-	get type(): ccScmStatus { return this.m_type; }
+	get type(): CCScmStatus { return this.mType; }
 
 	get letter(): string {
 		switch (this.type) {
-			case ccScmStatus.MODIFIED: return 'M';
-			case ccScmStatus.UNTRACKED: return 'U';
+			case CCScmStatus.modified: return 'M';
+			case CCScmStatus.untracked: return 'U';
 		}
 	}
 
 	get tooltip(): string {
 		switch (this.type) {
-			case ccScmStatus.MODIFIED: return 'modified';
-			case ccScmStatus.UNTRACKED: return 'untracked';
+			case CCScmStatus.modified: return 'modified';
+			case CCScmStatus.untracked: return 'untracked';
 		}
 	}
 
 	get color(): ThemeColor {
 		switch (this.type) {
-			case ccScmStatus.MODIFIED: return new ThemeColor('ccDecoration.modifiedResourceForeground');
-			case ccScmStatus.UNTRACKED: return new ThemeColor('ccDecoration.untrackedResourceForeground');
+			case CCScmStatus.modified:
+				return new ThemeColor('ccDecoration.modifiedResourceForeground');
+			case CCScmStatus.untracked:
+				return new ThemeColor('ccDecoration.untrackedResourceForeground');
 		}
 	}
 
 	get decorations(): SourceControlResourceDecorations {
-		const light = undefined;
-		const dark = undefined;
-		const tooltip = this.tooltip;
-		const strikeThrough = undefined;
 		const faded = false;
-
-		return { strikeThrough, faded, tooltip, light, dark};
+		const strikeThrough = false;
+		const tooltip = this.tooltip;
+		const dark = {iconPath: getIconUri("status-modified", "dark")};
+		const light = {iconPath: getIconUri("status-modified", "light")};
+		return { strikeThrough, faded, tooltip, light, dark };
 	}
 
-	public static sort( a:ccScmResource, b:ccScmResource)
+	public static sort( a:CCScmResource, b:CCScmResource)
 	{
-		if( a.resourceUri.fsPath < b.resourceUri.fsPath )
+		if( a.resourceUri.fsPath < b.resourceUri.fsPath ) {
 			return -1;
-		if( a.resourceUri.fsPath > b.resourceUri.fsPath )
+		}
+		if( a.resourceUri.fsPath > b.resourceUri.fsPath ) {
 			return 1;
+		}
 		return 0;
 	}
 
