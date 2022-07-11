@@ -41,9 +41,15 @@ Clearcase commands exposed by this extensions:
 
    * Syntax highlighting for ClearCase config-spec files
 
+## WSL
+
+You can use this extenion in a WSL environment and a windows clearcase installation. Just make sure the configured **executeable** ist the windows one (this is the default). The second important setting is the **tempDir** value. If you use a windows cleartool binary the temp dir needs to be a windows style path as already set by default. This path needs to be reachable by the windows cleartool executable. Therefor it is not possible to use a wsl linux only path like `/tmp/`.
+
+If the above settings are correct everything else is handled by the extension transparantly.
+
 ## Requirements
 
-A valid ClearCase installation within the system's PATH.
+A valid ClearCase installation within the system's PATH or a valid executable path setup in the **extension** preferences value.
 
 ## License
 [MIT](LICENSE)

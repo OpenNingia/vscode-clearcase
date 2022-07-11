@@ -1,91 +1,106 @@
 'use strict';
 
 export class ConfigurationProperty<T>{
-	private m_changed: boolean;
+	private mChanged: boolean;
 
-	public constructor(private m_prop: T) {
-		this.m_changed = true;
+	public constructor(private mProp: T) {
+		this.mChanged = true;
 	}
 
-	get Value(): T {
-		return this.m_prop;
+	get value(): T {
+		return this.mProp;
 	}
 
-	get Changed(): boolean {
-		let old = this.m_changed;
-		this.m_changed = false;
+	get changed(): boolean {
+		let old = this.mChanged;
+		this.mChanged = false;
 		return old;
 	}
 
-	set Value(value:T) {
-		if( this.m_prop != value )
+	set value(value:T) {
+		if( this.mProp !== value )
 		{
-			this.m_prop = value;
-			this.m_changed = true;
+			this.mProp = value;
+			this.mChanged = true;
 		}
 	}
 }
 
-export class ccConfiguration
+export class CCConfiguration
 {
-	private m_showStatusbar: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
-	private m_annotationColor: ConfigurationProperty<string> = new ConfigurationProperty("rgba(220, 220, 220, 0.8)");
-	private m_annotationBackgroundColor: ConfigurationProperty<string> = new ConfigurationProperty("rgba(20, 20, 20, 0.8)");
-	private m_annotationFormatString: ConfigurationProperty<string> = new ConfigurationProperty("%d %12u");
-	private m_showAnnotationCodeLens: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
-	private m_useClearDlg: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
-	private m_checkoutCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
-	private m_findCheckoutsCommand: ConfigurationProperty<string> = new ConfigurationProperty("-me -cview -short -avobs");
-	private m_uncoKeepFile: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
-	private m_checkinCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
-	private m_defaultComment: ConfigurationProperty<string> = new ConfigurationProperty(null);
-	private m_viewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
+	private mShowStatusbar: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
+	private mAnnotationColor: ConfigurationProperty<string> = new ConfigurationProperty("rgba(220, 220, 220, 0.8)");
+	private mAnnotationBackgroundColor: ConfigurationProperty<string> = new ConfigurationProperty("rgba(20, 20, 20, 0.8)");
+	private mAnnotationFormatString: ConfigurationProperty<string> = new ConfigurationProperty("%d %12u");
+	private mShowAnnotationCodeLens: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
+	private mUseClearDlg: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
+	private mCheckoutCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
+	private mFindCheckoutsCommand: ConfigurationProperty<string> = new ConfigurationProperty("-me -cview -short -avobs");
+	private mUncoKeepFile: ConfigurationProperty<boolean> = new ConfigurationProperty(true);
+	private mCheckinCommand: ConfigurationProperty<string> = new ConfigurationProperty("-comment ${comment} ${filename}");
+	private mDefaultComment: ConfigurationProperty<string> = new ConfigurationProperty("");
+	private mViewPrivateFiles: ConfigurationProperty<string> = new ConfigurationProperty('(hh|cpp|def|c|h|txt)$');
+	private mExecutable: ConfigurationProperty<string> = new ConfigurationProperty('cleartool.exe');
+	private mTempDir: ConfigurationProperty<string> = new ConfigurationProperty('c:\\Temp');
+	private mIsWslEnv: ConfigurationProperty<boolean> = new ConfigurationProperty(false);
 
-	public get ShowStatusbar() : ConfigurationProperty<boolean> {
-		return this.m_showStatusbar;
+	public get showStatusbar() : ConfigurationProperty<boolean> {
+		return this.mShowStatusbar;
 	}
 
-	public get ShowAnnotationCodeLens() : ConfigurationProperty<boolean> {
-		return this.m_showAnnotationCodeLens;
+	public get showAnnotationCodeLens() : ConfigurationProperty<boolean> {
+		return this.mShowAnnotationCodeLens;
 	}
 
-	public get AnnotationColor() : ConfigurationProperty<string> {
-		return this.m_annotationColor;
+	public get annotationColor() : ConfigurationProperty<string> {
+		return this.mAnnotationColor;
 	}
 
-	public get AnnotationBackground() : ConfigurationProperty<string> {
-		return this.m_annotationBackgroundColor;
+	public get annotationBackground() : ConfigurationProperty<string> {
+		return this.mAnnotationBackgroundColor;
 	}
 
-	public get AnnotationFormatString() : ConfigurationProperty<string> {
-		return this.m_annotationFormatString;
+	public get annotationFormatString() : ConfigurationProperty<string> {
+		return this.mAnnotationFormatString;
 	}
 
-	public get UseClearDlg() : ConfigurationProperty<boolean> {
-		return this.m_useClearDlg;
+	public get useClearDlg() : ConfigurationProperty<boolean> {
+		return this.mUseClearDlg;
 	}
 
-	public get CheckoutCommand() : ConfigurationProperty<string> {
-		return this.m_checkoutCommand;
+	public get checkoutCommand() : ConfigurationProperty<string> {
+		return this.mCheckoutCommand;
 	}	
 
-	public get CheckinCommand() : ConfigurationProperty<string> {
-		return this.m_checkinCommand;
+	public get checkinCommand() : ConfigurationProperty<string> {
+		return this.mCheckinCommand;
 	}
 
-	public get FindCheckoutsCommand() : ConfigurationProperty<string> {
-		return this.m_findCheckoutsCommand;
+	public get findCheckoutsCommand() : ConfigurationProperty<string> {
+		return this.mFindCheckoutsCommand;
 	}
 
-	public get UncoKeepFile() : ConfigurationProperty<boolean> {
-		return this.m_uncoKeepFile;
+	public get uncoKeepFile() : ConfigurationProperty<boolean> {
+		return this.mUncoKeepFile;
 	}
 
-	public get DefaultComment(): ConfigurationProperty<string> {
-		return this.m_defaultComment;
+	public get defaultComment(): ConfigurationProperty<string> {
+		return this.mDefaultComment;
 	}
 
-	public get ViewPrivateFileSuffixes(): ConfigurationProperty<string> {
-		return this.m_viewPrivateFiles;
+	public get viewPrivateFileSuffixes(): ConfigurationProperty<string> {
+		return this.mViewPrivateFiles;
+	}
+
+	public get executable(): ConfigurationProperty<string> {
+		return this.mExecutable;
+	}
+
+	public get tempDir(): ConfigurationProperty<string> {
+		return this.mTempDir;
+	}
+
+	public get isWslEnv(): ConfigurationProperty<boolean> {
+		return this.mIsWslEnv;
 	}
 }

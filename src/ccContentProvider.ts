@@ -4,13 +4,13 @@ import { workspace, Uri, Disposable, TextDocumentContentProvider, QuickDiffProvi
 import { ClearCase } from "./clearcase";
 import { toCcUri, fromCcUri } from "./uri";
 
-export class ccContentProvider implements TextDocumentContentProvider, QuickDiffProvider {
+export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider {
 
-	private m_ccHandler: ClearCase;
+	private mCcHandler: ClearCase;
 	private disposables: Disposable[] = [];
 
 	constructor(private cc: ClearCase) {
-        this.m_ccHandler = cc;
+        this.mCcHandler = cc;
 		this.disposables.push(
 			workspace.registerTextDocumentContentProvider('cc', this),
 			workspace.registerTextDocumentContentProvider('cc-orig', this)
@@ -27,7 +27,7 @@ export class ccContentProvider implements TextDocumentContentProvider, QuickDiff
         
 
 		try {
-			return await this.m_ccHandler.readFileAtVersion(path, version);
+			return await this.mCcHandler.readFileAtVersion(path, version);
 		}
 		catch (err) {
 			// no-op
@@ -37,15 +37,17 @@ export class ccContentProvider implements TextDocumentContentProvider, QuickDiff
     }
     
     async provideOriginalResource(uri: Uri): Promise<Uri | undefined> {
-        if (uri.scheme !== "file")
+        if (uri.scheme !== "file") {
           return;
+				}
 
-				let current_version = await this.m_ccHandler.getVersionInformation(uri, false);
-				if( current_version !== "" ) {
-					let is_checked_out = current_version.match("\\b(CHECKEDOUT)\\b$");
+				let currentVersion = await this.mCcHandler.getVersionInformation(uri, false);
+				if( currentVersion !== "" ) {
+					let isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
 					
-					if (is_checked_out)
-						return toCcUri(uri, current_version.replace("CHECKEDOUT", "LATEST"));
+					if (isCheckedOut) {
+						return toCcUri(uri, currentVersion.replace("CHECKEDOUT", "LATEST"));
+					}
 				}
         return;
       }    

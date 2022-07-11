@@ -1,16 +1,16 @@
 
 export class Lock {
-  private m_count: number;
-  constructor(private m_accessCnt: number) {
-    this.m_count = 0;
+  private mCount: number;
+  constructor(private mAccessCnt: number) {
+    this.mCount = 0;
   }
   public reserve(): boolean {
-    let s = this.m_count;
-    this.m_count++;
-    return (s < this.m_accessCnt);
+    let s = this.mCount;
+    this.mCount++;
+    return (s < this.mAccessCnt);
   }
 
   public release() {
-    this.m_count--;
+    this.mCount--;
   }
 }

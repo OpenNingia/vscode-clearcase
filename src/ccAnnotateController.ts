@@ -1,20 +1,19 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import { ClearCase } from './clearcase'
-import { ccConfigHandler } from './ccConfigHandler';
-import { ccConfiguration } from './ccConfiguration';
+import { CCConfigHandler } from './ccConfigHandler';
+import { CCConfiguration } from './ccConfiguration';
 
-export class ccAnnotationController {
-	private m_decorationType: vscode.TextEditorDecorationType;
-	private m_isActive: boolean;
-	private m_configuration: ccConfiguration;
+export class CCAnnotationController {
+	private mDecorationType: vscode.TextEditorDecorationType;
+	private mIsActive: boolean;
+	private mConfiguration: CCConfiguration;
 
 	constructor(
 		private editor: vscode.TextEditor,
 		private context: vscode.ExtensionContext,
-		private configHandler: ccConfigHandler) {
-		this.m_isActive = false;
+		private configHandler: CCConfigHandler) {
+		this.mIsActive = false;
 		vscode.window.onDidChangeActiveTextEditor(this.onActiveEditorChange, this, this.context.subscriptions);
 		this.configHandler.onDidChangeConfiguration(this.onConfigurationChanged, this);
 		let ro: vscode.DecorationRenderOptions = {
@@ -26,40 +25,41 @@ export class ccAnnotationController {
 				margin: '0 0 0 1em'
 			}
 		};
-		this.m_decorationType = vscode.window.createTextEditorDecorationType(ro);
-		this.m_configuration = this.configHandler.configuration;
+		this.mDecorationType = vscode.window.createTextEditorDecorationType(ro);
+		this.mConfiguration = this.configHandler.configuration;
 	}
 
-	onActiveEditorChange(event: vscode.TextEditor) {
+	onActiveEditorChange(event: vscode.TextEditor|undefined): any {
 		if (event) {
-			this.m_isActive = false;
+			this.mIsActive = false;
 			this.editor = event;
 		}
 	}
 
 	onConfigurationChanged() {
-		this.m_configuration = this.configHandler.configuration;
+		this.mConfiguration = this.configHandler.configuration;
 	}
 
 	setAnnotationInText(annotationText: string) {
 		let deco: vscode.DecorationOptions[] = [];
 		let maxWidth: number = 0;
-		if (this.m_isActive === false) {
+		if (this.mIsActive === false) {
 			let textLines = annotationText.split(/[\n\r]+/);
 			let textLineParts = textLines.map(l => {
 				let parts = l.split(" | ");
 				parts[0] = parts[0].replace(/\\/g, "/");
-				if (parts[0].length > maxWidth)
+				if (parts[0].length > maxWidth) {
 					maxWidth = parts[0].length;
+				}
 				return parts;
 			});
 			deco = this.getDecoration(textLineParts, maxWidth);
-			this.m_isActive = true;
+			this.mIsActive = true;
 		}
 		else {
-			this.m_isActive = false;
+			this.mIsActive = false;
 		}
-		this.editor.setDecorations(this.m_decorationType, deco);
+		this.editor.setDecorations(this.mDecorationType, deco);
 	}
 
 	getDecoration(iLines: string[][], iMaxWidth: number): vscode.DecorationOptions[] {
@@ -75,19 +75,23 @@ export class ccAnnotationController {
 		return deco;
 	}
 
-	private createLineDecoration(iLinePart: string, iLineNr: number, iCharStart: number, iWidth): vscode.DecorationOptions {
+	private createLineDecoration(iLinePart: string, iLineNr: number, iCharStart: number, iWidth: number): vscode.DecorationOptions {
 		let charLen = iLinePart.length;
+		let range = vscode.window.activeTextEditor?.document.validateRange(new vscode.Range(iLineNr, iCharStart, iLineNr, charLen));
+		if( range === undefined ) {
+			range = new vscode.Range(0,0,0,0);
+		}
 		return {
 			hoverMessage: "",
-			range: vscode.window.activeTextEditor.document.validateRange(new vscode.Range(iLineNr, iCharStart, iLineNr, charLen)),
+			range: range,
 			renderOptions: {
 				before: {
-					color: this.m_configuration.AnnotationColor.Value,
-					backgroundColor: this.m_configuration.AnnotationBackground.Value,
+					color: this.mConfiguration.annotationColor.value,
+					backgroundColor: this.mConfiguration.annotationBackground.value,
 					contentText: iLinePart
 				}
 			}
-		}
+		};
 	}
 
 	dispose() {

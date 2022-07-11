@@ -6,41 +6,45 @@ import { Model, ModelHandler } from "./model";
 
 export class IgnoreHandler {
   private fileIgnores: FileIgnore[];
-  private m_onFilterRefreshed: EventEmitter<void>;
+  private mOnFilterRefreshed: EventEmitter<void>;
 
 
-  constructor(private m_fsWatch: ModelHandler) {
-    this.m_onFilterRefreshed = new EventEmitter<void>();
+  constructor(private mFsWatch: ModelHandler) {
+    this.mOnFilterRefreshed = new EventEmitter<void>();
+    this.fileIgnores = [];
     this.init();
   }
 
-  get OnFilterRefreshed(): EventEmitter<void> {
-    return this.m_onFilterRefreshed;
+  get onFilterRefreshed(): EventEmitter<void> {
+    return this.mOnFilterRefreshed;
   }
   
   public init() {
     this.fileIgnores = [];
-    workspace.workspaceFolders.forEach((folder: WorkspaceFolder) => {
-      let l_m = this.m_fsWatch.addWatcher(join(folder.uri.fsPath, '.ccignore'));
-      l_m.onWorkspaceChanged(this.refreshFilter, this);
-      l_m.onWorkspaceCreated(this.refreshFilter, this);
-      l_m.onWorkspaceDeleted(this.removeFilter, this);
+    workspace.workspaceFolders?.forEach((folder: WorkspaceFolder) => {
+      let lM = this.mFsWatch.addWatcher(join(folder.uri.fsPath, '.ccignore'));
+      lM.onWorkspaceChanged(this.refreshFilter, this);
+      lM.onWorkspaceCreated(this.refreshFilter, this);
+      lM.onWorkspaceDeleted(this.removeFilter, this);
       let dir = this.appendSeparator(folder.uri.fsPath);
       this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
     });
   }
 
-  public getFolderIgnore(path: Uri | string): FileIgnore | null {
+  public getFolderIgnore(path: Uri | string|undefined): FileIgnore | null {
     for (let i = 0; i < this.fileIgnores.length; i++) {
       let p:string = "";
-      if (typeof path == "string") {
+      if (typeof path === "string") {
         let t = this.appendSeparator(path);
       }
       else {
-        let t = this.appendSeparator(path.fsPath);
-      
-        if (t.indexOf(this.fileIgnores[i].PathStr) == 0 && this.fileIgnores[i].HasIgnore === true)
-            return this.fileIgnores[i];
+        if(path !== undefined) {
+          let t = this.appendSeparator(path.fsPath);
+        
+          if (t.indexOf(this.fileIgnores[i].pathStr) === 0 && this.fileIgnores[i].hasIgnore === true) {
+              return this.fileIgnores[i];
+          }
+        }
       }
     }
     return null;
@@ -49,22 +53,22 @@ export class IgnoreHandler {
   public refreshFilter(fileObj:Uri) {
     let dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      if(this.fileIgnores[i].PathStr == dir) {
+      if(this.fileIgnores[i].pathStr === dir) {
         this.fileIgnores[i] = new FileIgnore(Uri.file(dir));
-        this.m_onFilterRefreshed.fire();
+        this.mOnFilterRefreshed.fire();
         return;
       }
     }
     this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
-    this.m_onFilterRefreshed.fire();
+    this.mOnFilterRefreshed.fire();
   }
 
   public removeFilter(fileObj:Uri) {
     let dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      if(this.fileIgnores[i].PathStr == dir) {
+      if(this.fileIgnores[i].pathStr === dir) {
         this.fileIgnores.splice(i, 1);
-        this.m_onFilterRefreshed.fire();
+        this.mOnFilterRefreshed.fire();
         return;
       }
     }
@@ -72,47 +76,49 @@ export class IgnoreHandler {
 
   public appendSeparator(path:string): string {
     const ps = statSync(path);
-    if( ps.isFile() === true )
+    if( ps.isFile() === true ) {
       path = dirname(path);
-    if( path.substr(-1, 1) !== sep )
+    }
+    if( path.substr(-1, 1) !== sep ) {
       return path + sep;
+    }
     return path;
   }
 }
 
 export class FileIgnore {
-  private path: Uri;
-  private hasIgnore: boolean = false;
-  private ignore: any = null;
+  private pathObj: Uri|null = null;
+  private hasIgnoreVal: boolean = false;
+  private ignoreObj: any = null;
   constructor(path: Uri) {
     this.init(path);
   }
 
   public init(path: Uri) {
-    this.ignore = ignore();
-    this.path = path;
+    this.ignoreObj = ignore();
+    this.pathObj = path;
     let p = join(path.fsPath, ".ccignore");
-    if (existsSync(p) == true) {
-      this.hasIgnore = true;
-      this.ignore.add(readFileSync(p).toString());
+    if (existsSync(p) === true) {
+      this.hasIgnoreVal = true;
+      this.ignoreObj.add(readFileSync(p).toString());
     }
   }
 
-  public get Path(): Uri {
-    return this.path;
+  public get path(): Uri|null {
+    return this.pathObj;
   }
 
-  public get PathStr(): string {
-    let p = this.Path.fsPath;
+  public get pathStr(): string {
+    let p = this.pathObj?.fsPath||"";
     p = p.substr(-1, 1) !== sep ? p+sep : p;
     return p;
   }
 
-  public get Ignore(): any {
-    return this.ignore;
+  public get ignore(): any {
+    return this.ignoreObj;
   }
 
-  public get HasIgnore(): boolean {
-    return this.hasIgnore;
+  public get hasIgnore(): boolean {
+    return this.hasIgnoreVal;
   }
 }

@@ -19,7 +19,7 @@ export function combinedDisposable(disposables: IDisposable[]): IDisposable {
     return toDisposable(() => dispose(disposables));
 }
 
-export const EmptyDisposable = toDisposable(() => null);
+export const emptyDisposable = toDisposable(() => null);
 
 export function mapEvent<I, O>(event: Event<I>, map: (i: I) => O): Event<O> {
     return (listener, thisArgs = null, disposables?) => event(i => listener.call(thisArgs, map(i)), null, disposables);
@@ -42,28 +42,28 @@ export function anyEvent<T>(...events: Event<T>[]): Event<T> {
 }
 
 export class ModelHandler {
-    private m_models: Model[];
+    private mModels: Model[]|undefined;
 
     public constructor() {}
 
     public init() {
-        this.m_models = [];
+        this.mModels = [];
     }
 
     public addWatcher(filter: string = '**'): Model {
-        let l_m = new Model();
-        l_m.init(filter);
-        this.m_models.push(l_m);
-        return l_m;
+        let lM = new Model();
+        lM.init(filter);
+        this.mModels?.push(lM);
+        return lM;
     }
 }
 
 export class Model implements Disposable {
 
     private disposables: Disposable[] = [];
-    private _onWorkspaceCreated: Event<Uri>;
-    private _onWorkspaceChanged: Event<Uri>;
-    private _onWorkspaceDeleted: Event<Uri>;
+    private _onWorkspaceCreated!: Event<Uri>;
+    private _onWorkspaceChanged!: Event<Uri>;
+    private _onWorkspaceDeleted!: Event<Uri>;
 
     public get onWorkspaceCreated(): Event<Uri> {
         return this._onWorkspaceCreated;

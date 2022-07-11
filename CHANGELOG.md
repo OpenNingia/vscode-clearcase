@@ -1,5 +1,13 @@
 ## Release Notes
 
+### 3.0.0
+* added WSL compatibility when using cleartool.exe in a wsl environment.
+  * **check** check if the default value for the temporary directory is valid on your setup
+* added new configuration dates
+  * executable: the default cleartool executable
+  * tempDir: the temp file path (in WSL it will be used by this extension. In case you use the cleartool.exe, this path has to be a windows style path)
+  * uncoKeepFile: keep unchecked out files
+
 ### 2.7.0
 * Option to keep file when undo checkout
 

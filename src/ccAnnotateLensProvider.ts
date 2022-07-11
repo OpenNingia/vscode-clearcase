@@ -1,53 +1,45 @@
-'use strict';
-
 import * as vscode from 'vscode';
-import {ccAnnotateLens} from './ccAnnotateLens';
-import {ClearCase} from './clearcase'
-import {ccConfigHandler} from './ccConfigHandler';
-import {ccConfiguration} from './ccConfiguration';
-import { ccScmProvider } from './ccScmProvider';
+import {CCAnnotateLens} from './ccAnnotateLens';
+import {CCConfigHandler} from './ccConfigHandler';
+import { CCScmProvider } from './ccScmProvider';
 
-export class ccCodeLensProvider implements vscode.CodeLensProvider
+export class CCCodeLensProvider implements vscode.CodeLensProvider
 {
 	static selector = {
 		scheme: "file"
 	};
 
-	public constructor(private m_context: vscode.ExtensionContext, private m_cfg: ccConfigHandler, private m_provider: ccScmProvider)
+	public constructor(private mContext: vscode.ExtensionContext, private mCfg: CCConfigHandler, private mProvider: CCScmProvider)
 	{
 	}
 
-	async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]>
+	public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.CodeLens[]> | vscode.CodeLens[]
 	{
-		if ( !this.m_cfg.configuration.ShowAnnotationCodeLens.Value )
+		if ( !this.mCfg.configuration.showAnnotationCodeLens.value ) {
 			return [];
-
-		let l_lenses: vscode.CodeLens[] = [];
-		let l_isCcO: boolean;
-		try
-		{
-			l_isCcO = await this.m_provider.ClearCase.isClearcaseObject(document.uri);
 		}
-		catch(error)
-		{
-			l_isCcO = error;
-		}
-		if( document !== undefined && l_isCcO === true )
-		{
-			l_lenses.push(new ccAnnotateLens(document, new vscode.Range(0,0,0,1)));
-		}
-		return l_lenses;
+		
+		let lLenses: vscode.CodeLens[] = [];
+		return new Promise(resolve => {
+			this.mProvider.clearCase.isClearcaseObject(document.uri).then((is:boolean) => {
+				if( document !== undefined && is === true ) {
+					lLenses.push(new CCAnnotateLens(document, new vscode.Range(0,0,0,1)));
+				}
+				resolve(lLenses);
+			});
+		});
 	}
 
 	public resolveCodeLens(codeLens: vscode.CodeLens, token: vscode.CancellationToken): Thenable<vscode.CodeLens>
 	{
-		if( codeLens instanceof ccAnnotateLens )
+		if( codeLens instanceof CCAnnotateLens ) {
 			return this.ccAnnotationCommand(codeLens, token);
+		}
 
 		return Promise.reject<vscode.CodeLens>(undefined);
 	}
 
-	private ccAnnotationCommand(iLens: ccAnnotateLens, iToken: vscode.CancellationToken)
+	private ccAnnotationCommand(iLens: CCAnnotateLens, iToken: vscode.CancellationToken)
 	{
 		iLens.command = {
 			title: "Toggle annotations",

@@ -1,15 +1,15 @@
 
-import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem, WorkspaceFolder, ProgressLocation, Progress } from "vscode";
-import { ccScmResource, ResourceGroupType } from "./ccScmResource";
-import { ccScmStatus } from "./ccScmStatus";
+import { SourceControl, scm, SourceControlResourceGroup, Uri, Disposable, OutputChannel, commands, Location, workspace, window, ViewColumn, TextDocumentShowOptions, TextDocumentWillSaveEvent, TextDocumentSaveReason, ExtensionContext, languages, EventEmitter, Event, TextEditor, SourceControlResourceThemableDecorations, UriHandler, TextDocument, MessageItem, WorkspaceFolder, ProgressLocation, Progress, SourceControlResourceState } from "vscode";
+import { CCScmResource, ResourceGroupType } from "./ccScmResource";
+import { CCScmStatus } from "./ccScmStatus";
 import { ClearCase } from "./clearcase";
 import { LocalizeFunc, loadMessageBundle } from "vscode-nls";
 import { Model, ModelHandler } from "./model";
-import { ccConfigHandler } from "./ccConfigHandler";
-import { ccAnnotationController } from "./ccAnnotateController";
-import { ccCodeLensProvider } from "./ccAnnotateLensProvider";
-import { ccContentProvider } from "./ccContentProvider";
-import { unlink, exists, statSync } from "fs";
+import { CCConfigHandler } from "./ccConfigHandler";
+import { CCAnnotationController } from "./ccAnnotateController";
+import { CCCodeLensProvider } from "./ccAnnotateLensProvider";
+import { CCContentProvider } from "./ccContentProvider";
+import { unlink, exists, statSync, access } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
@@ -18,66 +18,78 @@ import * as path from 'path';
 
 const localize: LocalizeFunc = loadMessageBundle();
 
-export class ccScmProvider {
+export class CCScmProvider {
 
-  private m_ccContentProvider: ccContentProvider;
-  private m_ccHandler: ClearCase;
-  private m_ignoreFileEv: ModelHandler;
-  private m_ccScm: SourceControl;
-  private m_ccCheckedoutGrp: SourceControlResourceGroup;
-  private m_ccUntrackedGrp: SourceControlResourceGroup;
-  private m_isUpdatingUntracked: boolean;
-  private m_listLock: Lock;
-  private m_ignores: IgnoreHandler;
+  private mCCContentProvider: CCContentProvider|null;
+  private mCCHandler: ClearCase;
+  private mIgnoreFileEv: ModelHandler|null;
+  private mCCScm: SourceControl|null;
+  private mCCCheckedoutGrp: SourceControlResourceGroup|null;
+  private mCCUntrackedGrp: SourceControlResourceGroup|null;
+  private mIsUpdatingUntracked: boolean|null;
+  private mListLock: Lock;
+  private mIgnores: IgnoreHandler|null;
 
-  private m_windowChangedEvent: EventEmitter<void>;
+  private mWindowChangedEvent: EventEmitter<void>;
 
-  get root(): Uri {
-    return workspace.workspaceFolders[0].uri;
+  get root(): Uri|undefined {
+    if( workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0)
+    {
+      return workspace.workspaceFolders[0].uri;
+    }
+    return undefined;
   }
 
-  constructor(private m_context: ExtensionContext,
-    private m_disposables: Disposable[],
+  constructor(private mContext: ExtensionContext,
+    private mDisposables: Disposable[],
     private outputChannel: OutputChannel,
-    private configHandler: ccConfigHandler) {
+    private configHandler: CCConfigHandler) {
 
-    this.m_listLock = new Lock(1);
-    this.m_ccHandler = new ClearCase(m_context, configHandler, outputChannel);
-    this.m_windowChangedEvent = new EventEmitter<void>();
+    this.mListLock = new Lock(1);
+    this.mCCHandler = new ClearCase(mContext, configHandler, outputChannel);
+    this.mWindowChangedEvent = new EventEmitter<void>();
 
-    this.m_ccHandler.checkIsView(null).then((is_view) => {
-      if (is_view) {
+    this.mCCContentProvider = null;
+    this.mIgnoreFileEv = null;
+    this.mCCScm = null;
+    this.mCCCheckedoutGrp = null;
+    this.mCCUntrackedGrp = null;
+    this.mIsUpdatingUntracked = null;
+    this.mIgnores = null;
 
-        let fileList = m_context.workspaceState.get('untrackedfilecache', []);
-        this.ClearCase.UntrackedList.parse(fileList);
+    this.mCCHandler.checkIsView(undefined).then((isView) => {
+      if (isView) {
 
-        this.m_ccScm = scm.createSourceControl('cc', 'ClearCase', this.root);
-        this.m_ccCheckedoutGrp = this.m_ccScm.createResourceGroup("cc_checkedout", "Checked out");
-        this.m_ccUntrackedGrp = this.m_ccScm.createResourceGroup("cc_untracked", "View private");
-        this.m_ccCheckedoutGrp.hideWhenEmpty = true;
-        this.m_ccUntrackedGrp.hideWhenEmpty = true;
-        this.m_ccContentProvider = new ccContentProvider(this.m_ccHandler);
+        let fileList = mContext.workspaceState.get('untrackedfilecache', []);
+        this.clearCase.untrackedList.parse(fileList);
 
-        this.m_context.subscriptions.push(this.m_ccScm);
+        this.mCCScm = scm.createSourceControl('cc', 'ClearCase', this.root);
+        this.mCCCheckedoutGrp = this.mCCScm.createResourceGroup("cc_checkedout", "Checked out");
+        this.mCCUntrackedGrp = this.mCCScm.createResourceGroup("cc_untracked", "View private");
+        this.mCCCheckedoutGrp.hideWhenEmpty = true;
+        this.mCCUntrackedGrp.hideWhenEmpty = true;
+        this.mCCContentProvider = new CCContentProvider(this.mCCHandler);
 
-        this.m_ccScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
-        this.m_ccScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
-        this.m_ccScm.quickDiffProvider = this.m_ccContentProvider;
+        this.mContext.subscriptions.push(this.mCCScm);
 
-        this.m_ignoreFileEv = new ModelHandler();
-        this.m_ignoreFileEv.init();
-        this.m_ignores = new IgnoreHandler(this.m_ignoreFileEv);
-        this.m_ignores.OnFilterRefreshed.event(() => {
+        this.mCCScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
+        this.mCCScm.acceptInputCommand = { command: 'extension.ccCheckinAll', title: localize('checkinall', 'Check In All') };
+        this.mCCScm.quickDiffProvider = this.mCCContentProvider;
+
+        this.mIgnoreFileEv = new ModelHandler();
+        this.mIgnoreFileEv.init();
+        this.mIgnores = new IgnoreHandler(this.mIgnoreFileEv);
+        this.mIgnores.onFilterRefreshed.event(() => {
           this.filterUntrackedList();
         }, this);
 
-        this.ClearCase.onCommandExecuted((evArgs: Uri) => {
+        this.clearCase.onCommandExecuted((evArgs: Uri) => {
           this.handleChangeFiles(evArgs);
         });
 
         this.bindScmCommand();
 
-        this.m_isUpdatingUntracked = false;
+        this.mIsUpdatingUntracked = false;
 
         this.updateCheckedOutList();
         this.filterUntrackedList();
@@ -85,14 +97,14 @@ export class ccScmProvider {
     });
   }
 
-  public get ClearCase(): ClearCase {
-    return this.m_ccHandler;
+  public get clearCase(): ClearCase {
+    return this.mCCHandler;
   }
 
   public updateIsView(): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-      this.ClearCase.checkIsView(window.activeTextEditor).then(() => {
-        resolve(this.ClearCase.IsView);
+      this.clearCase.checkIsView(window.activeTextEditor).then(() => {
+        resolve(this.clearCase.isView);
       }).catch((error) => {
         reject(false);
       });
@@ -101,85 +113,97 @@ export class ccScmProvider {
 
   public async handleChangeFiles(fileObj: Uri) {
     let version = "";
-    if (this.m_listLock.reserve()) {
+    if (this.mListLock.reserve()) {
       try {
-        version = await this.ClearCase.getVersionInformation(fileObj);
+        version = await this.clearCase.getVersionInformation(fileObj);
         let changed: boolean[] = [false, false];
-        let filteredUntracked = [];
-        let filteredCheckedout = this.m_ccCheckedoutGrp.resourceStates.filter((val, index) => {
-          if (val.resourceUri.fsPath !== fileObj.fsPath)
+        let filteredUntracked:CCScmResource[] = [];
+        let filteredCheckedout:CCScmResource[] = (this.mCCCheckedoutGrp?.resourceStates.filter((val, index) => {
+          if (val.resourceUri.fsPath !== fileObj.fsPath) {
             return val;
-          else
+          } else {
             changed[0] = true;
-        });
-        if (changed[0] == false) {
-          filteredUntracked = this.m_ccUntrackedGrp.resourceStates.filter((val, index) => {
-            if (val.resourceUri.fsPath !== fileObj.fsPath)
+          }
+        }) as CCScmResource[]);
+        if (changed[0] === false) {
+          filteredUntracked = (this.mCCUntrackedGrp?.resourceStates.filter((val, index) => {
+            if (val.resourceUri.fsPath !== fileObj.fsPath) {
               return val;
-            else
+            } else {
               changed[1] = true;
-          });
+            }
+          }) as CCScmResource[]) || [];
         }
         // file is checked out, add to resource state list
         if (version.match(/checkedout/i) !== null) {
-          filteredCheckedout.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.MODIFIED));
+          filteredCheckedout?.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.modified));
           changed[0] = true;
         }
         // file has no version information, so it is view private
-        if (version == "") {
-          if (this.ClearCase.UntrackedList.exists(fileObj.fsPath) === false) {
-            this.ClearCase.UntrackedList.addString(fileObj.fsPath);
-            this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
+        if (version === "") {
+          if (this.clearCase.untrackedList.exists(fileObj.fsPath) === false) {
+            this.clearCase.untrackedList.addString(fileObj.fsPath);
+            this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
           }
-          let ign = this.m_ignores.getFolderIgnore(path.dirname(fileObj.fsPath));
-          if (ign !== null && ign.Ignore.ignores(fileObj.fsPath) === false) {
-            filteredUntracked.push(new ccScmResource(ResourceGroupType.Index, fileObj, ccScmStatus.UNTRACKED));
+          let ign = this.mIgnores?.getFolderIgnore(path.dirname(fileObj.fsPath));
+          if (ign !== null && ign?.ignore.ignores(fileObj.fsPath) === false) {
+            filteredUntracked.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.untracked));
             changed[1] = true;
           }
         }
         if (changed[0]) {
-          this.m_ccCheckedoutGrp.resourceStates = filteredCheckedout.sort(ccScmResource.sort);
+          if(this.mCCCheckedoutGrp !== null) {
+            this.mCCCheckedoutGrp.resourceStates = filteredCheckedout?.sort(CCScmResource.sort)||[];
+          }
         }
         if (changed[1]) {
-          this.m_ccUntrackedGrp.resourceStates = filteredUntracked.sort(ccScmResource.sort);
+          if(this.mCCUntrackedGrp !== null) {
+            this.mCCUntrackedGrp.resourceStates = filteredUntracked?.sort(CCScmResource.sort)||[];
+          }
         }
       }
       catch (error) {
         this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
       }
     }
-    this.m_listLock.release();
+    this.mListLock.release();
   }
 
   public async cleanUntrackedList() {
-    this.ClearCase.UntrackedList.updateEntryExistsOnFileSystem();
-    this.ClearCase.UntrackedList.cleanMap();
+    this.clearCase.untrackedList.updateEntryExistsOnFileSystem();
+    this.clearCase.untrackedList.cleanMap();
   }
 
   public async handleDeleteFiles(fileObj: Uri) {
-    let filtered = this.m_ccCheckedoutGrp.resourceStates.filter((val) => {
-      if (val.resourceUri.fsPath != fileObj.fsPath)
-        return val;
-    });
-    this.m_ccCheckedoutGrp.resourceStates = filtered;
-    filtered = this.m_ccUntrackedGrp.resourceStates.filter((val) => {
-      if (val.resourceUri.fsPath != fileObj.fsPath)
-        return val;
-    });
-    this.m_ccUntrackedGrp.resourceStates = filtered;
+    if(this.mCCCheckedoutGrp !== null && this.mCCUntrackedGrp){
+      let filtered = this.mCCCheckedoutGrp.resourceStates.filter((val) => {
+        if (val.resourceUri.fsPath !== fileObj.fsPath) {
+          return val;
+        }
+      });
+      this.mCCCheckedoutGrp.resourceStates = filtered;
+      filtered = this.mCCUntrackedGrp.resourceStates.filter((val) => {
+        if (val.resourceUri.fsPath !== fileObj.fsPath) {
+          return val;
+        }
+      });
+      this.mCCUntrackedGrp.resourceStates = filtered;
+    }
   }
 
   public async updateCheckedOutList() {
-    let checkedout: ccScmResource[] = [];
+    let checkedout: CCScmResource[] = [];
 
-    this.ClearCase.findCheckouts().then((files) => {
+    this.clearCase.findCheckouts().then((files) => {
       checkedout = files.map((val) => {
-        return new ccScmResource(ResourceGroupType.Index, Uri.file(val), ccScmStatus.MODIFIED);
+        return new CCScmResource(ResourceGroupType.index, Uri.file(val), CCScmStatus.modified);
       }).sort((val1, val2) => {
         return (val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath));
       });
-      this.m_ccCheckedoutGrp.resourceStates = checkedout.sort(ccScmResource.sort);
-      this.m_isUpdatingUntracked = false;
+      if(this.mCCCheckedoutGrp) {
+        this.mCCCheckedoutGrp.resourceStates = checkedout.sort(CCScmResource.sort);
+      }
+      this.mIsUpdatingUntracked = false;
     });
   }
 
@@ -191,105 +215,116 @@ export class ccScmProvider {
         cancellable: false
       },
       async (process) => {
-        if (this.m_isUpdatingUntracked === false) {
-          this.m_isUpdatingUntracked = true;
-          this.ClearCase.UntrackedList.resetFoundState();
+        if (this.mIsUpdatingUntracked === false) {
+          this.mIsUpdatingUntracked = true;
+          this.clearCase.untrackedList.resetFoundState();
           
-          let l_step = 100;
+          let lStep = 100;
 
-          await this.ClearCase.findUntracked(this.root);
+          await this.clearCase.findUntracked(this.root);
           process.report({
             message: `Folder ${this.root} checked!`,
-            increment: l_step
+            increment: lStep
           });
 
-          this.ClearCase.UntrackedList.cleanMap();
-          this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
+          this.clearCase.untrackedList.cleanMap();
+          this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
           this.filterUntrackedList();
-          this.m_isUpdatingUntracked = false;
+          this.mIsUpdatingUntracked = false;
         }
       }
     );
   }
 
   public filterUntrackedList() {
-    let viewPrv: ccScmResource[] = [];
-
-    let ign = this.m_ignores.getFolderIgnore(this.root);
-    let d = this.ClearCase.UntrackedList.getStringsByKey(this.root.fsPath).filter((val) => {
-      // if no .ccignore file is present, show all files
-      if (ign === null || (val !== "" && ign.Ignore.ignores(path.relative(this.root.fsPath, val)) === false)) {
-        return val;
+    let viewPrv: CCScmResource[] = [];
+    let root = this.root;
+    if(root !== undefined) {
+      let ign = this.mIgnores?.getFolderIgnore(root);
+      let d = this.clearCase.untrackedList.getStringsByKey(root?.fsPath)?.filter((val) => {
+        // if no .ccignore file is present, show all files
+        if (root!== undefined && (ign === undefined || (val !== "" && ign?.ignore.ignores(path.relative(root.fsPath, val)) === false))) {
+          return val;
+        }
+      });
+      if(d!== undefined) {
+        viewPrv = viewPrv.concat(d.map((val) => {
+          return new CCScmResource(ResourceGroupType.untracked, Uri.file(val), CCScmStatus.untracked);
+        }));
+        if(this.mCCUntrackedGrp!==null) {
+          this.mCCUntrackedGrp.resourceStates = viewPrv.sort(CCScmResource.sort);
+        }
       }
-    });
-
-    viewPrv = viewPrv.concat(d.map((val) => {
-      return new ccScmResource(ResourceGroupType.Untracked, Uri.file(val), ccScmStatus.UNTRACKED);
-    }));
-
-    this.m_ccUntrackedGrp.resourceStates = viewPrv.sort(ccScmResource.sort);
+    }
   }
 
-  public deleteViewPrivateFile(fileObj: ccScmResource) {
+  public deleteViewPrivateFile(fileObj: CCScmResource) {
     let yes: MessageItem = { title: "Yes" };
     let no: MessageItem = { title: "No", isCloseAffordance: true };
     window.showInformationMessage(
       `Really delete file ${fileObj.resourceUri.fsPath}?`,
       { modal: true }, yes, no)
-      .then((retVal: MessageItem) => {
+      .then((retVal: MessageItem|undefined) => {
 
-        if (retVal.title === yes.title) {
-          exists(fileObj.resourceUri.fsPath, (exists => {
-            if (exists === true)
+        if (retVal !== undefined && retVal.title === yes.title) {
+          access(fileObj.resourceUri.fsPath, ((err:any) => {
+            if (err === undefined) {
               unlink(fileObj.resourceUri.fsPath, (error => {
-                if (error)
+                if (error) {
                   this.outputChannel.appendLine(`Delete error: ${error.message}`);
+                }
                 this.handleDeleteFiles(fileObj.resourceUri);
               }));
-          }))
+            }
+          }));
         }
       });
   }
 
   public async editConfigSpec() {
+    if( workspace.workspaceFolders === undefined ) {
+      return;
+    }
     let wsf = workspace.workspaceFolders[0].uri.fsPath;
     // create and configure input box:
     let saveInput = window.showInformationMessage("Save Configspec?", "Yes", "No");
     // Call cleartool:
-    let child = this.ClearCase.runClearTooledcs(wsf);
+    let child = await this.clearCase.runClearTooledcs(wsf);
     // Callback on accept:
     saveInput.then((ev) => {
       let answer = 'no';
       if (ev === 'Yes') {
         answer = 'yes';
       }
-      child.stdin.write(answer)
-      child.stdin.end()
+      child?.stdin?.write(answer);
+      child?.stdin?.end();
     });
   }
 
   public get onWindowChanged(): Event<void> {
-    return this.m_windowChangedEvent.event;
+    return this.mWindowChangedEvent.event;
   }
 
   public bindCommands() {
 
-    this.registerCommand('extension.ccExplorer', this.ClearCase.runClearCaseExplorer);
-    this.registerCommand('extension.ccCheckout', this.ClearCase.checkoutFile);
-    this.registerCommand('extension.ccCheckin', this.ClearCase.checkinFile);
-    this.registerCommand('extension.ccUndoCheckout', this.ClearCase.undoCheckoutFile);
-    this.registerCommand('extension.ccVersionTree', this.ClearCase.versionTree);
-    this.registerCommand('extension.ccComparePrevious', this.ClearCase.diffWithPrevious);
-    this.registerCommand('extension.ccItemProperties', this.ClearCase.itemProperties);
-    this.registerCommand('extension.ccMkElement', this.ClearCase.createVersionedObject);
+    this.registerCommand('extension.ccExplorer', this.clearCase.runClearCaseExplorer);
+    this.registerCommand('extension.ccCheckout', this.clearCase.checkoutFile);
+    this.registerCommand('extension.ccCheckin', this.clearCase.checkinFile);
+    this.registerCommand('extension.ccUndoCheckout', this.clearCase.undoCheckoutFile);
+    this.registerCommand('extension.ccVersionTree', this.clearCase.versionTree);
+    this.registerCommand('extension.ccComparePrevious', this.clearCase.diffWithPrevious);
+    this.registerCommand('extension.ccItemProperties', this.clearCase.itemProperties);
+    this.registerCommand('extension.ccMkElement', this.clearCase.createVersionedObject);
 
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccOpenResource', (fileObj: Uri | ccScmResource) => {
-        let file: Uri = null;
-        if (fileObj instanceof Uri)
+    this.mDisposables.push(
+      commands.registerCommand('extension.ccOpenResource', (fileObj: Uri | CCScmResource) => {
+        let file: Uri|null = null;
+        if (fileObj instanceof Uri) {
           file = fileObj;
-        if (fileObj instanceof ccScmResource)
+        }
+        if (fileObj instanceof CCScmResource) {
           file = fileObj.resourceUri;
+        }
         if (file === null) {
           if (window && window.activeTextEditor) {
             file = window.activeTextEditor.document.uri;
@@ -304,104 +339,116 @@ export class ccScmProvider {
       }, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccEmbedDiff', (fileObj: Uri) => {
         this.embedDiff(fileObj);
       }, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccFindModified', () => {
-        var path = workspace.rootPath || workspace.workspaceFolders[0].uri.fsPath;
-        if (path)
-          this.ClearCase.findModified(path);
+        if( workspace.workspaceFolders ) {
+          var path = workspace.workspaceFolders[0].uri.fsPath;
+          if (path) {
+            this.clearCase.findModified(path);
+          }
+        }
       }, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccFindCheckouts', () => {
-        var path = workspace.rootPath || workspace.workspaceFolders[0].uri.fsPath;
-        if (path)
-          this.ClearCase.findCheckoutsGui(path);
+        if( workspace.workspaceFolders ) {
+          var path = workspace.workspaceFolders[0].uri.fsPath;
+          if (path) {
+            this.clearCase.findCheckoutsGui(path);
+          }
+        }
       }, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccUpdateView', () => {
-        this.ClearCase.updateView();
+        this.clearCase.updateView();
       }, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccUpdateDir', (filePath?: Uri) => {
         if (window &&
-          window.activeTextEditor &&
-          window.activeTextEditor.document) {
-          this.ClearCase.updateDir(filePath);
+            window.activeTextEditor &&
+            window.activeTextEditor.document &&
+            filePath) {
+          this.clearCase.updateDir(filePath);
         }
       }, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccUpdateFile', (filePath?: Uri) => {
         if (window &&
-          window.activeTextEditor &&
-          window.activeTextEditor.document) {
-          this.ClearCase.updateFile(filePath);
+            window.activeTextEditor &&
+            window.activeTextEditor.document &&
+            filePath) {
+          this.clearCase.updateFile(filePath);
         }
       }, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccSelectActv', () => {
-        this.ClearCase.changeCurrentActivity();
+        this.clearCase.changeCurrentActivity();
       }, this)
     );
 
-    let annoCtrl = new ccAnnotationController(
-      window.activeTextEditor,
-      this.m_context,
-      this.configHandler);
-      
-    this.m_context.subscriptions.push(annoCtrl);
+    if( window.activeTextEditor !== undefined ) {
+      let annoCtrl = new CCAnnotationController(
+        window.activeTextEditor,
+        this.mContext,
+        this.configHandler);
+        
+      this.mContext.subscriptions.push(annoCtrl);
+      this.mDisposables.push(
+        commands.registerCommand('extension.ccAnnotate', (filePath?: Uri) => {
+          if (window &&
+            window.activeTextEditor &&
+            window.activeTextEditor.document) {
+            this.clearCase.annotate(filePath || window.activeTextEditor.document.uri, annoCtrl);
+          }
+        }, this)
+      );
+    }
 
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccAnnotate', (filePath?: Uri) => {
-        if (window &&
-          window.activeTextEditor &&
-          window.activeTextEditor.document) {
-          this.ClearCase.annotate(filePath || window.activeTextEditor.document.uri, annoCtrl);
-        }
-      }, this)
-    );
-
-    this.m_context.subscriptions.push(
+    this.mContext.subscriptions.push(
       languages.registerCodeLensProvider(
-        ccCodeLensProvider.selector,
-        new ccCodeLensProvider(this.m_context, this.configHandler, this)));
+        CCCodeLensProvider.selector,
+        new CCCodeLensProvider(this.mContext, this.configHandler, this)));
   }
 
   public registerCommand(cmdName: string, cmd: (fileObj: Uri) => void) {
-    this.m_disposables.push(
-      commands.registerCommand(cmdName, (fileObj: Uri | ccScmResource) => {
-        let file: Uri = null;
-        if (fileObj instanceof Uri)
+    this.mDisposables.push(
+      commands.registerCommand(cmdName, (fileObj: Uri | CCScmResource) => {
+        let file: Uri|null = null;
+        if (fileObj instanceof Uri) {
           file = fileObj;
-        if (fileObj instanceof ccScmResource)
+        }
+        if (fileObj instanceof CCScmResource) {
           file = fileObj.resourceUri;
+        }
         if (file === null) {
           if (window && window.activeTextEditor) {
             file = window.activeTextEditor.document.uri;
           }
         }
-        if (file !== null)
-          this.ClearCase.execOnSCMFile(file, cmd);
+        if (file !== null) {
+          this.clearCase.execOnSCMFile(file, cmd);
+        }
       }, this)
     );
   }
 
   public bindScmCommand() {
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccCheckinAll', () => {
         window.withProgress({
           location: ProgressLocation.SourceControl,
@@ -409,66 +456,70 @@ export class ccScmProvider {
           cancellable: false
         },
           async (process) => {
-            let fileObjs: Uri[] = this.m_ccCheckedoutGrp.resourceStates.map(val => {
+            let fileObjs: Uri[] = this.mCCCheckedoutGrp?.resourceStates.map(val => {
               return val.resourceUri;
-            });
-            let checkinComment = this.m_ccScm.inputBox.value;
-            await this.ClearCase.checkinFiles(fileObjs, checkinComment);
-            this.m_ccScm.inputBox.value = "";
-            this.updateCheckedOutList();
-            process.report({ message: "Checkin finished." });
+            }) || [];
+            if(this.mCCScm !== null) {
+              let checkinComment = this.mCCScm.inputBox.value || "";
+              await this.clearCase.checkinFiles(fileObjs, checkinComment);
+              this.mCCScm.inputBox.value = "";
+              this.updateCheckedOutList();
+              process.report({ message: "Checkin finished." });
+            }
           });
       }, this));
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccRefreshFileList', () => {
         this.updateCheckedOutList();
       }, this));
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccRefreshViewPrivateFileList', () => {
         this.updateUntrackedList();
       }, this));
 
-    this.m_disposables.push(
-      commands.registerCommand('extension.ccDeleteViewPrivate', (fileObj: ccScmResource) => {
+    this.mDisposables.push(
+      commands.registerCommand('extension.ccDeleteViewPrivate', (fileObj: CCScmResource) => {
         this.deleteViewPrivateFile(fileObj);
       }, this));
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       commands.registerCommand('extension.ccEditConfigSpec', () => {
         this.editConfigSpec();
       }, this));
   }
 
   public bindEvents() {
-    this.m_disposables.push(
+    this.mDisposables.push(
       workspace.onWillSaveTextDocument(this.onWillSaveDocument, this)
     );
 
-    this.m_disposables.push(
+    this.mDisposables.push(
       window.onDidChangeActiveTextEditor(this.onDidChangeTextEditor, this)
     );
   }
 
   public async onWillSaveDocument(event: TextDocumentWillSaveEvent) {
     try {
-      if (event == null ||
-        event.document == null ||
+      if (event === null ||
+        event.document === null ||
         event.document.isUntitled ||
-        event.reason != TextDocumentSaveReason.Manual)
+        event.reason !== TextDocumentSaveReason.Manual) {
         return;
-      if (this.ClearCase.isReadOnly(event.document)) {
+      }
+      if (this.clearCase.isReadOnly(event.document)) {
 
-        let useClearDlg = this.configHandler.configuration.UseClearDlg.Value;
+        let useClearDlg = this.configHandler.configuration.useClearDlg.value;
         if (useClearDlg) {
-          this.ClearCase.checkoutAndSaveFile(event.document);
+          this.clearCase.checkoutAndSaveFile(event.document);
         } else {
-          this.ClearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
+          this.clearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
             if (state === true) {
-              this.ClearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
-                if (isCheckedOut === true)
+              this.clearCase.checkoutFile(event.document.uri).then((isCheckedOut) => {
+                if (isCheckedOut === true) {
                   event.document.save();
+                }
               }).catch((error) => {
                 return;
               });
@@ -479,12 +530,12 @@ export class ccScmProvider {
       else {
         let version = "";
         try {
-          version = await this.ClearCase.getVersionInformation(event.document.uri);
+          version = await this.clearCase.getVersionInformation(event.document.uri);
         }
         catch (error) {
           this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
         }
-        if (version == "") {
+        if (version === "") {
           this.handleChangeFiles(event.document.uri);
         }
       }
@@ -507,37 +558,39 @@ export class ccScmProvider {
         preview: true
       };
 
-      let prev_uri = await this.m_ccContentProvider.provideOriginalResource(fileObj);
-      if (prev_uri !== undefined) {
+      let prevUri = await this.mCCContentProvider?.provideOriginalResource(fileObj);
+      if (prevUri !== undefined) {
         let fn = path.basename(fileObj.fsPath);
-        let { version } = fromCcUri(prev_uri);
+        let { version } = fromCcUri(prevUri);
 
-        commands.executeCommand('vscode.diff', prev_uri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
+        commands.executeCommand('vscode.diff', prevUri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
       }
     }
   }
 
   public async updateUntrackedListWFile(fileObj: Uri) {
-    let isCCObject = await this.ClearCase.isClearcaseObject(fileObj);
+    let isCCObject = await this.clearCase.isClearcaseObject(fileObj);
     if (isCCObject === false) {
       let wsf = workspace.getWorkspaceFolder(fileObj);
-      if (wsf && wsf.uri && wsf.uri.fsPath)
-        this.ClearCase.UntrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
-      this.m_context.workspaceState.update("untrackedfilecache", this.ClearCase.UntrackedList.stringify());
+      if (wsf && wsf.uri && wsf.uri.fsPath) {
+        this.clearCase.untrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
+      }
+      this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
       this.filterUntrackedList();
     }
   }
 
-  public async onDidChangeTextEditor(editor: TextEditor) {
-    await this.ClearCase.checkIsView(editor);
+  public async onDidChangeTextEditor(editor: TextEditor|undefined): Promise<any> {
+    await this.clearCase.checkIsView(editor);
     this.updateCheckedOutList();
-    if (editor && editor.document && editor.document.uri)
+    if (editor && editor.document && editor.document.uri) {
       this.updateUntrackedListWFile(editor.document.uri);
-    this.m_windowChangedEvent.fire();
+    }
+    this.mWindowChangedEvent.fire();
   }
 
   dispose(): void {
-    this.m_disposables.forEach(d => d.dispose());
-    this.m_disposables = [];
+    this.mDisposables.forEach(d => d.dispose());
+    this.mDisposables = [];
   }
 }
