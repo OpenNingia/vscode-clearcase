@@ -360,8 +360,9 @@ export class ClearCase {
         }
       });
     }
-    catch (error) {
-      this.outputChannel.appendLine(error);
+    catch (error:any) {
+      if( error !== undefined )
+        this.outputChannel.appendLine(error);
     }
     return resNew;
   }
@@ -397,7 +398,7 @@ export class ClearCase {
         });
       });
     }
-    catch (error) {
+    catch (error:any) {
       this.outputChannel.appendLine(error);
     }
   }
@@ -495,7 +496,7 @@ export class ClearCase {
       let msg: string|undefined = await this.updateObject(uri, 0);
       window.showInformationMessage(`Update of ${msg} finished!`);
     }
-    catch (error) {
+    catch (error:any) {
       window.showErrorMessage(error);
     }
   }
@@ -505,7 +506,7 @@ export class ClearCase {
       let msg: string|undefined = await this.updateObject(uri, 1);
       window.showInformationMessage(`Update of ${msg} finished!`);
     }
-    catch (error) {
+    catch (error:any) {
       window.showErrorMessage(error);
     }
   }
@@ -566,7 +567,7 @@ export class ClearCase {
       let content = await this.getAnnotatedFileContent(fileUri.fsPath);
       ctrl.setAnnotationInText(content);
     }
-    catch (error) {
+    catch (error:any) {
       error = error.replace(/[\r\n]+/g, " ");
       window.showErrorMessage(error);
     }
@@ -688,7 +689,7 @@ export class ClearCase {
         }
       }
     }
-    catch (error) {
+    catch (error:any) {
       error = error.replace(/[\r\n]+/g, " ");
       window.showErrorMessage(error);
     }
@@ -798,6 +799,10 @@ export class ClearCase {
         } else {
           msg = `ClearCase error: ClearCase error: ${msg}`;
           self.outputChannel.appendLine(msg);
+          let msgParts = msg.match(/(cleartool\:\serror\:)([\"\'\w\d\:\\\/\-\_\s]+)[\r\n\.]+/i);
+          if( msgParts !== null && msgParts?.length > 2 ) {
+            window.showErrorMessage(`Cleartool SCM:`, {}, [msgParts[2]]);
+          }
         }
         if (msg.match(/clearcase error/i) !== null) {
           reject();
