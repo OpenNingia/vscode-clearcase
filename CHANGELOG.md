@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 3.0.1
+* Security update
+
 ### 3.0.0
 * added WSL compatibility when using cleartool.exe in a wsl environment.
   * **check** check if the default value for the temporary directory is valid on your setup
