@@ -7,7 +7,7 @@
 	"configurations": [
 		{
 			"name": "Run Extension",
-			"type": "legacy-extensionHost",
+			"type": "extensionHost",
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
@@ -19,7 +19,7 @@
 		},
 		{
 			"name": "Extension Tests",
-			"type": "legacy-extensionHost",
+			"type": "extensionHost",
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",

@@ -468,7 +468,11 @@ export class ClearCase {
           null,
           (result: string) => {
             fileVers = this.getVersionString(result, normalize);
-          }
+          },
+          (error: string) => {
+            this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
+            fileVers = "?"
+          }          
         );
         resolve(fileVers);
       }
@@ -802,7 +806,7 @@ export class ClearCase {
           self.outputChannel.appendLine(msg);
           let msgParts = msg.match(/(cleartool\:\serror\:)([\"\'\w\d\:\\\/\-\_\s]+)[\r\n\.]+/i);
           if( msgParts !== null && msgParts?.length > 2 ) {
-            window.showErrorMessage(`Cleartool SCM:`, msgParts[2]);
+            window.showErrorMessage(`Cleartool SCM: ` + msgParts[2]);
           }
         }
         if (msg.match(/clearcase error/i) !== null) {
