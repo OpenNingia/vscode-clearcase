@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 3.0.2
+* Fix nagging error messages when editing unsaved files
+
 ### 3.0.1
 * Security update
 
