@@ -21,7 +21,7 @@ export class CCCodeLensProvider implements vscode.CodeLensProvider
 		
 		let lLenses: vscode.CodeLens[] = [];
 		return new Promise(resolve => {
-			this.mProvider.clearCase.isClearcaseObject(document.uri).then((is:boolean) => {
+			this.mProvider.clearCase?.isClearcaseObject(document.uri).then((is:boolean) => {
 				if( document !== undefined && is === true ) {
 					lLenses.push(new CCAnnotateLens(document, new vscode.Range(0,0,0,1)));
 				}

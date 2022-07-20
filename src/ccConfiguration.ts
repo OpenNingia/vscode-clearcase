@@ -43,6 +43,9 @@ export class CCConfiguration
 	private mExecutable: ConfigurationProperty<string> = new ConfigurationProperty('cleartool.exe');
 	private mTempDir: ConfigurationProperty<string> = new ConfigurationProperty('c:\\Temp');
 	private mIsWslEnv: ConfigurationProperty<boolean> = new ConfigurationProperty(false);
+	private mUseRemoteClient: ConfigurationProperty<boolean> = new ConfigurationProperty(false);
+	private mWebserverUsername: ConfigurationProperty<string> = new ConfigurationProperty("");
+	private mWebserverAddress: ConfigurationProperty<string> = new ConfigurationProperty("");
 
 	public get showStatusbar() : ConfigurationProperty<boolean> {
 		return this.mShowStatusbar;
@@ -102,5 +105,17 @@ export class CCConfiguration
 
 	public get isWslEnv(): ConfigurationProperty<boolean> {
 		return this.mIsWslEnv;
+	}
+
+	public get UseRemoteClient(): ConfigurationProperty<boolean> {
+		return this.mUseRemoteClient;
+	}
+
+	public get WebserverUsername(): ConfigurationProperty<string> {
+		return this.mWebserverUsername;
+	}
+
+	public get WebserverAddress(): ConfigurationProperty<string> {
+		return this.mWebserverAddress;
 	}
 }
