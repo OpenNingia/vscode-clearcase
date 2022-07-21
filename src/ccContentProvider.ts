@@ -6,15 +6,17 @@ import { toCcUri, fromCcUri } from "./uri";
 
 export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider {
 
-	private mCcHandler: ClearCase;
+	private mCcHandler: ClearCase|null = null;
 	private disposables: Disposable[] = [];
 
-	constructor(private cc: ClearCase) {
-        this.mCcHandler = cc;
-		this.disposables.push(
-			workspace.registerTextDocumentContentProvider('cc', this),
-			workspace.registerTextDocumentContentProvider('cc-orig', this)
-		);
+	constructor(private cc: ClearCase|null) {
+		if(cc!==null) {
+			this.mCcHandler = cc;
+			this.disposables.push(
+				workspace.registerTextDocumentContentProvider('cc', this),
+				workspace.registerTextDocumentContentProvider('cc-orig', this)
+			);
+		}
 	}
 	
 	async provideTextDocumentContent(uri: Uri): Promise<string> {
@@ -27,7 +29,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
         
 
 		try {
-			return await this.mCcHandler.readFileAtVersion(path, version);
+			return this.mCcHandler ? await this.mCcHandler.readFileAtVersion(path, version) : '';
 		}
 		catch (err) {
 			// no-op
@@ -41,7 +43,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
           return;
 				}
 
-				let currentVersion = await this.mCcHandler.getVersionInformation(uri, false);
+				let currentVersion = this.mCcHandler ? await this.mCcHandler.getVersionInformation(uri, false) : '';
 				if( currentVersion !== "" ) {
 					let isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
 					

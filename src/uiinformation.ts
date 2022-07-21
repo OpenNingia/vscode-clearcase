@@ -7,11 +7,12 @@ export class UIInformation {
 	private mStatusbar: vscode.StatusBarItem|null;
 	private mIsActive: boolean;
 
-	public constructor(private mContext: vscode.ExtensionContext,
+	public constructor(
+		private mContext: vscode.ExtensionContext,
 		private mDisposables: vscode.Disposable[],
 		private mConfigHandler: CCConfigHandler,
 		private mEditor: vscode.TextEditor|undefined,
-		private mClearcase: ClearCase) {
+		private mClearcase: ClearCase|null) {
 		this.mIsActive = true;
 		this.handleConfigState();
 		this.mStatusbar = null;
@@ -77,7 +78,7 @@ export class UIInformation {
 	}
 
 	public queryVersionInformation(iUri: vscode.Uri) {
-		this.mClearcase.getVersionInformation(iUri).then((value) => {
+		this.mClearcase?.getVersionInformation(iUri).then((value) => {
 			this.updateStatusbar(value);
 		}).catch((error) => {
 			this.updateStatusbar('');
@@ -86,7 +87,7 @@ export class UIInformation {
 
 	public async updateStatusbar(iFileInfo: string) {
 		if (iFileInfo !== undefined) {
-			if (await this.mClearcase.hasConfigspec() === true || iFileInfo !== "") {
+			if (await this.mClearcase?.hasConfigspec() === true || iFileInfo !== "") {
 				let version = "view private";
 				if (iFileInfo !== "") {
 					version = iFileInfo;
