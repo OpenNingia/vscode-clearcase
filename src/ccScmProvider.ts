@@ -78,7 +78,7 @@ export class CCScmProvider {
     return new Promise<boolean>((resolve, reject) => {
       this.mCCHandler?.checkIsView(undefined).then((is_view) => {
         if (is_view) {
-          const d = this.clearCase ? this.clearCase.viewType==ViewType.dynamic : false;
+          const d = this.clearCase ? this.clearCase.viewType===ViewType.dynamic : false;
           commands.executeCommand('setContext', 'vscode-clearcase:enabled', is_view);
           commands.executeCommand('setContext', 'vscode-clearcase:DynView', d);
 
@@ -239,7 +239,7 @@ export class CCScmProvider {
   public getCheckedoutObjects() {
     return this.mCCCheckedoutGrp?.resourceStates.map((value:SourceControlResourceState) => {
       return value.resourceUri.fsPath;
-    })
+    });
   }
 
   public async updateUntrackedList() {

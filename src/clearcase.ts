@@ -90,8 +90,9 @@ export class Cleartool implements CleartoolIf{
   }
 
   public Credentials(): string[] {
-    if( this.m_address !== "" )
+    if( this.m_address !== "" ) {
       return ["-lname", this.m_username, "-password", this.m_password, "-server", this.m_address];
+    }
     return [];
   }
 }
