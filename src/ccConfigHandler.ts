@@ -49,6 +49,9 @@ export class CCConfigHandler {
 			this.setChangeConfigDate<boolean>(config, "isWslEnv", this.mConfiguration.isWslEnv);
 			this.setChangeConfigDate<string>(config, "tempDir", this.mConfiguration.tempDir);
 			this.setChangeConfigDate<boolean>(config, "uncoKeepFile", this.mConfiguration.uncoKeepFile);
+			this.setChangeConfigDate<boolean>(config, "useRemoteClient", this.mConfiguration.UseRemoteClient);
+			this.setChangeConfigDate<string>(config, "webviewUsername", this.mConfiguration.WebserverUsername);
+			this.setChangeConfigDate<string>(config, "webviewAddress", this.mConfiguration.WebserverAddress);
 			return true;
 		}
 		return false;

@@ -22,27 +22,39 @@ async function _activate(context: vscode.ExtensionContext, disposables: vscode.D
 	let configHandler = new CCConfigHandler(context, disposables);
 	
 	let provider = new CCScmProvider(context, disposables, outputChannel, configHandler);
-	provider.bindEvents();
-	provider.bindCommands();
 
-	provider.updateIsView().then((is:boolean) => {
-			vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', is);
-			vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.clearCase.viewType===ViewType.dynamic);
-	});
+	try {
+		if( true === await provider.init() ) {
+			provider.bindEvents();
+			provider.bindCommands();
 
-	provider.onWindowChanged(() => {
-			vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.clearCase.isView);
-			vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', provider.clearCase.viewType===ViewType.dynamic);
-	}, provider);
+			provider.updateIsView().then((is:boolean) => {
+				const d = provider.clearCase ? provider.clearCase.viewType===ViewType.dynamic : false;
+				vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', is);
+				vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', d);
+			});
+	
+			provider.onWindowChanged(() => {
+				const d = provider.clearCase ? provider.clearCase.viewType===ViewType.dynamic : false;
+				vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.clearCase?.isView);
+				vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', d);
+			}, provider);
 
-	let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.clearCase);
-	uiInfo.createStatusbarItem();
-	uiInfo.bindEvents();
-	uiInfo.initialQuery();
-
-	provider.clearCase.onCommandExecuted(() => {
+			let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.clearCase);
+			uiInfo.createStatusbarItem();
+			uiInfo.bindEvents();
 			uiInfo.initialQuery();
-	}, uiInfo);
+
+			provider.clearCase?.onCommandExecuted(() => {
+					uiInfo.initialQuery();
+			}, uiInfo);
+		} else {
+			vscode.window.showWarningMessage("VSCode-Clearcase extension could not be started");
+		}
+	} catch {
+		vscode.window.showWarningMessage("VSCode-Clearcase extension could not be started (catched)");
+	}
+
 }
 
 export async function activate(context: vscode.ExtensionContext) {

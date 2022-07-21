@@ -25,7 +25,8 @@ export class EventArgs {
 export enum ViewType {
   unknown,
   dynamic,
-  snapshot
+  snapshot,
+  webview
 }
 
 export class CCArgs {
@@ -51,16 +52,57 @@ export class CCArgs {
   }
 }
 
+export interface CleartoolIf {
+  Executable(val?:string|undefined): string;
+  Credentials(): string[];
+}
+
+export class Cleartool implements CleartoolIf{
+  private m_username: string;
+  private m_password: string;
+  private m_address: string;
+  private m_executable: string;
+  public constructor(u:string="",p:string="",a:string="",e:string="") {
+    this.m_address = a;
+    this.m_password = p;
+    this.m_username = u;
+    this.m_executable = "";
+    if( e !== "" ) {
+      this.Executable(e);
+    } else {
+      this.Executable("cleartool");
+    }
+  }
+
+  public Executable(val?:string|undefined): string {
+    if( val !== undefined ) {
+      this.m_executable = val;
+    }
+    return this.m_executable;
+  }
+
+  public Credentials(): string[] {
+    if( this.m_address !== "" )
+      return ["-lname", this.m_username, "-password", this.m_password, "-server", this.m_address];
+    return [];
+  }
+}
+
 export class ClearCase {
   private readonly lsView: string[] = ['lsview', '-cview', '-long'];
 
   private readonly rxViewType = new RegExp('\\.(vws|stg)$', 'i');
+  private readonly rxViewAttr = new RegExp('(view attributes\\:)([\\,\\t \\w\\d]*)(webview)', 'i');
 
   private mIsCCView: boolean = false;
   private mViewType: ViewType;
   private mUpdateEvent: EventEmitter<Uri>;
 
   private mUntrackedList: MappedList;
+  private m_execCmd: CleartoolIf;
+  private m_retryViewDetection = true;
+
+  private m_webviewPassword: string = "";
 
   public constructor(private mContext: ExtensionContext,
     private configHandler: CCConfigHandler,
@@ -68,6 +110,32 @@ export class ClearCase {
     this.mUpdateEvent = new EventEmitter<Uri>();
     this.mViewType = ViewType.unknown;
     this.mUntrackedList = new MappedList();
+
+    if( this.configHandler.configuration.UseRemoteClient.value === true ) {
+      this.m_execCmd = new Cleartool(this.configHandler.configuration.WebserverUsername.value,
+                                     this.m_webviewPassword,
+                                     this.configHandler.configuration.WebserverAddress.value,
+                                     this.configHandler.configuration.executable.value);
+    } else {
+      this.m_execCmd = new Cleartool();
+    }
+    this.configHandler.onDidChangeConfiguration((datas: string[]) => {
+      let hasChangedUseRemote = datas.find((val) => {
+        return (val === "useRemoteClient");
+      });
+
+      let hasChangedExec = datas.find((val) => {
+        return (val === "cleartoolExecutable");
+      });
+      if( hasChangedUseRemote !== undefined )
+      {
+        window.showWarningMessage("The usewebview config date has changed! Please reload window to set changes active.");
+      }
+      if( hasChangedExec !== undefined )
+      {
+        this.m_execCmd.Executable(this.configHandler.configuration.executable.value);
+      }
+    });
   }
 
   public get isView(): boolean {
@@ -84,6 +152,16 @@ export class ClearCase {
 
   public get untrackedList(): MappedList {
     return this.mUntrackedList;
+  }
+
+  public set Password(val:string) {
+    this.m_webviewPassword = val;
+    if( this.configHandler.configuration.UseRemoteClient.value === true ) {
+      this.m_execCmd = new Cleartool(this.configHandler.configuration.WebserverUsername.value,
+                                     this.m_webviewPassword,
+                                     this.configHandler.configuration.WebserverAddress.value,
+                                     this.configHandler.configuration.executable.value);
+    }
   }
 
   /**
@@ -115,6 +193,21 @@ export class ClearCase {
     this.mIsCCView = isView;
 
     return isView;
+  }
+
+  public async loginWebview(): Promise<boolean> {
+    try {
+      const args: CCArgs = new CCArgs(["login"].concat(this.m_execCmd.Credentials()));
+      const path: string = workspace.workspaceFolders !== undefined ? workspace.workspaceFolders[0].uri.fsPath : "";
+
+      await this.runCleartoolCommand(args, path, (datas) => {
+        this.outputChannel.appendLine(datas.join(" "));
+        return true;
+      });
+    } catch(err) {
+      this.outputChannel.append(`Error while login ${err}`);
+    }
+    return false;
   }
 
   public async execOnSCMFile(doc: Uri, func: (arg: Uri) => void) {
@@ -756,7 +849,7 @@ export class ClearCase {
 
   private runCleartoolCommand(cmd: CCArgs, cwd: string, onData: ((data: string[]) => void)|null, onFinished?: (result:string) => void, onError?: (result:string) => void): Promise<void> {
     let self: ClearCase = this;
-    let executable = this.configHandler.configuration.executable.value;
+    let executable:string = this.m_execCmd.Executable();
     try{
       fs.accessSync(cwd, fs.constants.F_OK);
     } catch(err) {
@@ -765,7 +858,8 @@ export class ClearCase {
     }
     // tslint:disable-next-line:typedef
     return new Promise<void>(async function (resolve, reject): Promise<void> {
-      
+      let cmdErrMsg: string = "";
+
       // convert path to run cleartool windows cmd
       if( cmd.file ) {
         // wsl mount point for external drives is /mnt
@@ -802,24 +896,18 @@ export class ClearCase {
         if( onError !== undefined && typeof onError === "function" ) {
           onError(msg);
         } else {
-          msg = `ClearCase error: ClearCase error: ${msg}`;
-          self.outputChannel.appendLine(msg);
-          let msgParts = msg.match(/(cleartool\:\serror\:)([\"\'\w\d\:\\\/\-\_\s]+)[\r\n\.]+/i);
-          if( msgParts !== null && msgParts?.length > 2 ) {
-            window.showErrorMessage(`Cleartool SCM: ` + msgParts[2]);
-          }
-        }
-        if (msg.match(/clearcase error/i) !== null) {
-          reject();
+          cmdErrMsg = `${cmdErrMsg}${msg}`;
         }
       });
 
       command.on('close', (code) => {
         if (code !== 0) {
-          let msg = `Cleartool error: Cleartool command ${cmd} exited with error code: ${code}`;
-          self.outputChannel.appendLine(msg);
-        } else {
+          self.outputChannel.appendLine(cmdErrMsg);
+          if( self.isView && cmdErrMsg !== "" ) {
+            window.showErrorMessage(`${cmdErrMsg}`, {modal: false});
+          }
 
+        } else {
           if (typeof onFinished === 'function') {
             onFinished((allData.length > 0) ? allData.toString() : allDataStr);
           }
@@ -860,6 +948,9 @@ export class ClearCase {
           viewType = ViewType.dynamic;
         } else {
           viewType = ViewType.snapshot;
+          if( resLines.length > 1 && resLines[1].match(/webview/i) ) {
+            viewType = ViewType.webview;
+          }
         }
       });
     }
