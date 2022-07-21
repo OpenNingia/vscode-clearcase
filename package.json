@@ -183,7 +183,7 @@
         },
         {
           "command": "extension.ccCheckin",
-          "when": "vscode-clearcase:enabled"
+          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccVersionTree",
@@ -195,7 +195,7 @@
         },
         {
           "command": "extension.ccUndoCheckout",
-          "when": "vscode-clearcase:enabled"
+          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccFindCheckouts",
@@ -237,29 +237,54 @@
       "explorer/context": [
         {
           "command": "extension.ccUpdateFile",
-          "group": "cc",
+          "group": "cc@10",
           "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView"
         },
         {
           "command": "extension.ccMkElement",
-          "group": "cc",
+          "group": "cc@5",
           "when": "vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccVersionTree",
+          "group": "cc@12",
+          "when": "vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccCheckout",
+          "group": "cc@2",
+          "when": "vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccItemProperties",
+          "group": "cc@1",
+          "when": "vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccCheckin",
+          "group": "cc@3",
+          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccUndoCheckout",
+          "group": "cc@4",
+          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
         }
       ],
       "editor/context": [
         {
           "command": "extension.ccUndoCheckout",
-          "group": "cc@3",
-          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+          "group": "cc@4",
+          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccCheckin",
-          "group": "cc@2",
-          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+          "group": "cc@3",
+          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccCheckout",
-          "group": "cc@1",
+          "group": "cc@2",
           "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
         },
         {
@@ -271,6 +296,11 @@
           "command": "extension.ccVersionTree",
           "group": "cc@6",
           "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccItemProperties",
+          "group": "cc@1",
+          "when": "vscode-clearcase:enabled"
         }
       ],
       "scm/title": [
@@ -318,7 +348,7 @@
         },
         {
           "command": "extension.ccCheckin",
-          "when": "scmProvider == cc && vscode-clearcase:enabled",
+          "when": "scmProvider == cc && vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects",
           "group": "cc_file"
         },
         {
@@ -328,7 +358,7 @@
         },
         {
           "command": "extension.ccUndoCheckout",
-          "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
+          "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects",
           "group": "cc_file"
         },
         {
@@ -351,7 +381,7 @@
           "when": "scmProvider == cc && scmResourceGroup == cc_untracked && vscode-clearcase:enabled",
           "group": "cc_file"
         }
-      ]
+      ],"editor/title": [{"alt": "Hallo"}]
     },
     "keybindings": [
       {

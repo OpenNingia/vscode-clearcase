@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { CCConfigHandler } from './ccConfigHandler';
+import { CCContentProvider } from './ccContentProvider';
 import { CCScmProvider } from './ccScmProvider';
 import { ViewType } from './clearcase';
 import { UIInformation } from './uiinformation';
@@ -30,14 +31,18 @@ async function _activate(context: vscode.ExtensionContext, disposables: vscode.D
 
 			provider.updateIsView().then((is:boolean) => {
 				const d = provider.clearCase ? provider.clearCase.viewType===ViewType.dynamic : false;
+				const files = provider.getCheckedoutObjects();
 				vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', is);
 				vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', d);
+				vscode.commands.executeCommand('setContext', 'vscode-clearcase:CheckedoutObjects', files);
 			});
 	
 			provider.onWindowChanged(() => {
 				const d = provider.clearCase ? provider.clearCase.viewType===ViewType.dynamic : false;
+				const files = provider.getCheckedoutObjects();
 				vscode.commands.executeCommand('setContext', 'vscode-clearcase:enabled', provider.clearCase?.isView);
 				vscode.commands.executeCommand('setContext', 'vscode-clearcase:DynView', d);
+				vscode.commands.executeCommand('setContext', 'vscode-clearcase:CheckedoutObjects', files);
 			}, provider);
 
 			let uiInfo = new UIInformation(context, disposables, configHandler, vscode.window.activeTextEditor, provider.clearCase);

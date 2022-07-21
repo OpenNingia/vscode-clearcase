@@ -236,6 +236,12 @@ export class CCScmProvider {
     });
   }
 
+  public getCheckedoutObjects() {
+    return this.mCCCheckedoutGrp?.resourceStates.map((value:SourceControlResourceState) => {
+      return value.resourceUri.fsPath;
+    })
+  }
+
   public async updateUntrackedList() {
     await window.withProgress(
       {

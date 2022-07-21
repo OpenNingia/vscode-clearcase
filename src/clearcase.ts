@@ -31,7 +31,7 @@ export enum ViewType {
 
 export class CCArgs {
   public params: string [] = [];
-  public file?: string = "";
+  private file: string|undefined= undefined;
 
   public constructor(params: string[], file?:string) {
     this.params = [...params];
@@ -45,10 +45,18 @@ export class CCArgs {
   }
 
   public getCmd(): string[] {
-    if(this.file) {
+    if(this.file !== undefined) {
       return [...this.params, this.file];
     }
     return this.params;
+  }
+  
+  public get File() : string|undefined {
+    return this.file;
+  }
+
+  public set File(v : string|undefined) {
+    this.file = v;
   }
 }
 
@@ -283,7 +291,7 @@ export class ClearCase {
         cmd.params[idx] = this.wslPath(path, false);
       }
       else {
-        cmd.file = path;
+        cmd.File = path;
       }
       try {
         await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
@@ -390,7 +398,7 @@ export class ClearCase {
         cmd.params[idx] = this.wslPath(path, false);
       }
       else {
-        cmd.file = path;
+        cmd.File = path;
       }
 
       await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
@@ -856,18 +864,21 @@ export class ClearCase {
       self.outputChannel.appendLine(`CWD (${cwd}) not found`);
       return Promise.reject();
     }
+    // convert path to run cleartool windows cmd
+    if( cmd.File ) {
+      // wsl mount point for external drives is /mnt
+      // convert backslash to slash
+      cmd.File = self.wslPath(cmd.File, false);
+    }
+    if( cmd.File !== undefined && !fs.existsSync(cmd.File) ) {
+      return Promise.reject();
+    }
+
     // tslint:disable-next-line:typedef
     return new Promise<void>(async function (resolve, reject): Promise<void> {
       let cmdErrMsg: string = "";
 
-      // convert path to run cleartool windows cmd
-      if( cmd.file ) {
-        // wsl mount point for external drives is /mnt
-        // convert backslash to slash
-        cmd.file = self.wslPath(cmd.file, false);
-      }
-
-      self.outputChannel.appendLine(cmd.toString());
+      self.outputChannel.appendLine(cmd.getCmd().toString());
       let allData: Buffer = Buffer.alloc(0);
       let allDataStr: string = "";
       const command = spawn(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
