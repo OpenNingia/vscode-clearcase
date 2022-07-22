@@ -127,7 +127,7 @@
 			"patterns": [
 				{
 					"name": "comment.line.number-sign.config-spec",
-					"match": "^\\s*#.*$"
+					"match": "#.*$"
 				}
 			]
 		},
