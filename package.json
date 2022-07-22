@@ -660,8 +660,12 @@
         "extensions": [
           ".ics"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./Assets/icons/light/file-icon.png",
+          "dark": "./Assets/icons/dark/file-icon.png"
       }
+}
     ],
     "grammars": [
       {
