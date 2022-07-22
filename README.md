@@ -18,7 +18,7 @@ Clearcase commands exposed by this extensions:
     * Item Properties
     * Annotate
     * Set current Activity
-    * Remove Cleartool Client
+    * Remote Cleartool Client
 
 ### GUI
 
