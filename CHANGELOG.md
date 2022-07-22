@@ -1,5 +1,28 @@
 ## Release Notes
 
+### 4.0.0
+* added support for remote cleartool client (thanks to @bw1faeh0)
+  - New configuration parameters are available
+    - remoteCleartool.enable
+    - remoteCleartool.webserverUsername
+    - remoteCleartool.webserverPassword
+    - remoteCleartool.webserverAddress
+
+* **Breaking change**
+  some configuration names have change for better readability
+  - showAnnotationCodeLens -> **annotation.showAnnotationCodeLens**
+  - annotationColor -> **annotation.color**
+  - annotationBackgroundColor -> **annotation.backgroundColor**
+  - annotationFormatString -> **annotation.formatString**
+  - useClearDlg -> **cleartool.useDialog**
+  - checkoutCommandArgs -> **cleartool.checkoutCommandArguments**
+  - findCheckoutsCommandArgs -> **cleartool.findCheckoutsCommandArguments**
+  - checkinCommandArgs -> **cleartool.checkinCommandArguments**
+  - defaultComment -> **cleartool.defaultComment**
+  - executable -> **cleartool.executable**
+  - isWslEnv -> **isWslEnvironment**
+  - uncoKeepFile -> **cleartool.undoCheckouKeepFile**
+
 ### 3.0.2
 * Fix nagging error messages when editing unsaved files
 

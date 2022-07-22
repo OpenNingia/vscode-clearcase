@@ -18,6 +18,7 @@ Clearcase commands exposed by this extensions:
     * Item Properties
     * Annotate
     * Set current Activity
+    * Remove Cleartool Client
 
 ### GUI
 
@@ -40,6 +41,10 @@ Clearcase commands exposed by this extensions:
      Format string is documented at https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm
 
    * Syntax highlighting for ClearCase config-spec files
+
+## Remote Cleartool Client
+
+It is possible to use the remote cleartool client with VSCode. To activate, set the configuration `vscode-clearcase.remoteCleartool.enable` to `true`. With that set, insert the username to `vscode-clearcase.remoteCleartool.webviewUsername`. When connecting to the server, the password will be requested. It is stored as long as the VSCode window lives. Alternatively there is a setting for storing the password in the configuration `vscode-clearcase.remoteCleartool.webviewPassword`.
 
 ## WSL
 
