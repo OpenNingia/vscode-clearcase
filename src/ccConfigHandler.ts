@@ -35,23 +35,44 @@ export class CCConfigHandler {
 		if (config) {
 			this.mChangeIdents = [];
 			this.setChangeConfigDate<boolean>(config, "showVersionInStatusbar", this.mConfiguration.showStatusbar);
-			this.setChangeConfigDate<boolean>(config, "showAnnotationCodeLens", this.mConfiguration.showAnnotationCodeLens);
-			this.setChangeConfigDate<string>(config, "annotationColor", this.mConfiguration.annotationColor);
-			this.setChangeConfigDate<string>(config, "annotationBackgroundColor", this.mConfiguration.annotationBackground);
-			this.setChangeConfigDate<string>(config, "annotationFormatString", this.mConfiguration.annotationFormatString);
-			this.setChangeConfigDate<boolean>(config, "useClearDlg", this.mConfiguration.useClearDlg);
-			this.setChangeConfigDate<string>(config, "checkoutCommandArgs", this.mConfiguration.checkoutCommand);
-			this.setChangeConfigDate<string>(config, "findCheckoutsCommandArgs", this.mConfiguration.findCheckoutsCommand);
-			this.setChangeConfigDate<string>(config, "checkinCommandArgs", this.mConfiguration.checkinCommand);
-			this.setChangeConfigDate<string>(config, "defaultComment", this.mConfiguration.defaultComment);
+			this.setChangeConfigDate<boolean>(config, "annotation.showAnnotationCodeLens", this.mConfiguration.showAnnotationCodeLens);
+			this.setChangeConfigDate<string>(config, "annotation.color", this.mConfiguration.annotationColor);
+			this.setChangeConfigDate<string>(config, "annotation.backgroundColor", this.mConfiguration.annotationBackground);
+			this.setChangeConfigDate<string>(config, "annotation.formatString", this.mConfiguration.annotationFormatString);
+			this.setChangeConfigDate<boolean>(config, "cleartool.useDialog", this.mConfiguration.useClearDlg);
+			this.setChangeConfigDate<string>(config, "cleartool.checkoutCommandArguments", this.mConfiguration.checkoutCommand);
+			this.setChangeConfigDate<string>(config, "cleartool.findCheckoutsCommandArguments", this.mConfiguration.findCheckoutsCommand);
+			this.setChangeConfigDate<string>(config, "cleartool.checkinCommandArguments", this.mConfiguration.checkinCommand);
+			this.setChangeConfigDate<string>(config, "cleartool.defaultComment", this.mConfiguration.defaultComment);
 			this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);
-			this.setChangeConfigDate<string>(config, "executable", this.mConfiguration.executable);
-			this.setChangeConfigDate<boolean>(config, "isWslEnv", this.mConfiguration.isWslEnv);
+			this.setChangeConfigDate<string>(config, "cleartool.executable", this.mConfiguration.executable);
+			this.setChangeConfigDate<boolean>(config, "isWslEnvironment", this.mConfiguration.isWslEnv);
 			this.setChangeConfigDate<string>(config, "tempDir", this.mConfiguration.tempDir);
-			this.setChangeConfigDate<boolean>(config, "uncoKeepFile", this.mConfiguration.uncoKeepFile);
-			this.setChangeConfigDate<boolean>(config, "useRemoteClient", this.mConfiguration.UseRemoteClient);
-			this.setChangeConfigDate<string>(config, "webviewUsername", this.mConfiguration.WebserverUsername);
-			this.setChangeConfigDate<string>(config, "webviewAddress", this.mConfiguration.WebserverAddress);
+			this.setChangeConfigDate<boolean>(config, "cleartool.undoCheckouKeepFile", this.mConfiguration.uncoKeepFile);
+			this.setChangeConfigDate<boolean>(config, "remoteCleartool.enable", this.mConfiguration.UseRemoteClient);
+			this.setChangeConfigDate<string>(config, "remoteCleartool.webviewUsername", this.mConfiguration.WebserverUsername);
+			this.setChangeConfigDate<string>(config, "remoteCleartool.webviewPassword", this.mConfiguration.WebserverPassword);
+			this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.WebserverAddress);
+
+			/**
+			 * Deprecated setting strings
+
+			 this.setChangeConfigDate<boolean>(config, "showAnnotationCodeLens", this.mConfiguration.showAnnotationCodeLens);
+			 this.setChangeConfigDate<string>(config, "annotationColor", this.mConfiguration.annotationColor);
+			 this.setChangeConfigDate<string>(config, "annotationBackgroundColor", this.mConfiguration.annotationBackground);
+			 this.setChangeConfigDate<string>(config, "annotationFormatString", this.mConfiguration.annotationFormatString);
+			 this.setChangeConfigDate<boolean>(config, "useClearDlg", this.mConfiguration.useClearDlg);
+			 this.setChangeConfigDate<string>(config, "checkoutCommandArgs", this.mConfiguration.checkoutCommand);
+			 this.setChangeConfigDate<string>(config, "findCheckoutsCommandArgs", this.mConfiguration.findCheckoutsCommand);
+			 this.setChangeConfigDate<string>(config, "checkinCommandArgs", this.mConfiguration.checkinCommand);
+			 this.setChangeConfigDate<string>(config, "defaultComment", this.mConfiguration.defaultComment);
+			 this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);
+			 this.setChangeConfigDate<string>(config, "executable", this.mConfiguration.executable);
+			 this.setChangeConfigDate<boolean>(config, "isWslEnv", this.mConfiguration.isWslEnv);
+			 this.setChangeConfigDate<boolean>(config, "uncoKeepFile", this.mConfiguration.uncoKeepFile);
+
+			 */
+			 
 			return true;
 		}
 		return false;
