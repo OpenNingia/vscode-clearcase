@@ -484,7 +484,7 @@
           "markdownDescription": "Clearcase checkin arguments. Ignored if `#vscode-clearcase.cleartool.useDialog#` is set to `true`.",
           "order": 12
         },
-        "vscode-clearcase.cleartool.undoCheckouKeepFile": {
+        "vscode-clearcase.cleartool.undoCheckoutKeepFile": {
           "type": "boolean",
           "default": "true",
           "markdownDescription": "Keep unchecked out files in current directory",
