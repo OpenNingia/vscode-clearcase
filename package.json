@@ -381,7 +381,7 @@
           "when": "scmProvider == cc && scmResourceGroup == cc_untracked && vscode-clearcase:enabled",
           "group": "cc_file"
         }
-      ],"editor/title": [{"alt": "Hallo"}]
+      ]
     },
     "keybindings": [
       {
@@ -660,8 +660,12 @@
         "extensions": [
           ".ics"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./Assets/icons/light/file-icon.png",
+          "dark": "./Assets/icons/dark/file-icon.png"
       }
+}
     ],
     "grammars": [
       {
