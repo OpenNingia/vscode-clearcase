@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 4.0.1
+* fixed syntax highlighting in configspec file (thanks to @jsinger67)
+* fixed typo in package.json
+
 ### 4.0.0
 * added support for remote cleartool client (thanks to @bw1faeh0)
   - New configuration parameters are available
