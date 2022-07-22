@@ -428,82 +428,205 @@
       }
     ],
     "configuration": {
-      "title": "Clearcase confguration",
+      "title": "Clearcase",
       "properties": {
         "vscode-clearcase.showVersionInStatusbar": {
           "type": "boolean",
           "default": true,
-          "description": "Shows the current file clearcase version information."
+          "markdownDescription": "Shows the current file clearcase version information.",
+          "order": 0
         },
-        "vscode-clearcase.showAnnotationCodeLens": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable the 'Toggle Annotate' code lens."
-        },
-        "vscode-clearcase.annotationColor": {
-          "type": "string",
-          "default": "rgba(220, 220, 220, 0.8)",
-          "description": "Text color of the annotation."
-        },
-        "vscode-clearcase.annotationBackgroundColor": {
-          "type": "string",
-          "default": "rgba(20, 20, 20, 0.8)",
-          "description": "Background color of the annotation."
-        },
-        "vscode-clearcase.annotationFormatString": {
-          "type": "string",
-          "default": "%d %12u",
-          "description": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm"
-        },
-        "vscode-clearcase.useClearDlg": {
+        "vscode-clearcase.cleartool.useDialog": {
           "type": "boolean",
           "default": "true",
-          "description": "Use clearDlg command for checkout and checking operations."
+          "markdownDescription": "Use clearDlg command for checkout and checking operations.",
+          "order": 1
         },
-        "vscode-clearcase.checkoutCommandArgs": {
+        "vscode-clearcase.annotation.showAnnotationCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enable the 'Toggle Annotate' code lens.",
+          "order": 20
+        },
+        "vscode-clearcase.annotation.color": {
+          "type": "string",
+          "default": "rgba(220, 220, 220, 0.8)",
+          "markdownDescription": "Text color of the annotation. Only works when `#vscode-clearcase.annotation.showAnnotationCodeLens#` is set to `true`",
+          "order": 21
+        },
+        "vscode-clearcase.annotation.backgroundColor": {
+          "type": "string",
+          "default": "rgba(20, 20, 20, 0.8)",
+          "markdownDescription": "Background color of the annotation. Only works when `#vscode-clearcase.annotation.showAnnotationCodeLens#` is set to `true`",
+          "order": 22
+        },
+        "vscode-clearcase.annotation.formatString": {
+          "type": "string",
+          "default": "%d %12u",
+          "markdownDescription": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm. Only works when `#vscode-clearcase.annotation.showAnnotationCodeLens#` is set to `true`",
+          "order": 23
+        },
+        "vscode-clearcase.cleartool.checkoutCommandArguments": {
           "type": "string",
           "default": "-comment ${comment} ${filename}",
-          "description": "Clearcase checkout arguments. Ignored if useClearDlg is `true`."
+          "markdownDescription": "Clearcase checkout arguments. Ignored if `#vscode-clearcase.cleartool.useDialog#` is set to `true`.",
+          "order": 11
         },
-        "vscode-clearcase.findCheckoutsCommandArgs": {
+        "vscode-clearcase.cleartool.findCheckoutsCommandArguments": {
           "type": "string",
           "default": "-me -cview -short -avobs",
-          "description": "Clearcase lsco arguments."
+          "markdownDescription": "Clearcase lsco arguments.",
+          "order": 15
         },
-        "vscode-clearcase.checkinCommandArgs": {
+        "vscode-clearcase.cleartool.checkinCommandArguments": {
           "type": "string",
           "default": "-comment ${comment} ${filename}",
-          "description": "Clearcase checkin arguments. Ignored if useClearDlg is `true`."
+          "markdownDescription": "Clearcase checkin arguments. Ignored if `#vscode-clearcase.cleartool.useDialog#` is set to `true`.",
+          "order": 12
         },
-        "vscode-clearcase.defaultComment": {
+        "vscode-clearcase.cleartool.undoCheckouKeepFile": {
+          "type": "boolean",
+          "default": "true",
+          "markdownDescription": "Keep unchecked out files in current directory",
+          "order": 14
+        },
+        "vscode-clearcase.cleartool.defaultComment": {
           "type": "string",
           "default": null,
-          "description": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`."
+          "markdownDescription": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if `#vscode-clearcase.cleartool.useDialog#` is set to `true`.",
+          "order": 13
         },
         "vscode-clearcase.viewPrivateFileSuffixes": {
           "type": "string",
           "default": "(hh|cpp|def|c|h|txt)$",
-          "description": "Regular expression style string for file suffixes be shown as view private."
+          "markdownDescription": "Regular expression style string for file suffixes be shown as view private.",
+          "order": 16
         },
-        "vscode-clearcase.executable": {
+        "vscode-clearcase.cleartool.executable": {
           "type": "string",
           "default": "cleartool.exe",
-          "description": "The path to the cleartool executable"
+          "markdownDescription": "The path to the cleartool executable",
+          "order": 10
         },
-        "vscode-clearcase.isWslEnv": {
+        "vscode-clearcase.isWslEnvironment": {
           "type": "boolean",
           "default": "false",
-          "description": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation"
+          "markdownDescription": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation",
+          "order": 41
         },
         "vscode-clearcase.tempDir": {
           "type": "string",
           "default": "c:\\Temp",
-          "description": "The temp dir used for file operations"
+          "markdownDescription": "The temp dir used for file operations",
+          "order": 50
+        },
+        "vscode-clearcase.remoteCleartool.enable": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enable the rcleartool command usage.",
+          "order": 32
+        },
+        "vscode-clearcase.remoteCleartool.webserverUsername": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "The username to connect to the clearcase server.",
+          "order": 33
+        },
+        "vscode-clearcase.remoteCleartool.webserverPassword": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "The password to connect to the clearcase server. If empty the password is requested on every start of VSCode.",
+          "order": 33
+        },
+        "vscode-clearcase.remoteCleartool.webserverAddress": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "The network address of the clearcase server.",
+            "order": 34
+        },
+        "vscode-clearcase.useClearDlg": {
+          "type": "boolean",
+          "default": "true",
+          "markdownDescription": "Use clearDlg command for checkout and checking operations.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.useDialog#`",
+          "order": 100
+        },
+        "vscode-clearcase.showAnnotationCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enable the 'Toggle Annotate' code lens.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.showAnnotationCodeLens#`",
+          "order": 101
+        },
+        "vscode-clearcase.annotationColor": {
+          "type": "string",
+          "default": "rgba(220, 220, 220, 0.8)",
+          "markdownDescription": "Text color of the annotation.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.color#`",
+          "order": 102
+        },
+        "vscode-clearcase.annotationBackgroundColor": {
+          "type": "string",
+          "default": "rgba(20, 20, 20, 0.8)",
+          "markdownDescription": "Background color of the annotation.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.backgroundColor#`",
+          "order": 103
+        },
+        "vscode-clearcase.annotationFormatString": {
+          "type": "string",
+          "default": "%d %12u",
+          "markdownDescription": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.formatString#`",
+          "order": 104
+        },
+        "vscode-clearcase.checkoutCommandArgs": {
+          "type": "string",
+          "default": "-comment ${comment} ${filename}",
+          "markdownDescription": "Clearcase checkout arguments. Ignored if useClearDlg is `true`.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.checkoutCommandArguments#`",
+          "order": 105
+        },
+        "vscode-clearcase.findCheckoutsCommandArgs": {
+          "type": "string",
+          "default": "-me -cview -short -avobs",
+          "markdownDescription": "Clearcase lsco arguments.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.findCheckoutsCommandArguments#`",
+          "order": 106
+        },
+        "vscode-clearcase.checkinCommandArgs": {
+          "type": "string",
+          "default": "-comment ${comment} ${filename}",
+          "markdownDescription": "Clearcase checkin arguments. Ignored if useClearDlg is `true`.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.checkinCommandArguments#`",
+          "order": 107
+        },
+        "vscode-clearcase.defaultComment": {
+          "type": "string",
+          "default": null,
+          "markdownDescription": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`.",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.defaultComment#`",
+          "order": 108
+        },
+        "vscode-clearcase.executable": {
+          "type": "string",
+          "default": "cleartool.exe",
+          "markdownDescription": "The path to the cleartool executable",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.executable#`",
+          "order": 109
+        },
+        "vscode-clearcase.isWslEnv": {
+          "type": "boolean",
+          "default": "false",
+          "markdownDescription": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.isWslEnvironment#`",
+          "order": 110
         },
         "vscode-clearcase.uncoKeepFile": {
           "type": "boolean",
           "default": "true",
-          "description": "Keep unchecked out files in current directory"
+          "markdownDescription": "Keep unchecked out files in current directory",
+          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.uncoKeepFile#`",
+          "order": 111
         }
       }
     },

@@ -51,11 +51,9 @@ export class CCScmProvider {
       this.mListLock = new Lock(1);
       this.mCCHandler = new ClearCase(this.mContext, this.configHandler, this.outputChannel);
       if( this.configHandler.configuration.UseRemoteClient.value === true ) {
-        window.showInputBox({password:true,prompt:"Insert password for webview connection",ignoreFocusOut:true}).then(async (passwd:string|undefined) => {
-          if( passwd === undefined || this.clearCase === null ) {
-            reject(false);
-          } else {
-            this.clearCase.Password = passwd;
+        if( this.configHandler.configuration.WebserverPassword.value !== "" ) {
+          if( this.clearCase ) {
+            this.clearCase.Password = this.configHandler.configuration.WebserverPassword.value;
             await this.clearCase.loginWebview();
             try {
               resolve(await this.startExtension());
@@ -63,7 +61,22 @@ export class CCScmProvider {
               reject(false);
             }
           }
-        });
+        } else {
+
+          window.showInputBox({password:true,prompt:"Insert password for webview connection",ignoreFocusOut:true}).then(async (passwd:string|undefined) => {
+            if( passwd === undefined || this.clearCase === null ) {
+              reject(false);
+            } else {
+              this.clearCase.Password = passwd;
+              await this.clearCase.loginWebview();
+              try {
+                resolve(await this.startExtension());
+              } catch(err) {
+                reject(false);
+              }
+            }
+          });
+        }
       } else {
         try {
           resolve(await this.startExtension());

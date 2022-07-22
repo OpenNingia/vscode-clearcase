@@ -45,6 +45,7 @@ export class CCConfiguration
 	private mIsWslEnv: ConfigurationProperty<boolean> = new ConfigurationProperty(false);
 	private mUseRemoteClient: ConfigurationProperty<boolean> = new ConfigurationProperty(false);
 	private mWebserverUsername: ConfigurationProperty<string> = new ConfigurationProperty("");
+	private mWebserverPassword: ConfigurationProperty<string> = new ConfigurationProperty("");
 	private mWebserverAddress: ConfigurationProperty<string> = new ConfigurationProperty("");
 
 	public get showStatusbar() : ConfigurationProperty<boolean> {
@@ -113,6 +114,10 @@ export class CCConfiguration
 
 	public get WebserverUsername(): ConfigurationProperty<string> {
 		return this.mWebserverUsername;
+	}
+
+	public get WebserverPassword(): ConfigurationProperty<string> {
+		return this.mWebserverPassword;
 	}
 
 	public get WebserverAddress(): ConfigurationProperty<string> {
