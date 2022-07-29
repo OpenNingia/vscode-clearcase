@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 4.1.0
+* Usage of Webpack for packaging, which results in faster startup time.
+
 ### 4.0.1
 * fixed syntax highlighting in configspec file (thanks to @jsinger67)
 * fixed typo in package.json
