@@ -101,7 +101,7 @@ export class CCScmProvider {
       let fileList = this.mContext.workspaceState.get('untrackedfilecache', []);
       this.clearCase?.untrackedList.parse(fileList);
 
-      this.mCCScm = scm.createSourceControl('cc', 'ClearCase');
+      this.mCCScm = scm.createSourceControl('cc', 'ClearCase', this.root);
       this.mCCCheckedoutGrp = this.mCCScm.createResourceGroup("cc_checkedout", "Checked out");
       this.mCCUntrackedGrp = this.mCCScm.createResourceGroup("cc_untracked", "View private");
       this.mCCCheckedoutGrp.hideWhenEmpty = true;

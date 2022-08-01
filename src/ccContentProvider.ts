@@ -19,8 +19,8 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
 			return "canceled";
 		}
 
-		if (uri.scheme === 'cc-file-org') {
-			uri = uri.with({ scheme: 'cc-file-current', path: uri.query });
+		if (uri.scheme === 'cc-orig') {
+			uri = uri.with({ scheme: 'cc', path: uri.query });
 		}
 
 		let { path, version } = fromCcUri(uri);
