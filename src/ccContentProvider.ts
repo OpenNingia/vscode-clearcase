@@ -1,32 +1,35 @@
 
 
-import { workspace, Uri, Disposable, TextDocumentContentProvider, QuickDiffProvider } from 'vscode';
+import { workspace, Uri, Disposable, TextDocumentContentProvider, QuickDiffProvider, CancellationToken } from 'vscode';
 import { ClearCase } from "./clearcase";
 import { toCcUri, fromCcUri } from "./uri";
 
-export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider {
+export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, Disposable {
 
 	private mCcHandler: ClearCase|null = null;
-	private disposables: Disposable[] = [];
 
-	constructor(private cc: ClearCase|null) {
+	constructor(private cc: ClearCase|null, private m_disposals: Disposable[]) {
 		if(cc!==null) {
 			this.mCcHandler = cc;
-			this.disposables.push(
-				workspace.registerTextDocumentContentProvider('cc', this),
-				workspace.registerTextDocumentContentProvider('cc-orig', this)
+			this.m_disposals.push(
+				workspace.registerTextDocumentContentProvider('cc-file-current', this),
+				workspace.registerTextDocumentContentProvider('cc-file-org', this)
 			);
 		}
 	}
 	
-	async provideTextDocumentContent(uri: Uri): Promise<string> {
+	async provideTextDocumentContent(uri: Uri, token: CancellationToken): Promise<string> {
 
-		if (uri.scheme === 'cc-orig') {
-			uri = uri.with({ scheme: 'cc', path: uri.query });
+		if( token.isCancellationRequested === true ) {
+			return "canceled";
 		}
 
-        let { path, version } = fromCcUri(uri);
-        
+		if (uri.scheme === 'cc-file-org') {
+			uri = uri.with({ scheme: 'cc-file-current', path: uri.query });
+		}
+
+		let { path, version } = fromCcUri(uri);
+
 
 		try {
 			return this.mCcHandler ? await this.mCcHandler.readFileAtVersion(path, version) : '';
@@ -36,25 +39,25 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
 		}
 
 		return '';
-    }
-    
-    async provideOriginalResource(uri: Uri): Promise<Uri | undefined> {
-        if (uri.scheme !== "file") {
-          return;
-				}
+	}
 
-				let currentVersion = this.mCcHandler ? await this.mCcHandler.getVersionInformation(uri, false) : '';
-				if( currentVersion !== "" ) {
-					let isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
-					
-					if (isCheckedOut) {
-						return toCcUri(uri, currentVersion.replace("CHECKEDOUT", "LATEST"));
-					}
-				}
-        return;
-      }    
+	async provideOriginalResource(uri: Uri): Promise<Uri | undefined> {
+		if (uri.scheme !== "file") {
+			return;
+		}
+
+		let currentVersion = this.mCcHandler ? await this.mCcHandler.getVersionInformation(uri, false) : '';
+		if( currentVersion !== "" ) {
+			let isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
+
+			if (isCheckedOut) {
+				return toCcUri(uri, currentVersion.replace("CHECKEDOUT", "LATEST"));
+			}
+		}
+		return;
+	}
 
 	dispose(): void {
-		this.disposables.forEach(d => d.dispose());
+		this.m_disposals.forEach(d => d.dispose());
 	}
 }
