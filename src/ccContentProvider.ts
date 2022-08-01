@@ -6,15 +6,10 @@ import { toCcUri, fromCcUri } from "./uri";
 
 export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, Disposable {
 
-	private mCcHandler: ClearCase|null = null;
-
-	constructor(private cc: ClearCase|null, private m_disposals: Disposable[]) {
-		if(cc!==null) {
-			this.mCcHandler = cc;
-			this.m_disposals.push(
-				workspace.registerTextDocumentContentProvider('cc-file-current', this),
-				workspace.registerTextDocumentContentProvider('cc-file-org', this)
-			);
+	constructor(private mCcHandler: ClearCase|null, private m_disposals: Disposable[]) {
+		if(this.mCcHandler!==null) {
+			this.m_disposals.push(workspace.registerTextDocumentContentProvider('cc', this));
+			this.m_disposals.push(workspace.registerTextDocumentContentProvider('cc-orig', this));
 		}
 	}
 	

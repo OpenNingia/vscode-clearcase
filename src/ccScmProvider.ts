@@ -78,7 +78,7 @@ export class CCScmProvider {
       }
     } else {
       try {
-        return (await this.startExtension());
+        return await this.startExtension();
       } catch (err) {
         return (false);
       }
@@ -90,7 +90,6 @@ export class CCScmProvider {
     let isView: boolean | undefined = false;
     try {
       isView = await this.mCCHandler?.checkIsView(undefined);
-
     } catch (error) {
       isView = false;
     }

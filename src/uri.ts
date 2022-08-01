@@ -8,7 +8,7 @@ export function fromCcUri(uri: Uri): { path: string; version: string } {
 
 export function toCcUri(uri: Uri, ver: string): Uri {
 	return uri.with({
-		scheme: 'cc-file-org',
+		scheme: 'cc-orig',
 		path: uri.path,
 		query: JSON.stringify({
             path: uri.fsPath,
