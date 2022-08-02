@@ -128,6 +128,7 @@ export class ClearCase {
   ) {
     this.mUpdateEvent = new EventEmitter<Uri>();
     this.mViewType = ViewType.unknown;
+    this.IsView = false;
     this.mUntrackedList = new MappedList();
 
     if (this.configHandler.configuration.UseRemoteClient.value === true) {
@@ -159,8 +160,12 @@ export class ClearCase {
     });
   }
 
-  public get isView(): boolean {
+  public get IsView(): boolean {
     return this.mIsCCView;
+  }
+
+  public set IsView(v: boolean) {
+    this.mIsCCView = v;
   }
 
   public get viewType(): ViewType {
@@ -212,7 +217,7 @@ export class ClearCase {
       this.mViewType = await this.detectViewType();
     }
 
-    this.mIsCCView = isView;
+    this.IsView = isView;
 
     return isView;
   }
@@ -520,16 +525,32 @@ export class ClearCase {
    * view.
    */
   public async hasConfigspec(): Promise<boolean> {
+    let result: boolean = false;
     try {
       if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
         let cmd: CCArgs = new CCArgs(["catcs"]);
-        await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data) => {});
-        return true;
+        await this.runCleartoolCommand(
+          cmd,
+          workspace.workspaceFolders[0].uri.fsPath,
+          (data) => {},
+          (finishRes: string) => {
+            if (finishRes === "error") {
+              result = false;
+            } else {
+              result = true;
+            }
+          },
+          (errorRes: string) => {
+            if (errorRes.length > 0) {
+              result = false;
+            }
+          }
+        );
       }
-      return false;
     } catch (error) {
-      return false;
+      result = false;
     }
+    return result;
   }
 
   /**
@@ -912,8 +933,11 @@ export class ClearCase {
       command.on("close", (code) => {
         if (code !== 0) {
           self.outputChannel.appendLine(cmdErrMsg);
-          if (self.isView && cmdErrMsg !== "") {
+          if (self.IsView && cmdErrMsg !== "") {
             window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+          }
+          if (typeof onFinished === "function") {
+            onFinished("error");
           }
         } else {
           if (typeof onFinished === "function") {

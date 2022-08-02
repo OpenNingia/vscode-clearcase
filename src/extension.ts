@@ -38,7 +38,7 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
       provider.onWindowChanged(() => {
         const d = provider.clearCase ? provider.clearCase.viewType === ViewType.dynamic : false;
         const files = provider.getCheckedoutObjects();
-        commands.executeCommand("setContext", "vscode-clearcase:enabled", provider.clearCase?.isView);
+        commands.executeCommand("setContext", "vscode-clearcase:enabled", provider.clearCase?.IsView);
         commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
         commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
       }, provider);
@@ -52,11 +52,9 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
         uiInfo.initialQuery();
       }, uiInfo);
       console.log("[vscode-clearcase] started!");
-    } else {
-      window.showWarningMessage("VSCode-Clearcase extension could not be started");
     }
   } catch {
-    window.showWarningMessage("VSCode-Clearcase extension could not be started (catched)");
+    window.showWarningMessage("VSCode-Clearcase extension could not be started");
   }
 }
 

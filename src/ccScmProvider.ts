@@ -173,7 +173,7 @@ export class CCScmProvider {
       this.clearCase
         ?.checkIsView(window.activeTextEditor)
         .then(() => {
-          const s = this.clearCase ? this.clearCase.isView : false;
+          const s = this.clearCase ? this.clearCase.IsView : false;
           resolve(s);
         })
         .catch((error) => {
