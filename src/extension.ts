@@ -53,8 +53,6 @@ async function _activate(context: vscode.ExtensionContext, disposables: vscode.D
 			provider.clearCase?.onCommandExecuted(() => {
 					uiInfo.initialQuery();
 			}, uiInfo);
-		} else {
-			vscode.window.showWarningMessage("VSCode-Clearcase extension could not be started");
 		}
 	} catch {
 		vscode.window.showWarningMessage("VSCode-Clearcase extension could not be started (catched)");
