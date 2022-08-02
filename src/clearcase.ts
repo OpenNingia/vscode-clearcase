@@ -522,19 +522,33 @@ export class ClearCase {
    * Alternate methode detecting if the given path is part of an clearcase
    * view.
    */
-  public async hasConfigspec(): Promise<boolean> {
+   public async hasConfigspec(): Promise<boolean> {
+    let result: boolean = false;
     try {
-      if ( workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
+      if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
         let cmd: CCArgs = new CCArgs(["catcs"]);
-        await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data) => {
-        });
-        return true;
+        await this.runCleartoolCommand(
+          cmd,
+          workspace.workspaceFolders[0].uri.fsPath,
+          (data) => {},
+          (finishRes: string) => {
+            if (finishRes === "error") {
+              result = false;
+            } else {
+              result = true;
+            }
+          },
+          (errorRes: string) => {
+            if (errorRes.length > 0) {
+              result = false;
+            }
+          }
+        );
       }
-      return false;
+    } catch (error) {
+      result = false;
     }
-    catch (error) {
-      return false;
-    }
+    return result;
   }
 
   /**
@@ -918,7 +932,9 @@ export class ClearCase {
           if( self.isView && cmdErrMsg !== "" ) {
             window.showErrorMessage(`${cmdErrMsg}`, {modal: false});
           }
-
+          if (typeof onFinished === "function") {
+            onFinished("error");
+          }
         } else {
           if (typeof onFinished === 'function') {
             onFinished((allData.length > 0) ? allData.toString() : allDataStr);
