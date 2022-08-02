@@ -1,100 +1,105 @@
-'use strict';
-
-import * as vscode from 'vscode';
-import { CCConfigHandler } from './ccConfigHandler';
-import { CCConfiguration } from './ccConfiguration';
+import {
+  DecorationOptions,
+  DecorationRenderOptions,
+  ExtensionContext,
+  Range,
+  TextEditor,
+  TextEditorDecorationType,
+  window,
+} from "vscode";
+import { CCConfigHandler } from "./ccConfigHandler";
+import { CCConfiguration } from "./ccConfiguration";
 
 export class CCAnnotationController {
-	private mDecorationType: vscode.TextEditorDecorationType;
-	private mIsActive: boolean;
-	private mConfiguration: CCConfiguration;
+  private mDecorationType: TextEditorDecorationType;
+  private mIsActive: boolean;
+  private mConfiguration: CCConfiguration;
 
-	constructor(
-		private editor: vscode.TextEditor,
-		private context: vscode.ExtensionContext,
-		private configHandler: CCConfigHandler) {
-		this.mIsActive = false;
-		vscode.window.onDidChangeActiveTextEditor(this.onActiveEditorChange, this, this.context.subscriptions);
-		this.configHandler.onDidChangeConfiguration(this.onConfigurationChanged, this);
-		let ro: vscode.DecorationRenderOptions = {
-			isWholeLine: false,
-			before: {
-				margin: '0 1em 0 0'
-			},
-			after: {
-				margin: '0 0 0 1em'
-			}
-		};
-		this.mDecorationType = vscode.window.createTextEditorDecorationType(ro);
-		this.mConfiguration = this.configHandler.configuration;
-	}
+  constructor(private editor: TextEditor, private context: ExtensionContext, private configHandler: CCConfigHandler) {
+    this.mIsActive = false;
+    window.onDidChangeActiveTextEditor(this.onActiveEditorChange, this, this.context.subscriptions);
+    this.configHandler.onDidChangeConfiguration(this.onConfigurationChanged, this);
+    let ro: DecorationRenderOptions = {
+      isWholeLine: false,
+      before: {
+        margin: "0 1em 0 0",
+      },
+      after: {
+        margin: "0 0 0 1em",
+      },
+    };
+    this.mDecorationType = window.createTextEditorDecorationType(ro);
+    this.mConfiguration = this.configHandler.configuration;
+  }
 
-	onActiveEditorChange(event: vscode.TextEditor|undefined): any {
-		if (event) {
-			this.mIsActive = false;
-			this.editor = event;
-		}
-	}
+  onActiveEditorChange(event: TextEditor | undefined): any {
+    if (event) {
+      this.mIsActive = false;
+      this.editor = event;
+    }
+  }
 
-	onConfigurationChanged() {
-		this.mConfiguration = this.configHandler.configuration;
-	}
+  onConfigurationChanged() {
+    this.mConfiguration = this.configHandler.configuration;
+  }
 
-	setAnnotationInText(annotationText: string) {
-		let deco: vscode.DecorationOptions[] = [];
-		let maxWidth: number = 0;
-		if (this.mIsActive === false) {
-			let textLines = annotationText.split(/[\n\r]+/);
-			let textLineParts = textLines.map(l => {
-				let parts = l.split(" | ");
-				parts[0] = parts[0].replace(/\\/g, "/");
-				if (parts[0].length > maxWidth) {
-					maxWidth = parts[0].length;
-				}
-				return parts;
-			});
-			deco = this.getDecoration(textLineParts, maxWidth);
-			this.mIsActive = true;
-		}
-		else {
-			this.mIsActive = false;
-		}
-		this.editor.setDecorations(this.mDecorationType, deco);
-	}
+  setAnnotationInText(annotationText: string) {
+    let deco: DecorationOptions[] = [];
+    let maxWidth: number = 0;
+    if (this.mIsActive === false) {
+      let textLines = annotationText.split(/[\n\r]+/);
+      let textLineParts = textLines.map((l) => {
+        let parts = l.split(" | ");
+        parts[0] = parts[0].replace(/\\/g, "/");
+        if (parts[0].length > maxWidth) {
+          maxWidth = parts[0].length;
+        }
+        return parts;
+      });
+      deco = this.getDecoration(textLineParts, maxWidth);
+      this.mIsActive = true;
+    } else {
+      this.mIsActive = false;
+    }
+    this.editor.setDecorations(this.mDecorationType, deco);
+  }
 
-	getDecoration(iLines: string[][], iMaxWidth: number): vscode.DecorationOptions[] {
-		let max: number = 0;
-		let deco: vscode.DecorationOptions[] = [];
-		for (let lineNr = 0; lineNr < iLines.length; lineNr++) {
-			let line = iLines[lineNr][0].replace(/ /gi, '\u00A0');
-			while (line.length < iMaxWidth) {
-				line = line.concat('\u00A0');
-			}
-			deco.push(this.createLineDecoration(line, lineNr, 0, max));
-		}
-		return deco;
-	}
+  getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
+    let max: number = 0;
+    let deco: DecorationOptions[] = [];
+    for (let lineNr = 0; lineNr < iLines.length; lineNr++) {
+      let line = iLines[lineNr][0].replace(/ /gi, "\u00A0");
+      while (line.length < iMaxWidth) {
+        line = line.concat("\u00A0");
+      }
+      deco.push(this.createLineDecoration(line, lineNr, 0, max));
+    }
+    return deco;
+  }
 
-	private createLineDecoration(iLinePart: string, iLineNr: number, iCharStart: number, iWidth: number): vscode.DecorationOptions {
-		let charLen = iLinePart.length;
-		let range = vscode.window.activeTextEditor?.document.validateRange(new vscode.Range(iLineNr, iCharStart, iLineNr, charLen));
-		if( range === undefined ) {
-			range = new vscode.Range(0,0,0,0);
-		}
-		return {
-			hoverMessage: "",
-			range: range,
-			renderOptions: {
-				before: {
-					color: this.mConfiguration.annotationColor.value,
-					backgroundColor: this.mConfiguration.annotationBackground.value,
-					contentText: iLinePart
-				}
-			}
-		};
-	}
+  private createLineDecoration(
+    iLinePart: string,
+    iLineNr: number,
+    iCharStart: number,
+    iWidth: number
+  ): DecorationOptions {
+    let charLen = iLinePart.length;
+    let range = window.activeTextEditor?.document.validateRange(new Range(iLineNr, iCharStart, iLineNr, charLen));
+    if (range === undefined) {
+      range = new Range(0, 0, 0, 0);
+    }
+    return {
+      hoverMessage: "",
+      range: range,
+      renderOptions: {
+        before: {
+          color: this.mConfiguration.annotationColor.value,
+          backgroundColor: this.mConfiguration.annotationBackground.value,
+          contentText: iLinePart,
+        },
+      },
+    };
+  }
 
-	dispose() {
-
-	}
+  dispose() {}
 }

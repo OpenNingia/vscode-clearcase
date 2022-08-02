@@ -1,4 +1,3 @@
-
 export class Lock {
   private mCount: number;
   constructor(private mAccessCnt: number) {
@@ -7,7 +6,7 @@ export class Lock {
   public reserve(): boolean {
     let s = this.mCount;
     this.mCount++;
-    return (s < this.mAccessCnt);
+    return s < this.mAccessCnt;
   }
 
   public release() {
