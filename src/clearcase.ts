@@ -32,11 +32,15 @@ export enum ViewType {
 export class CCArgs {
   public params: string [] = [];
   private file: string|undefined= undefined;
+  private version: string|undefined= undefined;
 
-  public constructor(params: string[], file?:string) {
+  public constructor(params: string[], file?:string, version?:string) {
     this.params = [...params];
     if(file) {
       this.file = file;
+    }
+    if(version){
+      this.version = version;
     }
   }
 
@@ -45,8 +49,10 @@ export class CCArgs {
   }
 
   public getCmd(): string[] {
-    if(this.file !== undefined) {
+    if(this.file !== undefined && this.version === undefined) {
       return [...this.params, this.file];
+    } else if(this.file !== undefined && this.version !== undefined && this.version !== ""){
+      return [...this.params, `${this.file}@@${this.version}`];
     }
     return this.params;
   }
@@ -847,7 +853,6 @@ export class ClearCase {
     let tempDir = this.configHandler.configuration.tempDir.value;
     let tempFile = "";
     let ret = undefined;
-    let pname = fsPath + "@@" + version;
     let isWsl = this.isRunningInWsl();
     if( isWsl === true ) {
       tempDir = this.wslPath(tempDir, true, isWsl);
@@ -860,11 +865,14 @@ export class ClearCase {
     }
     if( workspace.workspaceFolders !== undefined ) {
       await this.runCleartoolCommand(
-        new CCArgs(['get', '-to', tempFile], pname),
+        new CCArgs(['get', '-to', tempFile], fsPath, version),
         workspace.workspaceFolders[0].uri.fsPath,
         (data: string[]) => { },
         (result: string) => {
           console.log(result);
+        },
+        (error: string) => {
+          console.error(error);
         });
     }
     return fs.readFileSync(ret.fsPath, { encoding: 'utf-8' });
