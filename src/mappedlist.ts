@@ -2,20 +2,17 @@ import { accessSync } from "fs";
 import { workspace } from "vscode";
 
 class FileType {
-  public constructor(
-    public found:boolean,
-    public name:string )
-  {}
+  public constructor(public found: boolean, public name: string) {}
 }
 
 export class MappedList {
-  private mUntrackedList: Map<string, FileType[]>|null;
+  private mUntrackedList: Map<string, FileType[]> | null;
 
   public constructor() {
     this.mUntrackedList = null;
-    if ( workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
+    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
       this.mUntrackedList = new Map<string, FileType[]>();
-      workspace.workspaceFolders.forEach(val => {
+      workspace.workspaceFolders.forEach((val) => {
         this.mUntrackedList?.set(val.uri.fsPath, []);
       });
     }
@@ -28,7 +25,7 @@ export class MappedList {
         if (iVal.indexOf(key) > -1) {
           let v = this.mUntrackedList.get(key);
           let o = v?.find((val) => val.name === iVal);
-          if( undefined !== o ) {
+          if (undefined !== o) {
             return true;
           }
         }
@@ -47,8 +44,7 @@ export class MappedList {
       }
       if (i < workspace.workspaceFolders.length) {
         let v = this.mUntrackedList.get(workspace.workspaceFolders[i].uri.fsPath);
-        if( v !== undefined )
-        {
+        if (v !== undefined) {
           v.push(new FileType(true, iVal));
           this.mUntrackedList.set(workspace.workspaceFolders[i].uri.fsPath, v);
         }
@@ -61,10 +57,10 @@ export class MappedList {
       if (this.mUntrackedList.get(iKey) !== undefined) {
         let v = this.mUntrackedList.get(iKey);
         let o = v?.find((val) => val.name === iVal);
-        if( undefined === o && v !== undefined ) {
+        if (undefined === o && v !== undefined) {
           v.push(new FileType(true, iVal));
           this.mUntrackedList.set(iKey, v);
-        } else if( o !== undefined ) {
+        } else if (o !== undefined) {
           o.found = true;
         }
       }
@@ -79,8 +75,8 @@ export class MappedList {
     }
   }
 
-  public getStringsByKey(iKey: string|undefined): string[]|undefined {
-    if(iKey === undefined) {
+  public getStringsByKey(iKey: string | undefined): string[] | undefined {
+    if (iKey === undefined) {
       return;
     }
     if (this.mUntrackedList !== null) {
@@ -100,20 +96,26 @@ export class MappedList {
   }
 
   public parse(filelist: string[]) {
-    if( filelist !== null && (this.mUntrackedList !== null) ) {
-      for(let i=0; i < filelist.length; i=i+2) {
-        this.mUntrackedList.set(filelist[i], filelist[i+1].split(";").map((val) => new FileType(false, val)));
+    if (filelist !== null && this.mUntrackedList !== null) {
+      for (let i = 0; i < filelist.length; i = i + 2) {
+        this.mUntrackedList.set(
+          filelist[i],
+          filelist[i + 1].split(";").map((val) => new FileType(false, val))
+        );
       }
     }
   }
 
-  public stringify() : string[] {
+  public stringify(): string[] {
     let f = [];
-    if( this.mUntrackedList !== null ) {
+    if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (let key of keys) {
-        let objs = this.mUntrackedList.get(key)?.map((val) => val.name).join(";");
-        if( objs !== undefined ) {
+        let objs = this.mUntrackedList
+          .get(key)
+          ?.map((val) => val.name)
+          .join(";");
+        if (objs !== undefined) {
           f.push(key);
           f.push(objs);
         }
@@ -123,22 +125,25 @@ export class MappedList {
   }
 
   public cleanMap() {
-    if( this.mUntrackedList !== null ) {
+    if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (let key of keys) {
         let objs = this.mUntrackedList.get(key)?.filter((val) => val.found);
-        if( objs !==undefined ){
-          this.mUntrackedList.set(key, objs.map((val) => {
-            val.found = false;
-            return val;
-          }));
+        if (objs !== undefined) {
+          this.mUntrackedList.set(
+            key,
+            objs.map((val) => {
+              val.found = false;
+              return val;
+            })
+          );
         }
       }
     }
   }
 
   public updateEntryExistsOnFileSystem() {
-    if( this.mUntrackedList !== null ) {
+    if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (let key of keys) {
         let objs = this.mUntrackedList.get(key)?.filter((val) => {
@@ -149,7 +154,7 @@ export class MappedList {
             val.found = false;
           }
         });
-        if( objs !== undefined ) {
+        if (objs !== undefined) {
           this.mUntrackedList.set(key, objs);
         }
       }
@@ -157,15 +162,18 @@ export class MappedList {
   }
 
   public resetFoundState() {
-    if( this.mUntrackedList !== null ) {
+    if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (let key of keys) {
         let objs = this.mUntrackedList.get(key);
-        if( objs !== undefined ) {
-          this.mUntrackedList.set(key, objs.map((val) => {
-            val.found = false;
-            return val;
-          }));
+        if (objs !== undefined) {
+          this.mUntrackedList.set(
+            key,
+            objs.map((val) => {
+              val.found = false;
+              return val;
+            })
+          );
         }
       }
     }
