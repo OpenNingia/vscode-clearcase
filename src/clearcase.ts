@@ -315,8 +315,14 @@ export class ClearCase {
         cmd.File = path;
       }
       try {
-        await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {});
-        this.mUpdateEvent.fire(doc);
+        await this.runCleartoolCommand(
+          cmd,
+          dirname(path),
+          (data: string[]) => {},
+          (finish: string) => {
+            this.mUpdateEvent.fire(doc);
+          }
+        );
       } catch (error) {
         this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + error);
         return false;
@@ -325,15 +331,17 @@ export class ClearCase {
     }
   }
 
-  public checkoutAndSaveFile(doc: TextDocument) {
+  public async checkoutAndSaveFile(doc: TextDocument) {
     let path = doc.fileName;
-    exec('cleardlg /checkout "' + path + '"', (error, stdout, stderr) => {
+    exec('cleardlg /checkout "' + path + '"', async (error, stdout, stderr) => {
       // only trigger save if checkout did work
       // If not and the user canceled this dialog the save event is
       // retriggered because of that save.
       if (this.isReadOnly(doc) === false) {
-        doc.save();
-        this.mUpdateEvent.fire(doc.uri);
+        try {
+          await doc.save();
+          this.mUpdateEvent.fire(doc.uri);
+        } catch (error) {}
       } else {
         window.showErrorMessage("Could not save file.");
       }
@@ -353,17 +361,27 @@ export class ClearCase {
       if (uncoKeepFile) {
         rm = "-keep";
       }
-      await this.runCleartoolCommand(new CCArgs(["unco", rm], path), dirname(path), (data: string[]) => {
-        this.mUpdateEvent.fire(doc);
-      });
+      await this.runCleartoolCommand(
+        new CCArgs(["unco", rm], path),
+        dirname(path),
+        (data: string[]) => {},
+        (finish: string) => {
+          this.mUpdateEvent.fire(doc);
+        }
+      );
     }
   }
 
   public async createVersionedObject(doc: Uri) {
     var path = doc.fsPath;
-    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], path), dirname(path), (data: string[]) => {
-      this.mUpdateEvent.fire(doc);
-    });
+    await this.runCleartoolCommand(
+      new CCArgs(["mkelem", "-mkp", "-nc"], path),
+      dirname(path),
+      (data: string[]) => {},
+      (finish: string) => {
+        this.mUpdateEvent.fire(doc);
+      }
+    );
   }
 
   public async checkinFile(doc: Uri) {
@@ -415,9 +433,14 @@ export class ClearCase {
         cmd.File = path;
       }
 
-      await this.runCleartoolCommand(cmd, dirname(path), (data: string[]) => {
-        this.mUpdateEvent.fire(doc);
-      });
+      await this.runCleartoolCommand(
+        cmd,
+        dirname(path),
+        (data: string[]) => {},
+        (finish: string) => {
+          this.mUpdateEvent.fire(doc);
+        }
+      );
     }
   }
 
@@ -651,22 +674,24 @@ export class ClearCase {
           ? window.activeTextEditor.document.fileName
           : filePath.fsPath;
 
-      let stat = fs.lstatSync(p);
-      let path = "";
+      const stat = fs.lstatSync(p);
+      let updateFsObj = "";
+      let cwd = "";
 
       if (stat.isDirectory()) {
-        path = p;
+        updateFsObj = p;
+        cwd = p;
       } else if (stat.isFile()) {
-        path = updateType === 0 ? dirname(p) : p;
-      }
-      if (path !== "") {
-        path = `"${path}"`;
+        cwd = updateFsObj = dirname(p);
+        if (updateType == 1) {
+          updateFsObj = p;
+        }
       }
 
       let errorRes: string = "";
       await this.runCleartoolCommand(
-        new CCArgs(["update"], path),
-        dirname(path),
+        new CCArgs(["update"], updateFsObj),
+        cwd,
         (data: string[]) => {
           this.mUpdateEvent.fire(filePath);
         },
