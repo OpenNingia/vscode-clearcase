@@ -111,5 +111,6 @@ export class UIInformation {
 
   public dispose() {
     this.mStatusbar?.dispose();
+    this.mDisposables.forEach(disposable => disposable.dispose());
   }
 }
