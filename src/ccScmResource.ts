@@ -27,7 +27,7 @@ export class CCScmResource implements SourceControlResourceState {
     };
   }
 
-  constructor(private mResourceGrpType: ResourceGroupType, private mResourceUri: Uri, private mType: CCScmStatus) {}
+  constructor(private mResourceGrpType: ResourceGroupType, private mResourceUri: Uri, private mType: CCScmStatus) { }
 
   get type(): CCScmStatus {
     return this.mType;
@@ -69,7 +69,7 @@ export class CCScmResource implements SourceControlResourceState {
     return { strikeThrough, faded, tooltip, light, dark };
   }
 
-  public static sort(a: CCScmResource, b: CCScmResource) {
+  public static sort(a: SourceControlResourceState, b: SourceControlResourceState) {
     if (a.resourceUri.fsPath < b.resourceUri.fsPath) {
       return -1;
     }

@@ -318,7 +318,7 @@ export class ClearCase {
         await this.runCleartoolCommand(
           cmd,
           dirname(path),
-          (data: string[]) => {},
+          (data: string[]) => { },
           (finish: string) => {
             this.mUpdateEvent.fire(doc);
           }
@@ -341,7 +341,7 @@ export class ClearCase {
         try {
           await doc.save();
           this.mUpdateEvent.fire(doc.uri);
-        } catch (error) {}
+        } catch (error) { }
       } else {
         window.showErrorMessage("Could not save file.");
       }
@@ -364,7 +364,7 @@ export class ClearCase {
       await this.runCleartoolCommand(
         new CCArgs(["unco", rm], path),
         dirname(path),
-        (data: string[]) => {},
+        (data: string[]) => { },
         (finish: string) => {
           this.mUpdateEvent.fire(doc);
         }
@@ -377,7 +377,7 @@ export class ClearCase {
     await this.runCleartoolCommand(
       new CCArgs(["mkelem", "-mkp", "-nc"], path),
       dirname(path),
-      (data: string[]) => {},
+      (data: string[]) => { },
       (finish: string) => {
         this.mUpdateEvent.fire(doc);
       }
@@ -436,7 +436,7 @@ export class ClearCase {
       await this.runCleartoolCommand(
         cmd,
         dirname(path),
-        (data: string[]) => {},
+        (data: string[]) => { },
         (finish: string) => {
           this.mUpdateEvent.fire(doc);
         }
@@ -561,7 +561,7 @@ export class ClearCase {
         await this.runCleartoolCommand(
           cmd,
           workspace.workspaceFolders[0].uri.fsPath,
-          (data) => {},
+          (data) => { },
           (finishRes: string) => {
             if (finishRes === "error") {
               result = false;
@@ -889,7 +889,7 @@ export class ClearCase {
       await this.runCleartoolCommand(
         new CCArgs(["get", "-to", tempFile], fsPath, version),
         workspace.workspaceFolders[0].uri.fsPath,
-        (data: string[]) => {},
+        (data: string[]) => { },
         (result: string) => {
           console.log(result);
         },
@@ -1050,7 +1050,7 @@ export class ClearCase {
    */
   public async runClearTooledcs(baseFolder: string): Promise<ChildProcess> {
     let executable = this.configHandler.configuration.executable.value;
-    process.env.VISUAL = "code -r";
+    process.env['VISUAL'] = "code -r";
     var options = {
       cwd: baseFolder,
       env: process.env,
