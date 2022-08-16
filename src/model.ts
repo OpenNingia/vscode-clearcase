@@ -9,41 +9,10 @@ export function dispose<T extends IDisposable>(disposables: T[]): T[] {
   return [];
 }
 
-export function toDisposable(dispose: () => void): IDisposable {
-  return { dispose };
-}
-
-export function combinedDisposable(disposables: IDisposable[]): IDisposable {
-  return toDisposable(() => dispose(disposables));
-}
-
-export const emptyDisposable = toDisposable(() => null);
-
-export function mapEvent<I, O>(event: Event<I>, map: (i: I) => O): Event<O> {
-  return (listener, thisArgs = null, disposables?) => event((i) => listener.call(thisArgs, map(i)), null, disposables);
-}
-
-export function filterEvent<T>(event: Event<T>, filter: (e: T) => boolean): Event<T> {
-  return (listener, thisArgs = null, disposables?) =>
-    event((e) => filter(e) && listener.call(thisArgs, e), null, disposables);
-}
-
-export function anyEvent<T>(...events: Event<T>[]): Event<T> {
-  return (listener, thisArgs = null, disposables?) => {
-    const result = combinedDisposable(events.map((event) => event((i) => listener.call(thisArgs, i))));
-
-    if (disposables) {
-      disposables.push(result);
-    }
-
-    return result;
-  };
-}
-
 export class ModelHandler {
   private mModels: Model[] | undefined;
 
-  public constructor() {}
+  public constructor() { }
 
   public init() {
     this.mModels = [];
@@ -73,7 +42,7 @@ export class Model implements Disposable {
     return this._onWorkspaceDeleted;
   }
 
-  constructor() {}
+  constructor() { }
 
   public init(filter: string = "**") {
     const fsWatcher = workspace.createFileSystemWatcher(filter);
