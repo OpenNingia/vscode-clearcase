@@ -64,7 +64,7 @@ export class CCScmProvider {
     private mDisposables: Disposable[],
     private outputChannel: OutputChannel,
     private configHandler: CCConfigHandler
-  ) { }
+  ) {}
 
   public async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
@@ -190,24 +190,25 @@ export class CCScmProvider {
         let checkoutsChanged = false;
         let untrackedChanged = false;
         let filteredUntracked: SourceControlResourceState[] = [];
-        let filteredCheckedout = this.mCCCheckedoutGrp?.resourceStates.filter(item => {
-          if (item.resourceUri.fsPath !== fileObj.fsPath) {
-            return true;
-          }
+        let filteredCheckedout =
+          this.mCCCheckedoutGrp?.resourceStates.filter((item) => {
+            if (item.resourceUri.fsPath !== fileObj.fsPath) {
+              return true;
+            }
 
-          checkoutsChanged = true;
-          return false;
-        }) || [];
+            checkoutsChanged = true;
+            return false;
+          }) || [];
         if (checkoutsChanged === false) {
           filteredUntracked =
-            (this.mCCUntrackedGrp?.resourceStates.filter(item => {
+            this.mCCUntrackedGrp?.resourceStates.filter((item) => {
               if (item.resourceUri.fsPath !== fileObj.fsPath) {
                 return true;
               }
 
               untrackedChanged = true;
               return false;
-            })) || [];
+            }) || [];
         }
         // file is checked out, add to resource state list
         if (version.match(/checkedout/i) !== null) {
@@ -238,6 +239,8 @@ export class CCScmProvider {
         }
       } catch (error) {
         this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
+      } finally {
+        this.mWindowChangedEvent.fire();
       }
     }
     this.mListLock?.release();
@@ -250,12 +253,13 @@ export class CCScmProvider {
 
   public async handleDeleteFiles(fileObj: Uri) {
     if (this.mCCCheckedoutGrp !== null && this.mCCUntrackedGrp) {
-      this.mCCCheckedoutGrp.resourceStates = this.mCCCheckedoutGrp.resourceStates
-        .filter(item => item.resourceUri.fsPath !== fileObj.fsPath);
+      this.mCCCheckedoutGrp.resourceStates = this.mCCCheckedoutGrp.resourceStates.filter(
+        (item) => item.resourceUri.fsPath !== fileObj.fsPath
+      );
 
-      this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedGrp.resourceStates
-        .filter(item => item.resourceUri.fsPath !== fileObj.fsPath);
-
+      this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedGrp.resourceStates.filter(
+        (item) => item.resourceUri.fsPath !== fileObj.fsPath
+      );
     }
   }
 
@@ -317,10 +321,11 @@ export class CCScmProvider {
     let root = this.root;
     if (root !== undefined) {
       let ign = this.mIgnores?.getFolderIgnore(root);
-      let d = this.clearCase?.untrackedList.getStringsByKey(root?.fsPath)?.filter(item =>
-        // if no .ccignore file is present, show all files
-        root !== undefined &&
-        (ign === undefined || (item !== "" && ign?.ignore.ignores(path.relative(root.fsPath, item)) === false))
+      let d = this.clearCase?.untrackedList.getStringsByKey(root?.fsPath)?.filter(
+        (item) =>
+          // if no .ccignore file is present, show all files
+          root !== undefined &&
+          (ign === undefined || (item !== "" && ign?.ignore.ignores(path.relative(root.fsPath, item)) === false))
       );
       if (d !== undefined) {
         viewPrv = viewPrv.concat(

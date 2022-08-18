@@ -253,7 +253,7 @@
         {
           "command": "extension.ccCheckout",
           "group": "cc@2",
-          "when": "vscode-clearcase:enabled"
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccItemProperties",
@@ -285,7 +285,7 @@
         {
           "command": "extension.ccCheckout",
           "group": "cc@2",
-          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccComparePrevious",
