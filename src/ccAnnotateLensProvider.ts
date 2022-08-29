@@ -19,7 +19,7 @@ export class CCCodeLensProvider implements CodeLensProvider {
       return [];
     }
 
-    let lLenses: CodeLens[] = [];
+    const lLenses: CodeLens[] = [];
     return new Promise((resolve) => {
       this.mProvider.clearCase?.isClearcaseObject(document.uri).then((is: boolean) => {
         if (document !== undefined && is === true) {

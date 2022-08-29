@@ -29,7 +29,7 @@ export class CCConfigHandler {
   }
 
   private loadConfig(): boolean {
-    let config = workspace.getConfiguration("vscode-clearcase");
+    const config = workspace.getConfiguration("vscode-clearcase");
     if (config) {
       this.mChangeIdents = [];
       this.setChangeConfigDate<boolean>(config, "showVersionInStatusbar", this.mConfiguration.showStatusbar);

@@ -21,23 +21,23 @@ export class IgnoreHandler {
   public init() {
     this.fileIgnores = [];
     workspace.workspaceFolders?.forEach((folder: WorkspaceFolder) => {
-      let lM = this.mFsWatch.addWatcher(join(folder.uri.fsPath, ".ccignore"));
+      const lM = this.mFsWatch.addWatcher(join(folder.uri.fsPath, ".ccignore"));
       lM.onWorkspaceChanged(this.refreshFilter, this);
       lM.onWorkspaceCreated(this.refreshFilter, this);
       lM.onWorkspaceDeleted(this.removeFilter, this);
-      let dir = this.appendSeparator(folder.uri.fsPath);
+      const dir = this.appendSeparator(folder.uri.fsPath);
       this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
     });
   }
 
   public getFolderIgnore(path: Uri | string | undefined): FileIgnore | null {
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      let p: string = "";
+      const p = "";
       if (typeof path === "string") {
-        let t = this.appendSeparator(path);
+        const t = this.appendSeparator(path);
       } else {
         if (path !== undefined) {
-          let t = this.appendSeparator(path.fsPath);
+          const t = this.appendSeparator(path.fsPath);
 
           if (t.indexOf(this.fileIgnores[i].pathStr) === 0 && this.fileIgnores[i].hasIgnore === true) {
             return this.fileIgnores[i];
@@ -49,7 +49,7 @@ export class IgnoreHandler {
   }
 
   public refreshFilter(fileObj: Uri) {
-    let dir = this.appendSeparator(fileObj.fsPath);
+    const dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if (this.fileIgnores[i].pathStr === dir) {
         this.fileIgnores[i] = new FileIgnore(Uri.file(dir));
@@ -62,7 +62,7 @@ export class IgnoreHandler {
   }
 
   public removeFilter(fileObj: Uri) {
-    let dir = this.appendSeparator(fileObj.fsPath);
+    const dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if (this.fileIgnores[i].pathStr === dir) {
         this.fileIgnores.splice(i, 1);
@@ -86,7 +86,7 @@ export class IgnoreHandler {
 
 export class FileIgnore {
   private pathObj: Uri | null = null;
-  private hasIgnoreVal: boolean = false;
+  private hasIgnoreVal = false;
   private ignoreObj: any = null;
   constructor(path: Uri) {
     this.init(path);
@@ -95,7 +95,7 @@ export class FileIgnore {
   public init(path: Uri) {
     this.ignoreObj = ignore();
     this.pathObj = path;
-    let p = join(path.fsPath, ".ccignore");
+    const p = join(path.fsPath, ".ccignore");
     if (existsSync(p) === true) {
       this.hasIgnoreVal = true;
       this.ignoreObj.add(readFileSync(p).toString());

@@ -16,11 +16,11 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with  registerCommand
   // The commandId parameter must match the command field in package.json
-  let outputChannel: OutputChannel = window.createOutputChannel("Clearcase SCM");
+  const outputChannel: OutputChannel = window.createOutputChannel("Clearcase SCM");
 
-  let configHandler = new CCConfigHandler(context, disposables);
+  const configHandler = new CCConfigHandler(context, disposables);
 
-  let provider = new CCScmProvider(context, disposables, outputChannel, configHandler);
+  const provider = new CCScmProvider(context, disposables, outputChannel, configHandler);
 
   try {
     if (true === (await provider.init())) {
@@ -43,7 +43,7 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
         commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
       }, provider);
 
-      let uiInfo = new UIInformation(context, disposables, configHandler, window.activeTextEditor, provider.clearCase);
+      const uiInfo = new UIInformation(context, disposables, configHandler, window.activeTextEditor, provider.clearCase);
       uiInfo.createStatusbarItem();
       uiInfo.bindEvents();
       uiInfo.initialQuery();

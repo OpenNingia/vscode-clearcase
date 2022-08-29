@@ -10,7 +10,7 @@ export class ConfigurationProperty<T> {
   }
 
   get changed(): boolean {
-    let old = this.mChanged;
+    const old = this.mChanged;
     this.mChanged = false;
     return old;
   }

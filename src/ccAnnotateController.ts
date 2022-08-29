@@ -19,7 +19,7 @@ export class CCAnnotationController {
     this.mIsActive = false;
     window.onDidChangeActiveTextEditor(this.onActiveEditorChange, this, this.context.subscriptions);
     this.configHandler.onDidChangeConfiguration(this.onConfigurationChanged, this);
-    let ro: DecorationRenderOptions = {
+    const ro: DecorationRenderOptions = {
       isWholeLine: false,
       before: {
         margin: "0 1em 0 0",
@@ -45,11 +45,11 @@ export class CCAnnotationController {
 
   setAnnotationInText(annotationText: string) {
     let deco: DecorationOptions[] = [];
-    let maxWidth: number = 0;
+    let maxWidth = 0;
     if (this.mIsActive === false) {
-      let textLines = annotationText.split(/[\n\r]+/);
-      let textLineParts = textLines.map((l) => {
-        let parts = l.split(" | ");
+      const textLines = annotationText.split(/[\n\r]+/);
+      const textLineParts = textLines.map((l) => {
+        const parts = l.split(" | ");
         parts[0] = parts[0].replace(/\\/g, "/");
         if (parts[0].length > maxWidth) {
           maxWidth = parts[0].length;
@@ -65,8 +65,8 @@ export class CCAnnotationController {
   }
 
   getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
-    let max: number = 0;
-    let deco: DecorationOptions[] = [];
+    const max = 0;
+    const deco: DecorationOptions[] = [];
     for (let lineNr = 0; lineNr < iLines.length; lineNr++) {
       let line = iLines[lineNr][0].replace(/ /gi, "\u00A0");
       while (line.length < iMaxWidth) {
@@ -83,7 +83,7 @@ export class CCAnnotationController {
     iCharStart: number,
     iWidth: number
   ): DecorationOptions {
-    let charLen = iLinePart.length;
+    const charLen = iLinePart.length;
     let range = window.activeTextEditor?.document.validateRange(new Range(iLineNr, iCharStart, iLineNr, charLen));
     if (range === undefined) {
       range = new Range(0, 0, 0, 0);

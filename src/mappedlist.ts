@@ -21,10 +21,10 @@ export class MappedList {
   public exists(iVal: string): boolean {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
-      for (let key of keys) {
+      for (const key of keys) {
         if (iVal.indexOf(key) > -1) {
-          let v = this.mUntrackedList.get(key);
-          let o = v?.find((val) => val.name === iVal);
+          const v = this.mUntrackedList.get(key);
+          const o = v?.find((val) => val.name === iVal);
           if (undefined !== o) {
             return true;
           }
@@ -43,7 +43,7 @@ export class MappedList {
         }
       }
       if (i < workspace.workspaceFolders.length) {
-        let v = this.mUntrackedList.get(workspace.workspaceFolders[i].uri.fsPath);
+        const v = this.mUntrackedList.get(workspace.workspaceFolders[i].uri.fsPath);
         if (v !== undefined) {
           v.push(new FileType(true, iVal));
           this.mUntrackedList.set(workspace.workspaceFolders[i].uri.fsPath, v);
@@ -55,8 +55,8 @@ export class MappedList {
   public addStringByKey(iVal: string, iKey: string) {
     if (this.mUntrackedList !== null) {
       if (this.mUntrackedList.get(iKey) !== undefined) {
-        let v = this.mUntrackedList.get(iKey);
-        let o = v?.find((val) => val.name === iVal);
+        const v = this.mUntrackedList.get(iKey);
+        const o = v?.find((val) => val.name === iVal);
         if (undefined === o && v !== undefined) {
           v.push(new FileType(true, iVal));
           this.mUntrackedList.set(iKey, v);
@@ -107,11 +107,11 @@ export class MappedList {
   }
 
   public stringify(): string[] {
-    let f = [];
+    const f = [];
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
-      for (let key of keys) {
-        let objs = this.mUntrackedList
+      for (const key of keys) {
+        const objs = this.mUntrackedList
           .get(key)
           ?.map((val) => val.name)
           .join(";");
@@ -127,8 +127,8 @@ export class MappedList {
   public cleanMap() {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
-      for (let key of keys) {
-        let objs = this.mUntrackedList.get(key)?.filter((val) => val.found);
+      for (const key of keys) {
+        const objs = this.mUntrackedList.get(key)?.filter((val) => val.found);
         if (objs !== undefined) {
           this.mUntrackedList.set(
             key,
@@ -145,8 +145,8 @@ export class MappedList {
   public updateEntryExistsOnFileSystem() {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
-      for (let key of keys) {
-        let objs = this.mUntrackedList.get(key)?.filter((val) => {
+      for (const key of keys) {
+        const objs = this.mUntrackedList.get(key)?.filter((val) => {
           try {
             accessSync(val.name);
             val.found = true;
@@ -164,8 +164,8 @@ export class MappedList {
   public resetFoundState() {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
-      for (let key of keys) {
-        let objs = this.mUntrackedList.get(key);
+      for (const key of keys) {
+        const objs = this.mUntrackedList.get(key);
         if (objs !== undefined) {
           this.mUntrackedList.set(
             key,

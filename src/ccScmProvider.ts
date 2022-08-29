@@ -81,7 +81,7 @@ export class CCScmProvider {
           }
         }
       } else {
-        let password = await window.showInputBox({
+        const password = await window.showInputBox({
           password: true,
           prompt: "Insert password for webview connection",
           ignoreFocusOut: true,
@@ -120,7 +120,7 @@ export class CCScmProvider {
       commands.executeCommand("setContext", "vscode-clearcase:enabled", isView);
       commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
 
-      let fileList = this.mContext.workspaceState.get("untrackedfilecache", []);
+      const fileList = this.mContext.workspaceState.get("untrackedfilecache", []);
       this.clearCase?.untrackedList.parse(fileList);
 
       this.mCCScm = scm.createSourceControl("cc", "ClearCase", this.root);
@@ -190,7 +190,7 @@ export class CCScmProvider {
         let checkoutsChanged = false;
         let untrackedChanged = false;
         let filteredUntracked: SourceControlResourceState[] = [];
-        let filteredCheckedout = this.mCCCheckedoutGrp?.resourceStates.filter(item => {
+        const filteredCheckedout = this.mCCCheckedoutGrp?.resourceStates.filter(item => {
           if (item.resourceUri.fsPath !== fileObj.fsPath) {
             return true;
           }
@@ -220,7 +220,7 @@ export class CCScmProvider {
             this.clearCase.untrackedList.addString(fileObj.fsPath);
             this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
           }
-          let ign = this.mIgnores?.getFolderIgnore(path.dirname(fileObj.fsPath));
+          const ign = this.mIgnores?.getFolderIgnore(path.dirname(fileObj.fsPath));
           if (ign !== null && ign?.ignore.ignores(fileObj.fsPath) === false) {
             filteredUntracked.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.untracked));
             untrackedChanged = true;
@@ -295,7 +295,7 @@ export class CCScmProvider {
           this.mIsUpdatingUntracked = true;
           this.clearCase?.untrackedList.resetFoundState();
 
-          let lStep = 100;
+          const lStep = 100;
 
           await this.clearCase?.findUntracked(this.root);
           process.report({
@@ -314,10 +314,10 @@ export class CCScmProvider {
 
   public filterUntrackedList() {
     let viewPrv: CCScmResource[] = [];
-    let root = this.root;
+    const root = this.root;
     if (root !== undefined) {
-      let ign = this.mIgnores?.getFolderIgnore(root);
-      let d = this.clearCase?.untrackedList.getStringsByKey(root?.fsPath)?.filter(item =>
+      const ign = this.mIgnores?.getFolderIgnore(root);
+      const d = this.clearCase?.untrackedList.getStringsByKey(root?.fsPath)?.filter(item =>
         // if no .ccignore file is present, show all files
         root !== undefined &&
         (ign === undefined || (item !== "" && ign?.ignore.ignores(path.relative(root.fsPath, item)) === false))
@@ -336,8 +336,8 @@ export class CCScmProvider {
   }
 
   public deleteViewPrivateFile(fileObj: CCScmResource) {
-    let yes: MessageItem = { title: "Yes" };
-    let no: MessageItem = { title: "No", isCloseAffordance: true };
+    const yes: MessageItem = { title: "Yes" };
+    const no: MessageItem = { title: "No", isCloseAffordance: true };
     window
       .showInformationMessage(`Really delete file ${fileObj.resourceUri.fsPath}?`, { modal: true }, yes, no)
       .then((retVal: MessageItem | undefined) => {
@@ -360,11 +360,11 @@ export class CCScmProvider {
     if (workspace.workspaceFolders === undefined) {
       return;
     }
-    let wsf = workspace.workspaceFolders[0].uri.fsPath;
+    const wsf = workspace.workspaceFolders[0].uri.fsPath;
     // create and configure input box:
-    let saveInput = window.showInformationMessage("Save Configspec?", "Yes", "No");
+    const saveInput = window.showInformationMessage("Save Configspec?", "Yes", "No");
     // Call cleartool:
-    let child = await this.clearCase?.runClearTooledcs(wsf);
+    const child = await this.clearCase?.runClearTooledcs(wsf);
     // Callback on accept:
     saveInput.then((ev) => {
       let answer = "no";
@@ -408,7 +408,7 @@ export class CCScmProvider {
               }
             }
             if (file !== null) {
-              let st = statSync(file.fsPath);
+              const st = statSync(file.fsPath);
               if (st.isDirectory() === false) {
                 this.openResource(file);
               }
@@ -433,7 +433,7 @@ export class CCScmProvider {
           "extension.ccFindModified",
           () => {
             if (workspace.workspaceFolders) {
-              var path = workspace.workspaceFolders[0].uri.fsPath;
+              const path = workspace.workspaceFolders[0].uri.fsPath;
               if (path) {
                 this.clearCase?.findModified(path);
               }
@@ -448,7 +448,7 @@ export class CCScmProvider {
           "extension.ccFindCheckouts",
           () => {
             if (workspace.workspaceFolders) {
-              var path = workspace.workspaceFolders[0].uri.fsPath;
+              const path = workspace.workspaceFolders[0].uri.fsPath;
               if (path) {
                 this.clearCase?.findCheckoutsGui(path);
               }
@@ -503,7 +503,7 @@ export class CCScmProvider {
       );
 
       if (window.activeTextEditor !== undefined) {
-        let annoCtrl = new CCAnnotationController(window.activeTextEditor, this.mContext, this.configHandler);
+        const annoCtrl = new CCAnnotationController(window.activeTextEditor, this.mContext, this.configHandler);
 
         this.mContext.subscriptions.push(annoCtrl);
         this.mDisposables.push(
@@ -566,12 +566,12 @@ export class CCScmProvider {
               cancellable: false,
             },
             async (process) => {
-              let fileObjs: Uri[] =
+              const fileObjs: Uri[] =
                 this.mCCCheckedoutGrp?.resourceStates.map((val) => {
                   return val.resourceUri;
                 }) || [];
               if (this.mCCScm !== null) {
-                let checkinComment = this.mCCScm.inputBox.value || "";
+                const checkinComment = this.mCCScm.inputBox.value || "";
                 await this.clearCase?.checkinFiles(fileObjs, checkinComment);
                 this.mCCScm.inputBox.value = "";
                 this.updateCheckedOutList();
@@ -642,7 +642,7 @@ export class CCScmProvider {
         return;
       }
       if (this.clearCase?.isReadOnly(event.document)) {
-        let useClearDlg = this.configHandler.configuration.useClearDlg.value;
+        const useClearDlg = this.configHandler.configuration.useClearDlg.value;
         if (useClearDlg) {
           this.clearCase.checkoutAndSaveFile(event.document);
         } else {
@@ -679,7 +679,7 @@ export class CCScmProvider {
 
   public async openResource(fileObj: Uri) {
     if (window) {
-      let doc: TextDocument = await workspace.openTextDocument(fileObj);
+      const doc: TextDocument = await workspace.openTextDocument(fileObj);
       window.showTextDocument(doc);
     }
   }
@@ -690,10 +690,10 @@ export class CCScmProvider {
         preview: true,
       };
 
-      let prevUri = await this.mCCContentProvider?.provideOriginalResource(fileObj);
+      const prevUri = await this.mCCContentProvider?.provideOriginalResource(fileObj);
       if (prevUri !== undefined) {
-        let fn = path.basename(fileObj.fsPath);
-        let { version } = fromCcUri(prevUri);
+        const fn = path.basename(fileObj.fsPath);
+        const { version } = fromCcUri(prevUri);
 
         commands.executeCommand("vscode.diff", prevUri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
       }
@@ -701,9 +701,9 @@ export class CCScmProvider {
   }
 
   public async updateUntrackedListWFile(fileObj: Uri) {
-    let isCCObject = await this.clearCase?.isClearcaseObject(fileObj);
+    const isCCObject = await this.clearCase?.isClearcaseObject(fileObj);
     if (isCCObject === false) {
-      let wsf = workspace.getWorkspaceFolder(fileObj);
+      const wsf = workspace.getWorkspaceFolder(fileObj);
       if (wsf && wsf.uri && wsf.uri.fsPath) {
         this.clearCase?.untrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
       }

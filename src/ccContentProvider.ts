@@ -19,7 +19,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       uri = uri.with({ scheme: "cc", path: uri.query });
     }
 
-    let { path, version } = fromCcUri(uri);
+    const { path, version } = fromCcUri(uri);
 
     try {
       return this.mCcHandler ? await this.mCcHandler.readFileAtVersion(path, version) : "";
@@ -35,9 +35,9 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       return;
     }
 
-    let currentVersion = this.mCcHandler ? await this.mCcHandler.getVersionInformation(uri, false) : "";
+    const currentVersion = this.mCcHandler ? await this.mCcHandler.getVersionInformation(uri, false) : "";
     if (currentVersion !== "") {
-      let isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
+      const isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
 
       if (isCheckedOut) {
         return toCcUri(uri, currentVersion.replace("CHECKEDOUT", "LATEST"));
