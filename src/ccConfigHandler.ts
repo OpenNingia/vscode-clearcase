@@ -59,18 +59,18 @@ export class CCConfigHandler {
       this.setChangeConfigDate<boolean>(config, "isWslEnvironment", this.mConfiguration.isWslEnv);
       this.setChangeConfigDate<string>(config, "tempDir", this.mConfiguration.tempDir);
       this.setChangeConfigDate<boolean>(config, "cleartool.undoCheckoutKeepFile", this.mConfiguration.uncoKeepFile);
-      this.setChangeConfigDate<boolean>(config, "remoteCleartool.enable", this.mConfiguration.UseRemoteClient);
+      this.setChangeConfigDate<boolean>(config, "remoteCleartool.enable", this.mConfiguration.useRemoteClient);
       this.setChangeConfigDate<string>(
         config,
         "remoteCleartool.webviewUsername",
-        this.mConfiguration.WebserverUsername
+        this.mConfiguration.webserverUsername
       );
       this.setChangeConfigDate<string>(
         config,
         "remoteCleartool.webviewPassword",
-        this.mConfiguration.WebserverPassword
+        this.mConfiguration.webserverPassword
       );
-      this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.WebserverAddress);
+      this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.webserverAddress);
 
       return true;
     }

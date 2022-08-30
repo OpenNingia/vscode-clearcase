@@ -32,7 +32,7 @@ export class CCAnnotationController {
     this.mConfiguration = this.configHandler.configuration;
   }
 
-  onActiveEditorChange(event: TextEditor | undefined): any {
+  onActiveEditorChange(event: TextEditor | undefined): void {
     if (event) {
       this.mIsActive = false;
       this.editor = event;
@@ -65,14 +65,13 @@ export class CCAnnotationController {
   }
 
   getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
-    const max = 0;
     const deco: DecorationOptions[] = [];
     for (let lineNr = 0; lineNr < iLines.length; lineNr++) {
       let line = iLines[lineNr][0].replace(/ /gi, "\u00A0");
       while (line.length < iMaxWidth) {
         line = line.concat("\u00A0");
       }
-      deco.push(this.createLineDecoration(line, lineNr, 0, max));
+      deco.push(this.createLineDecoration(line, lineNr, 0));
     }
     return deco;
   }
@@ -80,8 +79,7 @@ export class CCAnnotationController {
   private createLineDecoration(
     iLinePart: string,
     iLineNr: number,
-    iCharStart: number,
-    iWidth: number
+    iCharStart: number
   ): DecorationOptions {
     const charLen = iLinePart.length;
     let range = window.activeTextEditor?.document.validateRange(new Range(iLineNr, iCharStart, iLineNr, charLen));
@@ -101,5 +99,7 @@ export class CCAnnotationController {
     };
   }
 
-  dispose() {}
+  dispose() {
+    // do nothing.
+  }
 }

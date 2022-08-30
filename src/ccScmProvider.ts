@@ -69,10 +69,10 @@ export class CCScmProvider {
   public async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
     this.mCCHandler = new ClearCase(this.mContext, this.configHandler, this.outputChannel);
-    if (this.configHandler.configuration.UseRemoteClient.value === true) {
-      if (this.configHandler.configuration.WebserverPassword.value !== "") {
+    if (this.configHandler.configuration.useRemoteClient.value === true) {
+      if (this.configHandler.configuration.webserverPassword.value !== "") {
         if (this.clearCase) {
-          this.clearCase.Password = this.configHandler.configuration.WebserverPassword.value;
+          this.clearCase.password = this.configHandler.configuration.webserverPassword.value;
           await this.clearCase.loginWebview();
           try {
             return await this.startExtension();
@@ -89,7 +89,7 @@ export class CCScmProvider {
         if (password === undefined || this.clearCase === null) {
           return false;
         } else {
-          this.clearCase.Password = password;
+          this.clearCase.password = password;
           await this.clearCase.loginWebview();
           try {
             return await this.startExtension();
@@ -172,13 +172,8 @@ export class CCScmProvider {
     return new Promise<boolean>((resolve, reject) => {
       this.clearCase
         ?.checkIsView(window.activeTextEditor)
-        .then(() => {
-          const s = this.clearCase ? this.clearCase.IsView : false;
-          resolve(s);
-        })
-        .catch((error) => {
-          reject(false);
-        });
+        .then(() => resolve(this.clearCase?.isView ?? false))
+        .catch(() => reject(false));
     });
   }
 
@@ -186,7 +181,7 @@ export class CCScmProvider {
     let version = "";
     if (this.mListLock?.reserve()) {
       try {
-        version = this.clearCase ? await this.clearCase.getVersionInformation(fileObj) : "";
+        version = await this.clearCase?.getVersionInformation(fileObj) ?? "";
         let checkoutsChanged = false;
         let untrackedChanged = false;
         let filteredUntracked: SourceControlResourceState[] = [];
@@ -342,7 +337,7 @@ export class CCScmProvider {
       .showInformationMessage(`Really delete file ${fileObj.resourceUri.fsPath}?`, { modal: true }, yes, no)
       .then((retVal: MessageItem | undefined) => {
         if (retVal !== undefined && retVal.title === yes.title) {
-          access(fileObj.resourceUri.fsPath, (err: any) => {
+          access(fileObj.resourceUri.fsPath, (err) => {
             if (err === undefined) {
               unlink(fileObj.resourceUri.fsPath, (error) => {
                 if (error) {
@@ -655,7 +650,7 @@ export class CCScmProvider {
                     event.document.save();
                   }
                 })
-                .catch((error) => {
+                .catch(() => {
                   return;
                 });
             }
@@ -664,7 +659,7 @@ export class CCScmProvider {
       } else {
         let version = "";
         try {
-          version = this.clearCase ? await this.clearCase.getVersionInformation(event.document.uri) : "";
+          version = await this.clearCase?.getVersionInformation(event.document.uri) ?? "";
         } catch (error) {
           this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
         }
@@ -712,7 +707,7 @@ export class CCScmProvider {
     }
   }
 
-  public async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<any> {
+  public async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<void> {
     await this.clearCase?.checkIsView(editor);
     this.updateCheckedOutList();
     if (editor && editor.document && editor.document.uri) {

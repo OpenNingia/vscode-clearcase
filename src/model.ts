@@ -12,8 +12,6 @@ export function dispose<T extends IDisposable>(disposables: T[]): T[] {
 export class ModelHandler {
   private mModels: Model[] | undefined;
 
-  public constructor() { }
-
   public init() {
     this.mModels = [];
   }
@@ -41,8 +39,6 @@ export class Model implements Disposable {
   public get onWorkspaceDeleted(): Event<Uri> {
     return this._onWorkspaceDeleted;
   }
-
-  constructor() { }
 
   public init(filter = "**") {
     const fsWatcher = workspace.createFileSystemWatcher(filter);

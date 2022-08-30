@@ -38,7 +38,7 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
       provider.onWindowChanged(() => {
         const d = provider.clearCase ? provider.clearCase.viewType === ViewType.dynamic : false;
         const files = provider.getCheckedoutObjects();
-        commands.executeCommand("setContext", "vscode-clearcase:enabled", provider.clearCase?.IsView);
+        commands.executeCommand("setContext", "vscode-clearcase:enabled", provider.clearCase?.isView);
         commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
         commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
       }, provider);
@@ -67,4 +67,6 @@ export async function activate(context: ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  // do nothing.
+}

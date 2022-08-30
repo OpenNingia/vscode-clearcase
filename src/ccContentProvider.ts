@@ -3,10 +3,10 @@ import { ClearCase } from "./clearcase";
 import { toCcUri, fromCcUri } from "./uri";
 
 export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, Disposable {
-  constructor(private mCcHandler: ClearCase | null, private m_disposals: Disposable[]) {
+  constructor(private mCcHandler: ClearCase | null, private mDisposals: Disposable[]) {
     if (this.mCcHandler !== null) {
-      this.m_disposals.push(workspace.registerTextDocumentContentProvider("cc", this));
-      this.m_disposals.push(workspace.registerTextDocumentContentProvider("cc-orig", this));
+      this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc", this));
+      this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc-orig", this));
     }
   }
 
@@ -47,6 +47,6 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
   }
 
   dispose(): void {
-    this.m_disposals.forEach((d) => d.dispose());
+    this.mDisposals.forEach((d) => d.dispose());
   }
 }

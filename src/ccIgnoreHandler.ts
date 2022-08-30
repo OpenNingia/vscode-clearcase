@@ -1,8 +1,8 @@
 import { workspace, WorkspaceFolder, Uri, EventEmitter } from "vscode";
 import { existsSync, readFileSync, statSync } from "fs";
 import { join, dirname, sep } from "path";
-import ignore from "ignore";
-import { Model, ModelHandler } from "./model";
+import ignore, { Ignore } from "ignore";
+import { ModelHandler } from "./model";
 
 export class IgnoreHandler {
   private fileIgnores: FileIgnore[];
@@ -32,7 +32,6 @@ export class IgnoreHandler {
 
   public getFolderIgnore(path: Uri | string | undefined): FileIgnore | null {
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      const p = "";
       if (typeof path === "string") {
         const t = this.appendSeparator(path);
       } else {
@@ -85,14 +84,11 @@ export class IgnoreHandler {
 }
 
 export class FileIgnore {
-  private pathObj: Uri | null = null;
+  private pathObj: Uri;
   private hasIgnoreVal = false;
-  private ignoreObj: any = null;
-  constructor(path: Uri) {
-    this.init(path);
-  }
+  private ignoreObj: Ignore;
 
-  public init(path: Uri) {
+  constructor(path: Uri) {
     this.ignoreObj = ignore();
     this.pathObj = path;
     const p = join(path.fsPath, ".ccignore");
@@ -102,21 +98,21 @@ export class FileIgnore {
     }
   }
 
-  public get path(): Uri | null {
+  get path(): Uri {
     return this.pathObj;
   }
 
-  public get pathStr(): string {
+  get pathStr(): string {
     let p = this.pathObj?.fsPath || "";
     p = p.substr(-1, 1) !== sep ? p + sep : p;
     return p;
   }
 
-  public get ignore(): any {
+  get ignore(): Ignore {
     return this.ignoreObj;
   }
 
-  public get hasIgnore(): boolean {
+  get hasIgnore(): boolean {
     return this.hasIgnoreVal;
   }
 }
