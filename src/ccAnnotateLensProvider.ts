@@ -14,17 +14,13 @@ export class CCCodeLensProvider implements CodeLensProvider {
     private mProvider: CCScmProvider
   ) { }
 
-  public provideCodeLenses(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> | CodeLens[] {
+  public provideCodeLenses(document: TextDocument): Thenable<CodeLens[]> | CodeLens[] {
     if (!this.mCfg.configuration.showAnnotationCodeLens.value) {
       return [];
     }
 
     return new Promise((resolve) => {
       this.mProvider.clearCase?.isClearcaseObject(document.uri).then((is: boolean) => {
-        if (token.isCancellationRequested) {
-          resolve([]);
-        }
-
         const lLenses: CodeLens[] = [];
         if (document !== undefined && is === true) {
           lLenses.push(new CCAnnotateLens(document, new Range(0, 0, 0, 1)));
@@ -34,7 +30,7 @@ export class CCCodeLensProvider implements CodeLensProvider {
     });
   }
 
-  public resolveCodeLens(codeLens: CodeLens, token: CancellationToken): Thenable<CodeLens> {
+  public resolveCodeLens(codeLens: CodeLens): Thenable<CodeLens> {
     if (codeLens instanceof CCAnnotateLens) {
       codeLens.command = {
         title: "Toggle annotations",

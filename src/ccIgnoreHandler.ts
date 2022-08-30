@@ -30,18 +30,11 @@ export class IgnoreHandler {
     });
   }
 
-  public getFolderIgnore(path: Uri | string | undefined): FileIgnore | null {
+  public getFolderIgnore(path: Uri | string): FileIgnore | null {
+    const t = this.appendSeparator(typeof path === "string" ? path : path.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      if (typeof path === "string") {
-        const t = this.appendSeparator(path);
-      } else {
-        if (path !== undefined) {
-          const t = this.appendSeparator(path.fsPath);
-
-          if (t.indexOf(this.fileIgnores[i].pathStr) === 0 && this.fileIgnores[i].hasIgnore === true) {
-            return this.fileIgnores[i];
-          }
-        }
+      if (t.indexOf(this.fileIgnores[i].pathStr) === 0 && this.fileIgnores[i].hasIgnore === true) {
+        return this.fileIgnores[i];
       }
     }
     return null;
