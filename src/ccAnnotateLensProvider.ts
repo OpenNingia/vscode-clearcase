@@ -1,4 +1,4 @@
-import { CancellationToken, CodeLens, CodeLensProvider, ExtensionContext, Range, TextDocument } from "vscode";
+import { CodeLens, CodeLensProvider, ExtensionContext, Range, TextDocument } from "vscode";
 import { CCAnnotateLens } from "./ccAnnotateLens";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { CCScmProvider } from "./ccScmProvider";
