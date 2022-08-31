@@ -6,6 +6,7 @@ import {
   ExtensionContext,
   StatusBarAlignment,
   StatusBarItem,
+  TextDocument,
   TextEditor,
   TextEditorViewColumnChangeEvent,
   Uri,
@@ -50,16 +51,16 @@ export class UIInformation {
     }
   }
 
-  public receiveDocument(event: any) {
-    if (event && this.mIsActive && existsSync(event.uri.fsPath)) {
-      this.queryVersionInformation(event.uri);
+  public receiveDocument(document: TextDocument) {
+    if (document && this.mIsActive && existsSync(document.uri.fsPath)) {
+      this.queryVersionInformation(document.uri);
     }
   }
 
-  public receiveEditor(event: TextEditor | undefined) {
-    if (event && this.mIsActive) {
-      this.mEditor = event;
-      this.queryVersionInformation(event.document.uri);
+  public receiveEditor(editor: TextEditor | undefined) {
+    if (editor && this.mIsActive) {
+      this.mEditor = editor;
+      this.queryVersionInformation(editor.document.uri);
     }
   }
 
@@ -74,7 +75,7 @@ export class UIInformation {
   }
 
   public initialQuery() {
-    if (this.mIsActive && this.mEditor && this.mEditor.document) {
+    if (this.mIsActive && this.mEditor?.document) {
       this.queryVersionInformation(this.mEditor.document.uri);
     }
   }
@@ -82,12 +83,8 @@ export class UIInformation {
   public queryVersionInformation(iUri: Uri) {
     this.mClearcase
       ?.getVersionInformation(iUri)
-      .then((value) => {
-        this.updateStatusbar(value);
-      })
-      .catch((error) => {
-        this.updateStatusbar("");
-      });
+      .then((value) => this.updateStatusbar(value))
+      .catch(() => this.updateStatusbar(""));
   }
 
   public async updateStatusbar(iFileInfo: string) {

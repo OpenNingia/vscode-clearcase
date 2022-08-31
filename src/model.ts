@@ -12,14 +12,12 @@ export function dispose<T extends IDisposable>(disposables: T[]): T[] {
 export class ModelHandler {
   private mModels: Model[] | undefined;
 
-  public constructor() { }
-
   public init() {
     this.mModels = [];
   }
 
-  public addWatcher(filter: string = "**"): Model {
-    let lM = new Model();
+  public addWatcher(filter = "**"): Model {
+    const lM = new Model();
     lM.init(filter);
     this.mModels?.push(lM);
     return lM;
@@ -42,9 +40,7 @@ export class Model implements Disposable {
     return this._onWorkspaceDeleted;
   }
 
-  constructor() { }
-
-  public init(filter: string = "**") {
+  public init(filter = "**") {
     const fsWatcher = workspace.createFileSystemWatcher(filter);
     this._onWorkspaceCreated = fsWatcher.onDidCreate;
     this._onWorkspaceChanged = fsWatcher.onDidChange;

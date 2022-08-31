@@ -4,7 +4,7 @@ export class Lock {
     this.mCount = 0;
   }
   public reserve(): boolean {
-    let s = this.mCount;
+    const s = this.mCount;
     this.mCount++;
     return s < this.mAccessCnt;
   }

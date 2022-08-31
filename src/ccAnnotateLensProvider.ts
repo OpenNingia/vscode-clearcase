@@ -1,4 +1,4 @@
-import { CancellationToken, CodeLens, CodeLensProvider, ExtensionContext, Range, TextDocument } from "vscode";
+import { CodeLens, CodeLensProvider, ExtensionContext, Range, TextDocument } from "vscode";
 import { CCAnnotateLens } from "./ccAnnotateLens";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { CCScmProvider } from "./ccScmProvider";
@@ -12,16 +12,16 @@ export class CCCodeLensProvider implements CodeLensProvider {
     private mContext: ExtensionContext,
     private mCfg: CCConfigHandler,
     private mProvider: CCScmProvider
-  ) {}
+  ) { }
 
-  public provideCodeLenses(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> | CodeLens[] {
+  public provideCodeLenses(document: TextDocument): Thenable<CodeLens[]> | CodeLens[] {
     if (!this.mCfg.configuration.showAnnotationCodeLens.value) {
       return [];
     }
 
-    let lLenses: CodeLens[] = [];
     return new Promise((resolve) => {
       this.mProvider.clearCase?.isClearcaseObject(document.uri).then((is: boolean) => {
+        const lLenses: CodeLens[] = [];
         if (document !== undefined && is === true) {
           lLenses.push(new CCAnnotateLens(document, new Range(0, 0, 0, 1)));
         }
@@ -30,20 +30,16 @@ export class CCCodeLensProvider implements CodeLensProvider {
     });
   }
 
-  public resolveCodeLens(codeLens: CodeLens, token: CancellationToken): Thenable<CodeLens> {
+  public resolveCodeLens(codeLens: CodeLens): Thenable<CodeLens> {
     if (codeLens instanceof CCAnnotateLens) {
-      return this.ccAnnotationCommand(codeLens, token);
+      codeLens.command = {
+        title: "Toggle annotations",
+        command: "extension.ccAnnotate",
+        arguments: [codeLens.document.uri],
+      };
+      return Promise.resolve(codeLens);
     }
 
-    return Promise.reject<CodeLens>(undefined);
-  }
-
-  private ccAnnotationCommand(iLens: CCAnnotateLens, iToken: CancellationToken) {
-    iLens.command = {
-      title: "Toggle annotations",
-      command: "extension.ccAnnotate",
-      arguments: [iLens.document.uri],
-    };
-    return Promise.resolve(iLens);
+    return Promise.reject();
   }
 }

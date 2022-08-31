@@ -9,17 +9,17 @@ export class ConfigurationProperty<T> {
     return this.mProp;
   }
 
-  get changed(): boolean {
-    let old = this.mChanged;
-    this.mChanged = false;
-    return old;
-  }
-
   set value(value: T) {
     if (this.mProp !== value) {
       this.mProp = value;
       this.mChanged = true;
     }
+  }
+
+  get changed(): boolean {
+    const old = this.mChanged;
+    this.mChanged = false;
+    return old;
   }
 }
 
@@ -108,19 +108,19 @@ export class CCConfiguration {
     return this.mIsWslEnv;
   }
 
-  public get UseRemoteClient(): ConfigurationProperty<boolean> {
+  public get useRemoteClient(): ConfigurationProperty<boolean> {
     return this.mUseRemoteClient;
   }
 
-  public get WebserverUsername(): ConfigurationProperty<string> {
+  public get webserverUsername(): ConfigurationProperty<string> {
     return this.mWebserverUsername;
   }
 
-  public get WebserverPassword(): ConfigurationProperty<string> {
+  public get webserverPassword(): ConfigurationProperty<string> {
     return this.mWebserverPassword;
   }
 
-  public get WebserverAddress(): ConfigurationProperty<string> {
+  public get webserverAddress(): ConfigurationProperty<string> {
     return this.mWebserverAddress;
   }
 }
