@@ -401,7 +401,7 @@ export class CCScmProvider {
               file = fileObj.resourceUri;
             }
             if (file === null) {
-              if (window && window.activeTextEditor) {
+              if (window?.activeTextEditor) {
                 file = window.activeTextEditor.document.uri;
               }
             }
@@ -470,7 +470,7 @@ export class CCScmProvider {
         commands.registerCommand(
           "extension.ccUpdateDir",
           (filePath?: Uri) => {
-            if (window && window.activeTextEditor && window.activeTextEditor.document && filePath) {
+            if (window.activeTextEditor?.document && filePath) {
               this.clearCase?.updateDir(filePath);
             }
           },
@@ -482,7 +482,7 @@ export class CCScmProvider {
         commands.registerCommand(
           "extension.ccUpdateFile",
           (filePath?: Uri) => {
-            if (window && window.activeTextEditor && window.activeTextEditor.document && filePath) {
+            if (window.activeTextEditor?.document && filePath) {
               this.clearCase?.updateFile(filePath);
             }
           },
@@ -508,7 +508,7 @@ export class CCScmProvider {
           commands.registerCommand(
             "extension.ccAnnotate",
             (filePath?: Uri) => {
-              if (window && window.activeTextEditor && window.activeTextEditor.document) {
+              if (window.activeTextEditor?.document) {
                 this.clearCase?.annotate(filePath ?? window.activeTextEditor.document.uri, annoCtrl);
               }
             },
@@ -539,7 +539,7 @@ export class CCScmProvider {
             file = fileObj.resourceUri;
           }
           if (file === null) {
-            if (window && window.activeTextEditor) {
+            if (window.activeTextEditor) {
               file = window.activeTextEditor.document.uri;
             }
           }
@@ -702,7 +702,7 @@ export class CCScmProvider {
     const isCCObject = await this.clearCase?.isClearcaseObject(fileObj);
     if (isCCObject === false) {
       const wsf = workspace.getWorkspaceFolder(fileObj);
-      if (wsf && wsf.uri && wsf.uri.fsPath) {
+      if (wsf?.uri.fsPath) {
         this.clearCase?.untrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
       }
       this.mContext.workspaceState.update("untrackedfilecache", this.clearCase?.untrackedList.stringify());
@@ -713,7 +713,7 @@ export class CCScmProvider {
   public async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<void> {
     await this.clearCase?.checkIsView(editor);
     this.updateCheckedOutList();
-    if (editor && editor.document && editor.document.uri) {
+    if (editor?.document.uri) {
       this.updateUntrackedListWFile(editor.document.uri);
     }
     this.mWindowChangedEvent.fire();

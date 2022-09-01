@@ -202,7 +202,7 @@ export class ClearCase {
    */
   public async checkIsView(editor: TextEditor | undefined): Promise<boolean> {
     let isView = false;
-    if (editor !== undefined && editor.document !== undefined) {
+    if (editor?.document !== undefined) {
       try {
         isView = await this.isClearcaseObject(editor.document.uri);
       } catch (error) {

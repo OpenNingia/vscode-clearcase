@@ -19,6 +19,7 @@
 
         "@typescript-eslint/consistent-generic-constructors": "error",
         "@typescript-eslint/prefer-nullish-coalescing": "error",
+        "@typescript-eslint/prefer-optional-chain": "error",
         "@typescript-eslint/unbound-method": "error",
 
         "curly": "error",
