@@ -18,6 +18,7 @@
         "@typescript-eslint/semi": "warn",
 
         "@typescript-eslint/consistent-generic-constructors": "error",
+        "@typescript-eslint/prefer-nullish-coalescing": "error",
         "@typescript-eslint/unbound-method": "error",
 
         "curly": "error",

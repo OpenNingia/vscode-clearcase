@@ -193,7 +193,7 @@ export class CCScmProvider {
 
             checkoutsChanged = true;
             return false;
-          }) || [];
+          }) ?? [];
         if (checkoutsChanged === false) {
           filteredUntracked =
             this.mCCUntrackedGrp?.resourceStates.filter((item) => {
@@ -203,7 +203,7 @@ export class CCScmProvider {
 
               untrackedChanged = true;
               return false;
-            }) || [];
+            }) ?? [];
         }
         // file is checked out, add to resource state list
         if (version.match(/checkedout/i) !== null) {
@@ -509,7 +509,7 @@ export class CCScmProvider {
             "extension.ccAnnotate",
             (filePath?: Uri) => {
               if (window && window.activeTextEditor && window.activeTextEditor.document) {
-                this.clearCase?.annotate(filePath || window.activeTextEditor.document.uri, annoCtrl);
+                this.clearCase?.annotate(filePath ?? window.activeTextEditor.document.uri, annoCtrl);
               }
             },
             this
@@ -567,7 +567,7 @@ export class CCScmProvider {
               const fileObjs: Uri[] =
                 this.mCCCheckedoutGrp?.resourceStates.map((val) => {
                   return val.resourceUri;
-                }) || [];
+                }) ?? [];
               if (this.mCCScm !== null) {
                 const checkinComment = this.mCCScm.inputBox.value || "";
                 await this.clearCase?.checkinFiles(fileObjs, checkinComment);

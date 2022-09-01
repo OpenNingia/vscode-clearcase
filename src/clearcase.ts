@@ -280,7 +280,7 @@ export class ClearCase {
             (await window.showInputBox({
               ignoreFocusOut: true,
               prompt: "Checkout comment",
-            })) || "";
+            })) ?? "";
         }
         cmdOpts[idx] = comment;
       } else {
@@ -306,12 +306,7 @@ export class ClearCase {
         cmd.file = path;
       }
       try {
-        await this.runCleartoolCommand(
-          cmd,
-          dirname(path),
-          null,
-          () => this.mUpdateEvent.fire(doc)
-        );
+        await this.runCleartoolCommand(cmd, dirname(path), null, () => this.mUpdateEvent.fire(doc));
       } catch (error) {
         this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + error);
         return false;
@@ -350,22 +345,16 @@ export class ClearCase {
       if (uncoKeepFile) {
         rm = "-keep";
       }
-      await this.runCleartoolCommand(
-        new CCArgs(["unco", rm], path),
-        dirname(path),
-        null,
-        () => this.mUpdateEvent.fire(doc)
+      await this.runCleartoolCommand(new CCArgs(["unco", rm], path), dirname(path), null, () =>
+        this.mUpdateEvent.fire(doc)
       );
     }
   }
 
   public async createVersionedObject(doc: Uri) {
     const path = doc.fsPath;
-    await this.runCleartoolCommand(
-      new CCArgs(["mkelem", "-mkp", "-nc"], path),
-      dirname(path),
-      null,
-      () => this.mUpdateEvent.fire(doc)
+    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], path), dirname(path), null, () =>
+      this.mUpdateEvent.fire(doc)
     );
   }
 
@@ -389,7 +378,7 @@ export class ClearCase {
             (await window.showInputBox({
               ignoreFocusOut: true,
               prompt: "Checkin comment",
-            })) || "";
+            })) ?? "";
         }
         cmdOpts[idx] = comment;
       } else {
@@ -416,12 +405,7 @@ export class ClearCase {
         cmd.file = path;
       }
 
-      await this.runCleartoolCommand(
-        cmd,
-        dirname(path),
-        null,
-        () => this.mUpdateEvent.fire(doc)
-      );
+      await this.runCleartoolCommand(cmd, dirname(path), null, () => this.mUpdateEvent.fire(doc));
     }
   }
 
@@ -592,13 +576,12 @@ export class ClearCase {
           new CCArgs(["ls", "-d", "-short"], iUri.fsPath),
           workspace.workspaceFolders[0].uri.fsPath,
           null,
-          (result: string) => fileVers = this.getVersionString(result, normalize),
+          (result: string) => (fileVers = this.getVersionString(result, normalize)),
           (error: string) => {
             this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
             fileVers = "?";
           }
-        )
-          .then(() => resolve(fileVers));
+        ).then(() => resolve(fileVers));
       }
     });
   }
@@ -670,8 +653,8 @@ export class ClearCase {
         new CCArgs(["update"], updateFsObj),
         cwd,
         () => this.mUpdateEvent.fire(filePath),
-        (result: string) => resultOut = result,
-        (error: string) => errorRes = error
+        (result: string) => (resultOut = result),
+        (error: string) => (errorRes = error)
       );
       if (errorRes.length > 0) {
         throw new Error(errorRes);
@@ -1020,7 +1003,7 @@ export class ClearCase {
    */
   public async runClearTooledcs(baseFolder: string): Promise<ChildProcess> {
     const executable = this.configHandler.configuration.executable.value;
-    process.env['VISUAL'] = "code -r";
+    process.env["VISUAL"] = "code -r";
     const options = {
       cwd: baseFolder,
       env: process.env,
