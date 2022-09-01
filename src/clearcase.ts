@@ -410,8 +410,8 @@ export class ClearCase {
   }
 
   public async checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
-    for (let i = 0; i < fileObjs.length; i++) {
-      const cmd: CCArgs = new CCArgs(["ci", "-nc"], fileObjs[i].fsPath);
+    for (const fileObj of fileObjs) {
+      const cmd: CCArgs = new CCArgs(["ci", "-nc"], fileObj.fsPath);
       if (comment !== "") {
         cmd.params = ["ci", "-c", comment];
       }
@@ -749,8 +749,8 @@ export class ClearCase {
         null,
         (result: string) => {
           const lines = result.split(/[\n\r]+/);
-          for (let index = 0; index < lines.length; index++) {
-            const parts = lines[index].split(" ");
+          for (const line of lines) {
+            const parts = line.split(" ");
             if (parts.length >= 7) {
               const actvId = parts[2];
               let actvLb = parts.slice(7).join(" ");
