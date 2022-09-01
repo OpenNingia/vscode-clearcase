@@ -33,7 +33,7 @@ export class IgnoreHandler {
   public getFolderIgnore(path: Uri | string): FileIgnore | null {
     const t = this.appendSeparator(typeof path === "string" ? path : path.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
-      if (t.indexOf(this.fileIgnores[i].pathStr) === 0 && this.fileIgnores[i].hasIgnore === true) {
+      if (t.startsWith(this.fileIgnores[i].pathStr) && this.fileIgnores[i].hasIgnore === true) {
         return this.fileIgnores[i];
       }
     }
