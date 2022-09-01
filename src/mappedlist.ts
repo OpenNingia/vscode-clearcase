@@ -22,7 +22,7 @@ export class MappedList {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (const key of keys) {
-        if (iVal.indexOf(key) > -1) {
+        if (iVal.includes(key)) {
           const v = this.mUntrackedList.get(key);
           const o = v?.find((val) => val.name === iVal);
           if (undefined !== o) {
@@ -38,7 +38,7 @@ export class MappedList {
     if (this.mUntrackedList !== null && workspace.workspaceFolders !== undefined) {
       let i = 0;
       for (; i < workspace.workspaceFolders.length; i++) {
-        if (iVal.indexOf(workspace.workspaceFolders[i].uri.fsPath) > -1) {
+        if (iVal.includes(workspace.workspaceFolders[i].uri.fsPath)) {
           break;
         }
       }
