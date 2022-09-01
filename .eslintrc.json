@@ -16,6 +16,9 @@
     "rules": {
         "@typescript-eslint/naming-convention": "warn",
         "@typescript-eslint/semi": "warn",
+
+        "@typescript-eslint/unbound-method": "error",
+
         "curly": "error",
         "eqeqeq": "warn",
         "no-throw-literal": "warn",

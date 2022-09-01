@@ -36,12 +36,12 @@ export class UIInformation {
 
   public bindEvents() {
     // configuration change event
-    this.mConfigHandler.onDidChangeConfiguration(this.handleConfigState, this);
+    this.mConfigHandler.onDidChangeConfiguration(() => this.handleConfigState());
 
-    this.mDisposables.push(workspace.onDidOpenTextDocument(this.receiveDocument, this));
-    this.mDisposables.push(workspace.onDidSaveTextDocument(this.receiveDocument, this));
-    this.mDisposables.push(window.onDidChangeActiveTextEditor(this.receiveEditor, this));
-    this.mDisposables.push(window.onDidChangeTextEditorViewColumn(this.receiveEditorColumn, this));
+    this.mDisposables.push(workspace.onDidOpenTextDocument((document) => this.receiveDocument(document)));
+    this.mDisposables.push(workspace.onDidSaveTextDocument((document) => this.receiveDocument(document)));
+    this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.receiveEditor(editor)));
+    this.mDisposables.push(window.onDidChangeTextEditorViewColumn((event) => this.receiveEditorColumn(event)));
   }
 
   public receiveEditorColumn(event: TextEditorViewColumnChangeEvent) {
@@ -108,6 +108,6 @@ export class UIInformation {
 
   public dispose() {
     this.mStatusbar?.dispose();
-    this.mDisposables.forEach(disposable => disposable.dispose());
+    this.mDisposables.forEach((disposable) => disposable.dispose());
   }
 }

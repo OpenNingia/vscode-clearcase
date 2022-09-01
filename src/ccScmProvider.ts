@@ -64,7 +64,7 @@ export class CCScmProvider {
     private mDisposables: Disposable[],
     private outputChannel: OutputChannel,
     private configHandler: CCConfigHandler
-  ) { }
+  ) {}
 
   public async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
@@ -181,28 +181,29 @@ export class CCScmProvider {
     let version = "";
     if (this.mListLock?.reserve()) {
       try {
-        version = await this.clearCase?.getVersionInformation(fileObj) ?? "";
+        version = (await this.clearCase?.getVersionInformation(fileObj)) ?? "";
         let checkoutsChanged = false;
         let untrackedChanged = false;
         let filteredUntracked: SourceControlResourceState[] = [];
-        const filteredCheckedout = this.mCCCheckedoutGrp?.resourceStates.filter(item => {
-          if (item.resourceUri.fsPath !== fileObj.fsPath) {
-            return true;
-          }
+        const filteredCheckedout =
+          this.mCCCheckedoutGrp?.resourceStates.filter((item) => {
+            if (item.resourceUri.fsPath !== fileObj.fsPath) {
+              return true;
+            }
 
-          checkoutsChanged = true;
-          return false;
-        }) || [];
+            checkoutsChanged = true;
+            return false;
+          }) || [];
         if (checkoutsChanged === false) {
           filteredUntracked =
-            (this.mCCUntrackedGrp?.resourceStates.filter(item => {
+            this.mCCUntrackedGrp?.resourceStates.filter((item) => {
               if (item.resourceUri.fsPath !== fileObj.fsPath) {
                 return true;
               }
 
               untrackedChanged = true;
               return false;
-            })) || [];
+            }) || [];
         }
         // file is checked out, add to resource state list
         if (version.match(/checkedout/i) !== null) {
@@ -223,12 +224,12 @@ export class CCScmProvider {
         }
         if (checkoutsChanged) {
           if (this.mCCCheckedoutGrp !== null) {
-            this.mCCCheckedoutGrp.resourceStates = filteredCheckedout?.sort(CCScmResource.sort) || [];
+            this.mCCCheckedoutGrp.resourceStates = filteredCheckedout?.sort((a, b) => CCScmResource.sort(a, b)) || [];
           }
         }
         if (untrackedChanged) {
           if (this.mCCUntrackedGrp !== null) {
-            this.mCCUntrackedGrp.resourceStates = filteredUntracked?.sort(CCScmResource.sort) || [];
+            this.mCCUntrackedGrp.resourceStates = filteredUntracked?.sort((a, b) => CCScmResource.sort(a, b)) || [];
           }
         }
       } catch (error) {
@@ -245,12 +246,13 @@ export class CCScmProvider {
 
   public async handleDeleteFiles(fileObj: Uri) {
     if (this.mCCCheckedoutGrp !== null && this.mCCUntrackedGrp) {
-      this.mCCCheckedoutGrp.resourceStates = this.mCCCheckedoutGrp.resourceStates
-        .filter(item => item.resourceUri.fsPath !== fileObj.fsPath);
+      this.mCCCheckedoutGrp.resourceStates = this.mCCCheckedoutGrp.resourceStates.filter(
+        (item) => item.resourceUri.fsPath !== fileObj.fsPath
+      );
 
-      this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedGrp.resourceStates
-        .filter(item => item.resourceUri.fsPath !== fileObj.fsPath);
-
+      this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedGrp.resourceStates.filter(
+        (item) => item.resourceUri.fsPath !== fileObj.fsPath
+      );
     }
   }
 
@@ -266,7 +268,7 @@ export class CCScmProvider {
           return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
         });
       if (this.mCCCheckedoutGrp) {
-        this.mCCCheckedoutGrp.resourceStates = checkedout.sort(CCScmResource.sort);
+        this.mCCCheckedoutGrp.resourceStates = checkedout.sort((a, b) => CCScmResource.sort(a, b));
       }
       this.mIsUpdatingUntracked = false;
     });
@@ -312,10 +314,11 @@ export class CCScmProvider {
     const root = this.root;
     if (root !== undefined) {
       const ign = this.mIgnores?.getFolderIgnore(root);
-      const d = this.clearCase?.untrackedList.getStringsByKey(root?.fsPath)?.filter(item =>
-        // if no .ccignore file is present, show all files
-        root !== undefined &&
-        (ign === undefined || (item !== "" && ign?.ignore.ignores(path.relative(root.fsPath, item)) === false))
+      const d = this.clearCase?.untrackedList.getStringsByKey(root?.fsPath)?.filter(
+        (item) =>
+          // if no .ccignore file is present, show all files
+          root !== undefined &&
+          (ign === undefined || (item !== "" && ign?.ignore.ignores(path.relative(root.fsPath, item)) === false))
       );
       if (d !== undefined) {
         viewPrv = viewPrv.concat(
@@ -324,7 +327,7 @@ export class CCScmProvider {
           })
         );
         if (this.mCCUntrackedGrp !== null) {
-          this.mCCUntrackedGrp.resourceStates = viewPrv.sort(CCScmResource.sort);
+          this.mCCUntrackedGrp.resourceStates = viewPrv.sort((a, b) => CCScmResource.sort(a, b));
         }
       }
     }
@@ -377,14 +380,14 @@ export class CCScmProvider {
 
   public bindCommands() {
     if (this.clearCase !== null) {
-      this.registerCommand("extension.ccExplorer", this.clearCase.runClearCaseExplorer);
-      this.registerCommand("extension.ccCheckout", this.clearCase.checkoutFile);
-      this.registerCommand("extension.ccCheckin", this.clearCase.checkinFile);
-      this.registerCommand("extension.ccUndoCheckout", this.clearCase.undoCheckoutFile);
-      this.registerCommand("extension.ccVersionTree", this.clearCase.versionTree);
-      this.registerCommand("extension.ccComparePrevious", this.clearCase.diffWithPrevious);
-      this.registerCommand("extension.ccItemProperties", this.clearCase.itemProperties);
-      this.registerCommand("extension.ccMkElement", this.clearCase.createVersionedObject);
+      this.registerCommand("extension.ccExplorer", (fileObj) => this.clearCase?.runClearCaseExplorer(fileObj));
+      this.registerCommand("extension.ccCheckout", (fileObj) => this.clearCase?.checkoutFile(fileObj));
+      this.registerCommand("extension.ccCheckin", (fileObj) => this.clearCase?.checkinFile(fileObj));
+      this.registerCommand("extension.ccUndoCheckout", (fileObj) => this.clearCase?.undoCheckoutFile(fileObj));
+      this.registerCommand("extension.ccVersionTree", (fileObj) => this.clearCase?.versionTree(fileObj));
+      this.registerCommand("extension.ccComparePrevious", (fileObj) => this.clearCase?.diffWithPrevious(fileObj));
+      this.registerCommand("extension.ccItemProperties", (fileObj) => this.clearCase?.itemProperties(fileObj));
+      this.registerCommand("extension.ccMkElement", (fileObj) => this.clearCase?.createVersionedObject(fileObj));
 
       this.mDisposables.push(
         commands.registerCommand(
@@ -621,9 +624,9 @@ export class CCScmProvider {
   }
 
   public bindEvents() {
-    this.mDisposables.push(workspace.onWillSaveTextDocument(this.onWillSaveDocument, this));
+    this.mDisposables.push(workspace.onWillSaveTextDocument((event) => this.onWillSaveDocument(event)));
 
-    this.mDisposables.push(window.onDidChangeActiveTextEditor(this.onDidChangeTextEditor, this));
+    this.mDisposables.push(window.onDidChangeActiveTextEditor((event) => this.onDidChangeTextEditor(event)));
   }
 
   public async onWillSaveDocument(event: TextDocumentWillSaveEvent) {
@@ -659,7 +662,7 @@ export class CCScmProvider {
       } else {
         let version = "";
         try {
-          version = await this.clearCase?.getVersionInformation(event.document.uri) ?? "";
+          version = (await this.clearCase?.getVersionInformation(event.document.uri)) ?? "";
         } catch (error) {
           this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
         }

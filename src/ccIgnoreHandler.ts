@@ -22,9 +22,9 @@ export class IgnoreHandler {
     this.fileIgnores = [];
     workspace.workspaceFolders?.forEach((folder: WorkspaceFolder) => {
       const lM = this.mFsWatch.addWatcher(join(folder.uri.fsPath, ".ccignore"));
-      lM.onWorkspaceChanged(this.refreshFilter, this);
-      lM.onWorkspaceCreated(this.refreshFilter, this);
-      lM.onWorkspaceDeleted(this.removeFilter, this);
+      lM.onWorkspaceChanged((fileObj) => this.refreshFilter(fileObj));
+      lM.onWorkspaceCreated((fileObj) => this.refreshFilter(fileObj));
+      lM.onWorkspaceDeleted((fileObj) => this.removeFilter(fileObj));
       const dir = this.appendSeparator(folder.uri.fsPath);
       this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
     });

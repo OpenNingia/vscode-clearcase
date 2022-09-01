@@ -16,7 +16,7 @@ export class CCConfigHandler {
     this.loadConfig();
 
     this.disposables.push(
-      workspace.onDidChangeConfiguration(this.handleChangedConfig, this, this.context.subscriptions)
+      workspace.onDidChangeConfiguration(() => this.handleChangedConfig(), this, this.context.subscriptions)
     );
   }
 
