@@ -882,7 +882,7 @@ export class ClearCase {
 
     const outputChannel = this.outputChannel;
     const isView = this.isView;
-    // tslint:disable-next-line:typedef
+   
     return new Promise<void>((resolve, reject) => {
       let cmdErrMsg = "";
 

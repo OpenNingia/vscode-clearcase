@@ -16,6 +16,7 @@
     "rules": {
         "@typescript-eslint/naming-convention": "warn",
         "@typescript-eslint/semi": "warn",
+        "@typescript-eslint/ban-tslint-comment": "error",
         "@typescript-eslint/consistent-generic-constructors": "error",
         "@typescript-eslint/explicit-module-boundary-types": "error",
         "@typescript-eslint/no-unsafe-call": "error",
