@@ -48,7 +48,7 @@ It is possible to use the remote cleartool client with VSCode. To activate, set 
 
 ## WSL
 
-You can use this extenion in a WSL environment and a windows clearcase installation. Just make sure the configured **executeable** ist the windows one (this is the default). The second important setting is the **tempDir** value. If you use a windows cleartool binary the temp dir needs to be a windows style path as already set by default. This path needs to be reachable by the windows cleartool executable. Therefor it is not possible to use a wsl linux only path like `/tmp/`.
+You can use this extenion in a WSL environment and a windows clearcase installation. Just make sure the configured **executeable** is the windows one (this is the default). The second important setting is the **tempDir** value. If you use a windows cleartool binary the temp dir needs to be a windows style path as already set by default. This path needs to be reachable by the windows cleartool executable. Therefor it is not possible to use a wsl linux only path like `/tmp/`.
 
 If the above settings are correct everything else is handled by the extension transparantly.
 
