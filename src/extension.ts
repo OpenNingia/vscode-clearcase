@@ -58,7 +58,7 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
   }
 }
 
-export async function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext): Promise<void> {
   const disposables: Disposable[] = [];
   context.subscriptions.push(new Disposable(() => Disposable.from(...disposables).dispose()));
   if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
@@ -67,6 +67,6 @@ export async function activate(context: ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {
+export function deactivate(): void {
   // do nothing.
 }

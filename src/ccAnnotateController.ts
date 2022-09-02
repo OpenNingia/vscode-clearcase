@@ -17,8 +17,8 @@ export class CCAnnotationController {
 
   constructor(private editor: TextEditor, private context: ExtensionContext, private configHandler: CCConfigHandler) {
     this.mIsActive = false;
-    window.onDidChangeActiveTextEditor(this.onActiveEditorChange, this, this.context.subscriptions);
-    this.configHandler.onDidChangeConfiguration(this.onConfigurationChanged, this);
+    window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChange(editor), this, this.context.subscriptions);
+    this.configHandler.onDidChangeConfiguration(() => this.onConfigurationChanged());
     const ro: DecorationRenderOptions = {
       isWholeLine: false,
       before: {
@@ -32,18 +32,18 @@ export class CCAnnotationController {
     this.mConfiguration = this.configHandler.configuration;
   }
 
-  onActiveEditorChange(event: TextEditor | undefined): void {
-    if (event) {
+  private onActiveEditorChange(editor: TextEditor | undefined): void {
+    if (editor) {
       this.mIsActive = false;
-      this.editor = event;
+      this.editor = editor;
     }
   }
 
-  onConfigurationChanged() {
+  private onConfigurationChanged() {
     this.mConfiguration = this.configHandler.configuration;
   }
 
-  setAnnotationInText(annotationText: string) {
+  setAnnotationInText(annotationText: string): void {
     let deco: DecorationOptions[] = [];
     let maxWidth = 0;
     if (this.mIsActive === false) {
@@ -64,7 +64,7 @@ export class CCAnnotationController {
     this.editor.setDecorations(this.mDecorationType, deco);
   }
 
-  getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
+  private getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
     const deco: DecorationOptions[] = [];
     for (let lineNr = 0; lineNr < iLines.length; lineNr++) {
       let line = iLines[lineNr][0].replace(/ /gi, "\u00A0");
@@ -76,11 +76,7 @@ export class CCAnnotationController {
     return deco;
   }
 
-  private createLineDecoration(
-    iLinePart: string,
-    iLineNr: number,
-    iCharStart: number
-  ): DecorationOptions {
+  private createLineDecoration(iLinePart: string, iLineNr: number, iCharStart: number): DecorationOptions {
     const charLen = iLinePart.length;
     let range = window.activeTextEditor?.document.validateRange(new Range(iLineNr, iCharStart, iLineNr, charLen));
     if (range === undefined) {
@@ -99,7 +95,7 @@ export class CCAnnotationController {
     };
   }
 
-  dispose() {
+  dispose(): void {
     // do nothing.
   }
 }

@@ -2,13 +2,13 @@ import { accessSync } from "fs";
 import { workspace } from "vscode";
 
 class FileType {
-  public constructor(public found: boolean, public name: string) {}
+  constructor(public found: boolean, public name: string) {}
 }
 
 export class MappedList {
   private mUntrackedList: Map<string, FileType[]> | null;
 
-  public constructor() {
+  constructor() {
     this.mUntrackedList = null;
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
       this.mUntrackedList = new Map<string, FileType[]>();
@@ -18,11 +18,11 @@ export class MappedList {
     }
   }
 
-  public exists(iVal: string): boolean {
+  exists(iVal: string): boolean {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (const key of keys) {
-        if (iVal.indexOf(key) > -1) {
+        if (iVal.includes(key)) {
           const v = this.mUntrackedList.get(key);
           const o = v?.find((val) => val.name === iVal);
           if (undefined !== o) {
@@ -34,11 +34,11 @@ export class MappedList {
     return false;
   }
 
-  public addString(iVal: string) {
+  addString(iVal: string): void {
     if (this.mUntrackedList !== null && workspace.workspaceFolders !== undefined) {
       let i = 0;
       for (; i < workspace.workspaceFolders.length; i++) {
-        if (iVal.indexOf(workspace.workspaceFolders[i].uri.fsPath) > -1) {
+        if (iVal.includes(workspace.workspaceFolders[i].uri.fsPath)) {
           break;
         }
       }
@@ -52,7 +52,7 @@ export class MappedList {
     }
   }
 
-  public addStringByKey(iVal: string, iKey: string) {
+  addStringByKey(iVal: string, iKey: string): void {
     if (this.mUntrackedList !== null) {
       if (this.mUntrackedList.get(iKey) !== undefined) {
         const v = this.mUntrackedList.get(iKey);
@@ -67,7 +67,7 @@ export class MappedList {
     }
   }
 
-  public addStringsByKey(iVal: FileType[], iKey: string) {
+  addStringsByKey(iVal: FileType[], iKey: string): void {
     if (this.mUntrackedList !== null) {
       if (this.mUntrackedList.get(iKey) !== undefined) {
         this.mUntrackedList.set(iKey, iVal);
@@ -75,7 +75,7 @@ export class MappedList {
     }
   }
 
-  public getStringsByKey(iKey: string | undefined): string[] | undefined {
+  getStringsByKey(iKey: string | undefined): string[] | undefined {
     if (iKey === undefined) {
       return;
     }
@@ -87,7 +87,7 @@ export class MappedList {
     return [];
   }
 
-  public clearStringsOfKey(iKey: string) {
+  clearStringsOfKey(iKey: string): void {
     if (this.mUntrackedList !== null) {
       if (this.mUntrackedList.get(iKey) !== undefined) {
         this.mUntrackedList.set(iKey, []);
@@ -95,7 +95,7 @@ export class MappedList {
     }
   }
 
-  public parse(filelist: string[]) {
+  parse(filelist: string[]): void {
     if (filelist !== null && this.mUntrackedList !== null) {
       for (let i = 0; i < filelist.length; i = i + 2) {
         this.mUntrackedList.set(
@@ -106,7 +106,7 @@ export class MappedList {
     }
   }
 
-  public stringify(): string[] {
+  stringify(): string[] {
     const f = [];
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
@@ -124,7 +124,7 @@ export class MappedList {
     return f;
   }
 
-  public cleanMap() {
+  cleanMap(): void {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (const key of keys) {
@@ -142,7 +142,7 @@ export class MappedList {
     }
   }
 
-  public updateEntryExistsOnFileSystem() {
+  updateEntryExistsOnFileSystem(): void {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (const key of keys) {
@@ -161,7 +161,7 @@ export class MappedList {
     }
   }
 
-  public resetFoundState() {
+  resetFoundState(): void {
     if (this.mUntrackedList !== null) {
       const keys = this.mUntrackedList.keys();
       for (const key of keys) {

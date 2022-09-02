@@ -8,7 +8,7 @@ export class CCConfigHandler {
   private mConfiguration: CCConfiguration;
   private mChangeIdents: string[];
 
-  public constructor(private context: ExtensionContext, private disposables: Disposable[]) {
+  constructor(private context: ExtensionContext, private disposables: Disposable[]) {
     this.mChangeIdents = [];
     this.mConfigChanged = new EventEmitter<string[]>();
     this.mConfiguration = new CCConfiguration();
@@ -16,7 +16,7 @@ export class CCConfigHandler {
     this.loadConfig();
 
     this.disposables.push(
-      workspace.onDidChangeConfiguration(this.handleChangedConfig, this, this.context.subscriptions)
+      workspace.onDidChangeConfiguration(() => this.handleChangedConfig(), this, this.context.subscriptions)
     );
   }
 
@@ -76,6 +76,7 @@ export class CCConfigHandler {
     }
     return false;
   }
+  
   private handleChangedConfig(): void {
     if (this.loadConfig()) {
       this.mConfigChanged.fire(this.mChangeIdents);
