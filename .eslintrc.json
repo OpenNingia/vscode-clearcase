@@ -18,6 +18,7 @@
         "@typescript-eslint/semi": "warn",
         "@typescript-eslint/consistent-generic-constructors": "error",
         "@typescript-eslint/explicit-module-boundary-types": "error",
+        "@typescript-eslint/no-unsafe-call": "error",
         "@typescript-eslint/prefer-includes": "error",
         "@typescript-eslint/prefer-for-of": "error",
         "@typescript-eslint/prefer-nullish-coalescing": "error",

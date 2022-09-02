@@ -898,7 +898,7 @@ export class ClearCase {
           allDataStr += data;
         } else {
           allData = Buffer.concat([allData, data], allData.length + data.length);
-          res = data.toString();
+          res = JSON.stringify(data);
         }
         if (onData !== null && typeof onData === "function") {
           onData(res.split(/\r\n|\r|\n/).filter((s: string) => s.length > 0));
@@ -910,7 +910,7 @@ export class ClearCase {
         if (typeof data === "string") {
           msg = data;
         } else {
-          msg = data.toString();
+          msg = JSON.stringify(data);
         }
         if (onError !== undefined && typeof onError === "function") {
           onError(msg);
