@@ -8,13 +8,13 @@ export class CCCodeLensProvider implements CodeLensProvider {
     scheme: "file",
   };
 
-  public constructor(
+  constructor(
     private mContext: ExtensionContext,
     private mCfg: CCConfigHandler,
     private mProvider: CCScmProvider
   ) { }
 
-  public provideCodeLenses(document: TextDocument): Thenable<CodeLens[]> | CodeLens[] {
+  provideCodeLenses(document: TextDocument): Thenable<CodeLens[]> | CodeLens[] {
     if (!this.mCfg.configuration.showAnnotationCodeLens.value) {
       return [];
     }
@@ -30,7 +30,7 @@ export class CCCodeLensProvider implements CodeLensProvider {
     });
   }
 
-  public resolveCodeLens(codeLens: CodeLens): Thenable<CodeLens> {
+  resolveCodeLens(codeLens: CodeLens): Thenable<CodeLens> {
     if (codeLens instanceof CCAnnotateLens) {
       codeLens.command = {
         title: "Toggle annotations",

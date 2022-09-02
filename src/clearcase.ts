@@ -43,17 +43,17 @@ export class CCArgs {
   private mFile: string | undefined;
   private mVersion: string | undefined;
 
-  public constructor(params: string[], file?: string, version?: string) {
+  constructor(params: string[], file?: string, version?: string) {
     this.params = [...params];
     this.mFile = file;
     this.mVersion = version;
   }
 
-  public toString(): string {
+  private toString(): string {
     return this.params.reduce((a: string, s: string) => `${a} ${s}`) + ` ${this.mFile}`;
   }
 
-  public getCmd(): string[] {
+  getCmd(): string[] {
     if (this.mFile !== undefined && this.mVersion === undefined) {
       return [...this.params, this.mFile];
     } else if (this.mFile !== undefined && this.mVersion !== undefined && this.mVersion !== "") {
@@ -62,11 +62,11 @@ export class CCArgs {
     return this.params;
   }
 
-  public get file(): string | undefined {
+  get file(): string | undefined {
     return this.mFile;
   }
 
-  public set file(v: string | undefined) {
+  set file(v: string | undefined) {
     this.mFile = v;
   }
 }
@@ -81,7 +81,8 @@ export class Cleartool implements CleartoolIf {
   private mPassword: string;
   private mAddress: string;
   private mExecutable: string;
-  public constructor(u = "", p = "", a = "", e = "") {
+
+  constructor(u = "", p = "", a = "", e = "") {
     this.mAddress = a;
     this.mPassword = p;
     this.mUsername = u;
@@ -93,14 +94,14 @@ export class Cleartool implements CleartoolIf {
     }
   }
 
-  public executable(val?: string | undefined): string {
+  executable(val?: string | undefined): string {
     if (val !== undefined) {
       this.mExecutable = val;
     }
     return this.mExecutable;
   }
 
-  public credentials(): string[] {
+  credentials(): string[] {
     if (this.mAddress !== "") {
       return ["-lname", this.mUsername, "-password", this.mPassword, "-server", this.mAddress];
     }
@@ -123,7 +124,7 @@ export class ClearCase {
 
   private mWebviewPassword = "";
 
-  public constructor(
+  constructor(
     private mContext: ExtensionContext,
     private configHandler: CCConfigHandler,
     private outputChannel: OutputChannel
@@ -162,27 +163,27 @@ export class ClearCase {
     });
   }
 
-  public get isView(): boolean {
+  get isView(): boolean {
     return this.mIsCCView;
   }
 
-  public set isView(v: boolean) {
+  set isView(v: boolean) {
     this.mIsCCView = v;
   }
 
-  public get viewType(): ViewType {
+  get viewType(): ViewType {
     return this.mViewType;
   }
 
-  public get onCommandExecuted(): Event<Uri> {
+  get onCommandExecuted(): Event<Uri> {
     return this.mUpdateEvent.event;
   }
 
-  public get untrackedList(): MappedList {
+  get untrackedList(): MappedList {
     return this.mUntrackedList;
   }
 
-  public set password(val: string) {
+  set password(val: string) {
     this.mWebviewPassword = val;
     if (this.configHandler.configuration.useRemoteClient.value === true) {
       this.mExecCmd = new Cleartool(
@@ -200,7 +201,7 @@ export class ClearCase {
    *
    * @param editor current editor instance
    */
-  public async checkIsView(editor: TextEditor | undefined): Promise<boolean> {
+  async checkIsView(editor: TextEditor | undefined): Promise<boolean> {
     let isView = false;
     if (editor?.document !== undefined) {
       try {
@@ -224,7 +225,7 @@ export class ClearCase {
     return isView;
   }
 
-  public async loginWebview(): Promise<boolean> {
+  async loginWebview(): Promise<boolean> {
     try {
       const args: CCArgs = new CCArgs(["login"].concat(this.mExecCmd.credentials()));
       const path: string = workspace.workspaceFolders !== undefined ? workspace.workspaceFolders[0].uri.fsPath : "";
@@ -239,7 +240,7 @@ export class ClearCase {
     return false;
   }
 
-  public async execOnSCMFile(doc: Uri, func: (arg: Uri) => void) {
+  async execOnSCMFile(doc: Uri, func: (arg: Uri) => void): Promise<void> {
     const path = doc.fsPath;
 
     await this.runCleartoolCommand(
@@ -254,12 +255,12 @@ export class ClearCase {
     );
   }
 
-  public runClearCaseExplorer(doc: Uri) {
+  runClearCaseExplorer(doc: Uri): void {
     const path = doc.fsPath;
     exec('clearexplorer "' + path + '"');
   }
 
-  public async checkoutFile(doc: Uri): Promise<boolean> {
+  async checkoutFile(doc: Uri): Promise<boolean> {
     const path = doc.fsPath;
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     const coArgTmpl = this.configHandler.configuration.checkoutCommand.value;
@@ -315,7 +316,7 @@ export class ClearCase {
     }
   }
 
-  public async checkoutAndSaveFile(doc: TextDocument) {
+  async checkoutAndSaveFile(doc: TextDocument): Promise<void> {
     const path = doc.fileName;
     exec('cleardlg /checkout "' + path + '"', async () => {
       // only trigger save if checkout did work
@@ -334,7 +335,7 @@ export class ClearCase {
     });
   }
 
-  public async undoCheckoutFile(doc: Uri) {
+  async undoCheckoutFile(doc: Uri): Promise<void> {
     const path = doc.fsPath;
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
@@ -351,14 +352,14 @@ export class ClearCase {
     }
   }
 
-  public async createVersionedObject(doc: Uri) {
+  async createVersionedObject(doc: Uri): Promise<void> {
     const path = doc.fsPath;
     await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], path), dirname(path), null, () =>
       this.mUpdateEvent.fire(doc)
     );
   }
 
-  public async checkinFile(doc: Uri) {
+  async checkinFile(doc: Uri): Promise<void> {
     const path = doc.fsPath;
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     const ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
@@ -409,7 +410,7 @@ export class ClearCase {
     }
   }
 
-  public async checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
+  async checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
     for (const fileObj of fileObjs) {
       const cmd: CCArgs = new CCArgs(["ci", "-nc"], fileObj.fsPath);
       if (comment !== "") {
@@ -423,12 +424,12 @@ export class ClearCase {
     }
   }
 
-  public versionTree(doc: Uri) {
+  versionTree(doc: Uri): void {
     const path = doc.fsPath;
     this.runCleartoolCommand(new CCArgs(["lsvtree", "-graphical"], path), dirname(path), null);
   }
 
-  public diffWithPrevious(doc: Uri) {
+  diffWithPrevious(doc: Uri): void {
     const path = doc.fsPath;
     this.runCleartoolCommand(new CCArgs(["diff", "-graph", "-pred"], path), dirname(path), null);
   }
@@ -436,7 +437,7 @@ export class ClearCase {
   /**
    * Searching checkout files in all vobs of the current view
    */
-  public async findCheckouts(): Promise<string[]> {
+  async findCheckouts(): Promise<string[]> {
     const lscoArgTmpl = this.configHandler.configuration.findCheckoutsCommand.value;
     let resNew: string[] = [];
     let wsf = "";
@@ -472,7 +473,7 @@ export class ClearCase {
    * Searching view private objects in all workspace folders of the current project.
    * The result is filtered by the configuration 'ViewPrivateFileSuffixes'
    */
-  public async findUntracked(pathObj: Uri | undefined): Promise<void> {
+  async findUntracked(pathObj: Uri | undefined): Promise<void> {
     try {
       if (pathObj === undefined) {
         return;
@@ -500,15 +501,15 @@ export class ClearCase {
     }
   }
 
-  public findCheckoutsGui(path: string) {
+  findCheckoutsGui(path: string): void {
     exec('clearfindco "' + path + '"');
   }
 
-  public findModified(path: string) {
+  findModified(path: string): void {
     exec('clearviewupdate -pname "' + path + '" -modified');
   }
 
-  public updateView() {
+  updateView(): void {
     exec("clearviewupdate");
   }
 
@@ -516,7 +517,7 @@ export class ClearCase {
    * Alternate methode detecting if the given path is part of an clearcase
    * view.
    */
-  public async hasConfigspec(): Promise<boolean> {
+  async hasConfigspec(): Promise<boolean> {
     let result = false;
     try {
       if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
@@ -550,7 +551,7 @@ export class ClearCase {
    *
    * @param iUri the uri of the file object to be checked
    */
-  public async isClearcaseObject(iUri: Uri): Promise<boolean> {
+  async isClearcaseObject(iUri: Uri): Promise<boolean> {
     try {
       return "" !== (await this.getVersionInformation(iUri));
     } catch (error) {
@@ -566,7 +567,7 @@ export class ClearCase {
    * @param iUri the uri of the file object to be checked
    * @returns Promise<string>
    */
-  public async getVersionInformation(iUri: Uri, normalize = true): Promise<string> {
+  async getVersionInformation(iUri: Uri, normalize = true): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       if (iUri === undefined || workspace.workspaceFolders === undefined) {
         reject("");
@@ -593,7 +594,7 @@ export class ClearCase {
    * @param iFileInfo a string with filename and version information
    * @returns string
    */
-  public getVersionString(iFileInfo: string, normalize: boolean) {
+  getVersionString(iFileInfo: string, normalize: boolean): string {
     if (iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "") {
       const res = iFileInfo.split("@@");
       if (res.length > 1) {
@@ -603,7 +604,7 @@ export class ClearCase {
     return "";
   }
 
-  public async updateDir(uri: Uri) {
+  async updateDir(uri: Uri): Promise<void> {
     try {
       const msg: string | undefined = await this.updateObject(uri, 0);
       window.showInformationMessage(`Update of ${msg} finished!`);
@@ -612,7 +613,7 @@ export class ClearCase {
     }
   }
 
-  public async updateFile(uri: Uri) {
+  async updateFile(uri: Uri): Promise<void> {
     try {
       const msg: string | undefined = await this.updateObject(uri, 1);
       window.showInformationMessage(`Update of ${msg} finished!`);
@@ -625,7 +626,7 @@ export class ClearCase {
    * @param filePath Uri of the selected file object in the explorer
    * @param updateType which one to update: 0=directory, 1=file
    */
-  public async updateObject(filePath: Uri, updateType: number): Promise<string | undefined> {
+  async updateObject(filePath: Uri, updateType: number): Promise<string | undefined> {
     let resultOut = "";
 
     if (window.activeTextEditor !== undefined) {
@@ -664,7 +665,7 @@ export class ClearCase {
     return resultOut;
   }
 
-  public itemProperties(doc: Uri) {
+  itemProperties(doc: Uri): void {
     const path = doc.fsPath;
     exec('cleardescribe "' + path + '"');
   }
@@ -679,7 +680,7 @@ export class ClearCase {
     }
   }
 
-  public async getAnnotatedFileContent(filePath: string): Promise<string> {
+  private async getAnnotatedFileContent(filePath: string): Promise<string> {
     let resultOut = "";
     if (workspace.workspaceFolders !== undefined) {
       let errorRes = "";
@@ -706,7 +707,7 @@ export class ClearCase {
   }
 
   // returns true if the given document is read-only
-  public isReadOnly(doc: TextDocument): boolean {
+  isReadOnly(doc: TextDocument): boolean {
     const filePath = doc.fileName;
     try {
       fs.accessSync(filePath, fs.constants.W_OK);
@@ -716,7 +717,7 @@ export class ClearCase {
     }
   }
 
-  async getCurrentActivity(): Promise<string> {
+  private async getCurrentActivity(): Promise<string> {
     let resultOut = "";
     if (workspace.workspaceFolders !== undefined) {
       let errorRes = "";
@@ -739,7 +740,7 @@ export class ClearCase {
   }
 
   // return view activities as QuickPickItem list
-  async getQuickPickActivities(currentAcvtId: string): Promise<QuickPickItem[]> {
+  private async getQuickPickActivities(currentAcvtId: string): Promise<QuickPickItem[]> {
     const resultOut: QuickPickItem[] = [];
     if (workspace.workspaceFolders !== undefined) {
       let errorRes = "";
@@ -780,7 +781,7 @@ export class ClearCase {
     return resultOut;
   }
 
-  async changeCurrentActivity() {
+  async changeCurrentActivity(): Promise<void> {
     try {
       const currentActv = await this.getCurrentActivity();
       const userChoose = await window.showQuickPick<QuickPickItem>(this.getQuickPickActivities(currentActv));
@@ -798,7 +799,7 @@ export class ClearCase {
     }
   }
 
-  public async setViewActivity(actvID: string | undefined): Promise<string> {
+  private async setViewActivity(actvID: string | undefined): Promise<string> {
     let resultOut = "";
     if (workspace.workspaceFolders !== undefined) {
       let errorRes = "";
@@ -824,7 +825,7 @@ export class ClearCase {
     return resultOut;
   }
 
-  public async readFileAtVersion(fsPath: string, version: string): Promise<string> {
+  async readFileAtVersion(fsPath: string, version: string): Promise<string> {
     // cannot call getFileAtVersion because the temp file is automatically removed
     let tempDir = this.configHandler.configuration.tempDir.value;
     let tempFile = "";
@@ -979,7 +980,7 @@ export class ClearCase {
     return viewType;
   }
 
-  public isRunningInWsl(): boolean {
+  private isRunningInWsl(): boolean {
     return this.configHandler.configuration.isWslEnv.value;
 
     if (type() !== "Windows_NT") {
@@ -1001,7 +1002,7 @@ export class ClearCase {
    * @param dialogBox a reference to a vs code InputBox for problem handling
    * @returns ChildProcess
    */
-  public async runClearTooledcs(baseFolder: string): Promise<ChildProcess> {
+  async runClearTooledcs(baseFolder: string): Promise<ChildProcess> {
     const executable = this.configHandler.configuration.executable.value;
     process.env["VISUAL"] = "code -r";
     const options = {
@@ -1026,7 +1027,7 @@ export class ClearCase {
     });
   }
 
-  public wslPath(path: string, toLinux = true, runInWsl?: boolean): string {
+  private wslPath(path: string, toLinux = true, runInWsl?: boolean): string {
     if (runInWsl === undefined) {
       runInWsl = this.isRunningInWsl();
     }

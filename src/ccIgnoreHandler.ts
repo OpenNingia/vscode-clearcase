@@ -18,7 +18,7 @@ export class IgnoreHandler {
     return this.mOnFilterRefreshed;
   }
 
-  public init() {
+  private init(): void {
     this.fileIgnores = [];
     workspace.workspaceFolders?.forEach((folder: WorkspaceFolder) => {
       const lM = this.mFsWatch.addWatcher(join(folder.uri.fsPath, ".ccignore"));
@@ -30,7 +30,7 @@ export class IgnoreHandler {
     });
   }
 
-  public getFolderIgnore(path: Uri | string): FileIgnore | null {
+  getFolderIgnore(path: Uri | string): FileIgnore | null {
     const t = this.appendSeparator(typeof path === "string" ? path : path.fsPath);
     for (const ignore of this.fileIgnores) {
       if (t.startsWith(ignore.pathStr) && ignore.hasIgnore === true) {
@@ -40,7 +40,7 @@ export class IgnoreHandler {
     return null;
   }
 
-  public refreshFilter(fileObj: Uri) {
+  private refreshFilter(fileObj: Uri) {
     const dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if (this.fileIgnores[i].pathStr === dir) {
@@ -53,7 +53,7 @@ export class IgnoreHandler {
     this.mOnFilterRefreshed.fire();
   }
 
-  public removeFilter(fileObj: Uri) {
+  private removeFilter(fileObj: Uri) {
     const dir = this.appendSeparator(fileObj.fsPath);
     for (let i = 0; i < this.fileIgnores.length; i++) {
       if (this.fileIgnores[i].pathStr === dir) {
@@ -64,7 +64,7 @@ export class IgnoreHandler {
     }
   }
 
-  public appendSeparator(path: string): string {
+  private appendSeparator(path: string): string {
     const ps = statSync(path);
     if (ps.isFile() === true) {
       path = dirname(path);

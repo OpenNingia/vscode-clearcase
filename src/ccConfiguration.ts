@@ -1,7 +1,7 @@
 export class ConfigurationProperty<T> {
   private mChanged: boolean;
 
-  public constructor(private mProp: T) {
+  constructor(private mProp: T) {
     this.mChanged = true;
   }
 
@@ -48,79 +48,79 @@ export class CCConfiguration {
   private mWebserverPassword = new ConfigurationProperty<string>("");
   private mWebserverAddress = new ConfigurationProperty<string>("");
 
-  public get showStatusbar(): ConfigurationProperty<boolean> {
+  get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
   }
 
-  public get showAnnotationCodeLens(): ConfigurationProperty<boolean> {
+  get showAnnotationCodeLens(): ConfigurationProperty<boolean> {
     return this.mShowAnnotationCodeLens;
   }
 
-  public get annotationColor(): ConfigurationProperty<string> {
+  get annotationColor(): ConfigurationProperty<string> {
     return this.mAnnotationColor;
   }
 
-  public get annotationBackground(): ConfigurationProperty<string> {
+  get annotationBackground(): ConfigurationProperty<string> {
     return this.mAnnotationBackgroundColor;
   }
 
-  public get annotationFormatString(): ConfigurationProperty<string> {
+  get annotationFormatString(): ConfigurationProperty<string> {
     return this.mAnnotationFormatString;
   }
 
-  public get useClearDlg(): ConfigurationProperty<boolean> {
+  get useClearDlg(): ConfigurationProperty<boolean> {
     return this.mUseClearDlg;
   }
 
-  public get checkoutCommand(): ConfigurationProperty<string> {
+  get checkoutCommand(): ConfigurationProperty<string> {
     return this.mCheckoutCommand;
   }
 
-  public get checkinCommand(): ConfigurationProperty<string> {
+  get checkinCommand(): ConfigurationProperty<string> {
     return this.mCheckinCommand;
   }
 
-  public get findCheckoutsCommand(): ConfigurationProperty<string> {
+  get findCheckoutsCommand(): ConfigurationProperty<string> {
     return this.mFindCheckoutsCommand;
   }
 
-  public get uncoKeepFile(): ConfigurationProperty<boolean> {
+  get uncoKeepFile(): ConfigurationProperty<boolean> {
     return this.mUncoKeepFile;
   }
 
-  public get defaultComment(): ConfigurationProperty<string> {
+  get defaultComment(): ConfigurationProperty<string> {
     return this.mDefaultComment;
   }
 
-  public get viewPrivateFileSuffixes(): ConfigurationProperty<string> {
+  get viewPrivateFileSuffixes(): ConfigurationProperty<string> {
     return this.mViewPrivateFiles;
   }
 
-  public get executable(): ConfigurationProperty<string> {
+  get executable(): ConfigurationProperty<string> {
     return this.mExecutable;
   }
 
-  public get tempDir(): ConfigurationProperty<string> {
+  get tempDir(): ConfigurationProperty<string> {
     return this.mTempDir;
   }
 
-  public get isWslEnv(): ConfigurationProperty<boolean> {
+  get isWslEnv(): ConfigurationProperty<boolean> {
     return this.mIsWslEnv;
   }
 
-  public get useRemoteClient(): ConfigurationProperty<boolean> {
+  get useRemoteClient(): ConfigurationProperty<boolean> {
     return this.mUseRemoteClient;
   }
 
-  public get webserverUsername(): ConfigurationProperty<string> {
+  get webserverUsername(): ConfigurationProperty<string> {
     return this.mWebserverUsername;
   }
 
-  public get webserverPassword(): ConfigurationProperty<string> {
+  get webserverPassword(): ConfigurationProperty<string> {
     return this.mWebserverPassword;
   }
 
-  public get webserverAddress(): ConfigurationProperty<string> {
+  get webserverAddress(): ConfigurationProperty<string> {
     return this.mWebserverAddress;
   }
 }

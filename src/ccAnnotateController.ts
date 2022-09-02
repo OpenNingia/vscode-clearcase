@@ -32,18 +32,18 @@ export class CCAnnotationController {
     this.mConfiguration = this.configHandler.configuration;
   }
 
-  onActiveEditorChange(editor: TextEditor | undefined): void {
+  private onActiveEditorChange(editor: TextEditor | undefined): void {
     if (editor) {
       this.mIsActive = false;
       this.editor = editor;
     }
   }
 
-  onConfigurationChanged() {
+  private onConfigurationChanged() {
     this.mConfiguration = this.configHandler.configuration;
   }
 
-  setAnnotationInText(annotationText: string) {
+  setAnnotationInText(annotationText: string): void {
     let deco: DecorationOptions[] = [];
     let maxWidth = 0;
     if (this.mIsActive === false) {
@@ -64,7 +64,7 @@ export class CCAnnotationController {
     this.editor.setDecorations(this.mDecorationType, deco);
   }
 
-  getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
+  private getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
     const deco: DecorationOptions[] = [];
     for (let lineNr = 0; lineNr < iLines.length; lineNr++) {
       let line = iLines[lineNr][0].replace(/ /gi, "\u00A0");
@@ -95,7 +95,7 @@ export class CCAnnotationController {
     };
   }
 
-  dispose() {
+  dispose(): void {
     // do nothing.
   }
 }
