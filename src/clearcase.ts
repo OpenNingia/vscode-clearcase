@@ -882,7 +882,7 @@ export class ClearCase {
 
     const outputChannel = this.outputChannel;
     const isView = this.isView;
-   
+
     return new Promise<void>((resolve, reject) => {
       let cmdErrMsg = "";
 
@@ -896,7 +896,7 @@ export class ClearCase {
         if (typeof data === "string") {
           res = data;
           allDataStr += data;
-        } else {
+        } else if (Buffer.isBuffer(data)) {
           allData = Buffer.concat([allData, data], allData.length + data.length);
           res = JSON.stringify(data);
         }
