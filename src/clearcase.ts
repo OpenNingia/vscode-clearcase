@@ -309,7 +309,7 @@ export class ClearCase {
       try {
         await this.runCleartoolCommand(cmd, dirname(path), null, () => this.mUpdateEvent.fire(doc));
       } catch (error) {
-        this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + error);
+        this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + getErrorMessage(error));
         return false;
       }
       return true;

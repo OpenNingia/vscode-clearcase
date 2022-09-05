@@ -36,6 +36,7 @@ import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
 
 import * as path from "path";
+import { getErrorMessage } from "./errormessage";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -64,7 +65,7 @@ export class CCScmProvider {
     private mDisposables: Disposable[],
     private outputChannel: OutputChannel,
     private configHandler: CCConfigHandler
-  ) {}
+  ) { }
 
   async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
@@ -233,7 +234,7 @@ export class CCScmProvider {
           }
         }
       } catch (error) {
-        this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
+        this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
       }
     }
     this.mListLock?.release();
@@ -664,14 +665,14 @@ export class CCScmProvider {
         try {
           version = (await this.clearCase?.getVersionInformation(event.document.uri)) ?? "";
         } catch (error) {
-          this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + error);
+          this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
         }
         if (version === "") {
           this.handleChangeFiles(event.document.uri);
         }
       }
     } catch (error) {
-      console.log("error " + error);
+      console.log("error " + getErrorMessage(error));
     }
   }
 
