@@ -18,20 +18,22 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
   // The commandId parameter must match the command field in package.json
   const outputChannel: OutputChannel = window.createOutputChannel("Clearcase SCM");
 
-  const configHandler = new CCConfigHandler(context, disposables);
+  const configHandler = new CCConfigHandler();
+  disposables.push(configHandler);
 
-  const provider = new CCScmProvider(context, disposables, outputChannel, configHandler);
+  const provider = new CCScmProvider(context, outputChannel, configHandler);
+  disposables.push(provider);
 
   try {
     if (true === (await provider.init())) {
       provider.bindEvents();
       provider.bindCommands();
 
-      provider.updateIsView().then((is: boolean) => {
-        const d = provider.clearCase ? provider.clearCase.viewType === ViewType.dynamic : false;
+      provider.updateIsView().then((isView: boolean) => {
+        const viewType = provider.clearCase ? provider.clearCase.viewType === ViewType.dynamic : false;
         const files = provider.getCheckedoutObjects();
-        commands.executeCommand("setContext", "vscode-clearcase:enabled", is);
-        commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
+        commands.executeCommand("setContext", "vscode-clearcase:enabled", isView);
+        commands.executeCommand("setContext", "vscode-clearcase:DynView", viewType);
         commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
       });
 
@@ -43,14 +45,8 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
         commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
       }, provider);
 
-      const uiInfo = new UIInformation(context, disposables, configHandler, window.activeTextEditor, provider.clearCase);
-      uiInfo.createStatusbarItem();
-      uiInfo.bindEvents();
-      uiInfo.initialQuery();
-
-      provider.clearCase?.onCommandExecuted(() => {
-        uiInfo.initialQuery();
-      }, uiInfo);
+      const uiInfo = new UIInformation(configHandler, window.activeTextEditor, provider.clearCase);
+      disposables.push(uiInfo);
       console.log("[vscode-clearcase] started!");
     }
   } catch {

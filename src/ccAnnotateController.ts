@@ -1,7 +1,6 @@
 import {
   DecorationOptions,
   DecorationRenderOptions,
-  ExtensionContext,
   Range,
   TextEditor,
   TextEditorDecorationType,
@@ -9,16 +8,17 @@ import {
 } from "vscode";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { CCConfiguration } from "./ccConfiguration";
+import { IDisposable } from "./model";
 
-export class CCAnnotationController {
+export class CCAnnotationController implements IDisposable {
   private mDecorationType: TextEditorDecorationType;
-  private mIsActive: boolean;
+  private mIsActive = false;
   private mConfiguration: CCConfiguration;
+  private mDisposables: IDisposable[] = [];
 
-  constructor(private editor: TextEditor, private context: ExtensionContext, private configHandler: CCConfigHandler) {
-    this.mIsActive = false;
-    window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChange(editor), this, this.context.subscriptions);
-    this.configHandler.onDidChangeConfiguration(() => this.onConfigurationChanged());
+  constructor(private editor: TextEditor, private configHandler: CCConfigHandler) {
+    this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChange(editor)));
+    this.mDisposables.push(this.configHandler.onDidChangeConfiguration(() => this.onConfigurationChanged()));
     const ro: DecorationRenderOptions = {
       isWholeLine: false,
       before: {

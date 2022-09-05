@@ -7,7 +7,6 @@ import * as tmp from "tmp";
 import {
   Event,
   EventEmitter,
-  ExtensionContext,
   OutputChannel,
   QuickPickItem,
   TextDocument,
@@ -116,24 +115,18 @@ export class ClearCase {
   private readonly rxViewAttr = new RegExp("(view attributes\\:)([\\,\\t \\w\\d]*)(webview)", "i");
 
   private mIsCCView = false;
-  private mViewType: ViewType;
-  private mUpdateEvent: EventEmitter<Uri>;
+  private mViewType: ViewType = ViewType.unknown;
+  private mUpdateEvent = new EventEmitter<Uri>();
 
-  private mUntrackedList: MappedList;
+  private mUntrackedList = new MappedList();
   private mExecCmd: CleartoolIf;
 
   private mWebviewPassword = "";
 
   constructor(
-    private mContext: ExtensionContext,
     private configHandler: CCConfigHandler,
     private outputChannel: OutputChannel
   ) {
-    this.mUpdateEvent = new EventEmitter<Uri>();
-    this.mViewType = ViewType.unknown;
-    this.isView = false;
-    this.mUntrackedList = new MappedList();
-
     if (this.configHandler.configuration.useRemoteClient.value === true) {
       this.mExecCmd = new Cleartool(
         this.configHandler.configuration.webserverUsername.value,
@@ -165,10 +158,6 @@ export class ClearCase {
 
   get isView(): boolean {
     return this.mIsCCView;
-  }
-
-  set isView(v: boolean) {
-    this.mIsCCView = v;
   }
 
   get viewType(): ViewType {
@@ -220,7 +209,7 @@ export class ClearCase {
       this.mViewType = await this.detectViewType();
     }
 
-    this.isView = isView;
+    this.mIsCCView = isView;
 
     return isView;
   }
@@ -882,7 +871,7 @@ export class ClearCase {
 
     const outputChannel = this.outputChannel;
     const isView = this.isView;
-   
+
     return new Promise<void>((resolve, reject) => {
       let cmdErrMsg = "";
 

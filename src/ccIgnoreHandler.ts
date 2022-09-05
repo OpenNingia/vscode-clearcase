@@ -1,25 +1,14 @@
-import { workspace, WorkspaceFolder, Uri, EventEmitter } from "vscode";
+import { workspace, WorkspaceFolder, Uri, EventEmitter, Event } from "vscode";
 import { existsSync, readFileSync, statSync } from "fs";
 import { join, dirname, sep } from "path";
 import ignore, { Ignore } from "ignore";
 import { ModelHandler } from "./model";
 
 export class IgnoreHandler {
-  private fileIgnores: FileIgnore[];
-  private mOnFilterRefreshed: EventEmitter<void>;
+  private fileIgnores: FileIgnore[] = [];
+  private mOnFilterRefreshed = new EventEmitter<void>();
 
   constructor(private mFsWatch: ModelHandler) {
-    this.mOnFilterRefreshed = new EventEmitter<void>();
-    this.fileIgnores = [];
-    this.init();
-  }
-
-  get onFilterRefreshed(): EventEmitter<void> {
-    return this.mOnFilterRefreshed;
-  }
-
-  private init(): void {
-    this.fileIgnores = [];
     workspace.workspaceFolders?.forEach((folder: WorkspaceFolder) => {
       const lM = this.mFsWatch.addWatcher(join(folder.uri.fsPath, ".ccignore"));
       lM.onWorkspaceChanged((fileObj) => this.refreshFilter(fileObj));
@@ -28,6 +17,10 @@ export class IgnoreHandler {
       const dir = this.appendSeparator(folder.uri.fsPath);
       this.fileIgnores.push(new FileIgnore(Uri.file(dir)));
     });
+  }
+
+  get onFilterRefreshed(): Event<void> {
+    return this.mOnFilterRefreshed.event;
   }
 
   getFolderIgnore(path: Uri | string): FileIgnore | null {

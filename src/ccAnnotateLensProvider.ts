@@ -1,4 +1,4 @@
-import { CodeLens, CodeLensProvider, ExtensionContext, Range, TextDocument } from "vscode";
+import { CancellationToken, CodeLens, CodeLensProvider, ProviderResult, Range, TextDocument } from "vscode";
 import { CCAnnotateLens } from "./ccAnnotateLens";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { CCScmProvider } from "./ccScmProvider";
@@ -9,35 +9,43 @@ export class CCCodeLensProvider implements CodeLensProvider {
   };
 
   constructor(
-    private mContext: ExtensionContext,
     private mCfg: CCConfigHandler,
     private mProvider: CCScmProvider
   ) { }
 
-  provideCodeLenses(document: TextDocument): Thenable<CodeLens[]> | CodeLens[] {
+  provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]> {
     if (!this.mCfg.configuration.showAnnotationCodeLens.value) {
       return [];
     }
 
-    return new Promise((resolve) => {
-      this.mProvider.clearCase?.isClearcaseObject(document.uri).then((is: boolean) => {
-        const lLenses: CodeLens[] = [];
-        if (document !== undefined && is === true) {
-          lLenses.push(new CCAnnotateLens(document, new Range(0, 0, 0, 1)));
-        }
-        resolve(lLenses);
-      });
-    });
+    return this.getCodeLenses(document, token);
   }
 
-  resolveCodeLens(codeLens: CodeLens): Thenable<CodeLens> {
+  private async getCodeLenses(document: TextDocument, token: CancellationToken): Promise<CodeLens[]> {
+    if (token.isCancellationRequested === true) {
+      return [];
+    }
+
+    const isClearcaseObject = (await this.mProvider.clearCase?.isClearcaseObject(document.uri)) ?? false;
+
+    if (document !== undefined && isClearcaseObject) {
+      return [new CCAnnotateLens(document, new Range(0, 0, 0, 1))];
+    }
+    return [];
+  }
+
+  resolveCodeLens?(codeLens: CodeLens, token: CancellationToken): ProviderResult<CodeLens> {
+    if (token.isCancellationRequested === true) {
+      return codeLens;
+    }
+
     if (codeLens instanceof CCAnnotateLens) {
       codeLens.command = {
         title: "Toggle annotations",
         command: "extension.ccAnnotate",
         arguments: [codeLens.document.uri],
       };
-      return Promise.resolve(codeLens);
+      return codeLens;
     }
 
     return Promise.reject();

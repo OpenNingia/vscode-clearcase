@@ -1,16 +1,30 @@
-import { workspace, Uri, Disposable, TextDocumentContentProvider, QuickDiffProvider, CancellationToken } from "vscode";
+import {
+  workspace,
+  Uri,
+  TextDocumentContentProvider,
+  QuickDiffProvider,
+  CancellationToken,
+  ProviderResult,
+} from "vscode";
 import { ClearCase } from "./clearcase";
+import { IDisposable } from "./model";
 import { toCcUri, fromCcUri } from "./uri";
 
-export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, Disposable {
-  constructor(private mCcHandler: ClearCase | null, private mDisposals: Disposable[]) {
+export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, IDisposable {
+  private mDisposals: IDisposable[] = [];
+
+  constructor(private mCcHandler: ClearCase | null) {
     if (this.mCcHandler !== null) {
       this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc", this));
       this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc-orig", this));
     }
   }
 
-  async provideTextDocumentContent(uri: Uri, token: CancellationToken): Promise<string> {
+  provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
+    return this.getTextDocumentContent(uri, token);
+  }
+
+  private async getTextDocumentContent(uri: Uri, token: CancellationToken): Promise<string> {
     if (token.isCancellationRequested === true) {
       return "canceled";
     }
@@ -30,12 +44,20 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
     return "";
   }
 
-  async provideOriginalResource(uri: Uri): Promise<Uri | undefined> {
+  provideOriginalResource(uri: Uri, token: CancellationToken): ProviderResult<Uri> {
+    return this.getOriginalResource(uri, token);
+  }
+
+  async getOriginalResource(uri: Uri, token?: CancellationToken): Promise<Uri | undefined> {
+    if (token?.isCancellationRequested === true) {
+      return undefined;
+    }
+
     if (uri.scheme !== "file") {
       return;
     }
 
-    const currentVersion = this.mCcHandler ? await this.mCcHandler.getVersionInformation(uri, false) : "";
+    const currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? "";
     if (currentVersion !== "") {
       const isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
 
