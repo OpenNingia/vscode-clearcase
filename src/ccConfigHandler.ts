@@ -1,23 +1,23 @@
 "use strict";
 
-import { Disposable, Event, EventEmitter, ExtensionContext, workspace, WorkspaceConfiguration } from "vscode";
+import { Event, EventEmitter, workspace, WorkspaceConfiguration } from "vscode";
 import { CCConfiguration, ConfigurationProperty } from "./ccConfiguration";
+import { IDisposable } from "./model";
 
-export class CCConfigHandler {
-  private mConfigChanged: EventEmitter<string[]>;
-  private mConfiguration: CCConfiguration;
-  private mChangeIdents: string[];
+export class CCConfigHandler implements IDisposable {
+  private mConfigChanged = new EventEmitter<string[]>();
+  private mConfiguration = new CCConfiguration();
+  private mChangeIdents: string[] = [];
+  private mDisposables: IDisposable[] = [];
 
-  public constructor(private context: ExtensionContext, private disposables: Disposable[]) {
-    this.mChangeIdents = [];
-    this.mConfigChanged = new EventEmitter<string[]>();
-    this.mConfiguration = new CCConfiguration();
-
+  constructor() {
     this.loadConfig();
 
-    this.disposables.push(
-      workspace.onDidChangeConfiguration(this.handleChangedConfig, this, this.context.subscriptions)
-    );
+    this.mDisposables.push(workspace.onDidChangeConfiguration(() => this.handleChangedConfig()));
+  }
+
+  dispose(): void {
+    this.mDisposables.forEach((d) => d.dispose());
   }
 
   get onDidChangeConfiguration(): Event<string[]> {
@@ -29,7 +29,7 @@ export class CCConfigHandler {
   }
 
   private loadConfig(): boolean {
-    let config = workspace.getConfiguration("vscode-clearcase");
+    const config = workspace.getConfiguration("vscode-clearcase");
     if (config) {
       this.mChangeIdents = [];
       this.setChangeConfigDate<boolean>(config, "showVersionInStatusbar", this.mConfiguration.showStatusbar);
@@ -59,23 +59,24 @@ export class CCConfigHandler {
       this.setChangeConfigDate<boolean>(config, "isWslEnvironment", this.mConfiguration.isWslEnv);
       this.setChangeConfigDate<string>(config, "tempDir", this.mConfiguration.tempDir);
       this.setChangeConfigDate<boolean>(config, "cleartool.undoCheckoutKeepFile", this.mConfiguration.uncoKeepFile);
-      this.setChangeConfigDate<boolean>(config, "remoteCleartool.enable", this.mConfiguration.UseRemoteClient);
+      this.setChangeConfigDate<boolean>(config, "remoteCleartool.enable", this.mConfiguration.useRemoteClient);
       this.setChangeConfigDate<string>(
         config,
         "remoteCleartool.webviewUsername",
-        this.mConfiguration.WebserverUsername
+        this.mConfiguration.webserverUsername
       );
       this.setChangeConfigDate<string>(
         config,
         "remoteCleartool.webviewPassword",
-        this.mConfiguration.WebserverPassword
+        this.mConfiguration.webserverPassword
       );
-      this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.WebserverAddress);
+      this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.webserverAddress);
 
       return true;
     }
     return false;
   }
+
   private handleChangedConfig(): void {
     if (this.loadConfig()) {
       this.mConfigChanged.fire(this.mChangeIdents);

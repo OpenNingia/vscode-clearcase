@@ -69,7 +69,7 @@ export class CCScmResource implements SourceControlResourceState {
     return { strikeThrough, faded, tooltip, light, dark };
   }
 
-  public static sort(a: SourceControlResourceState, b: SourceControlResourceState) {
+  static sort(a: SourceControlResourceState, b: SourceControlResourceState): 1 | -1 | 0 {
     if (a.resourceUri.fsPath < b.resourceUri.fsPath) {
       return -1;
     }

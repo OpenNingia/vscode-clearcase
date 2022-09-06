@@ -1,12 +1,7 @@
-//@ts-check
+import * as path from 'path';
+import * as webpack from 'webpack';
 
-'use strict';
-
-const path = require('path');
-const webpack = require('webpack');
-
-/**@type {import('webpack').Configuration}*/
-const config = {
+const config: webpack.Configuration = {
   target: 'async-node', // vscode extensions run in webworker context for VS Code web 📖 -> https://webpack.js.org/configuration/target/#target
 
   entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
@@ -48,7 +43,8 @@ const config = {
     ]
   },
   resolveLoader: {
-    modules: ['node_modules']   
+    modules: ['node_modules']
   }
 };
-module.exports = config;
+
+export default config;

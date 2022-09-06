@@ -2,64 +2,60 @@ import { CCConfigHandler } from "./ccConfigHandler";
 import { ClearCase } from "./clearcase";
 import { existsSync } from "fs";
 import {
-  Disposable,
-  ExtensionContext,
   StatusBarAlignment,
   StatusBarItem,
+  TextDocument,
   TextEditor,
   TextEditorViewColumnChangeEvent,
   Uri,
   window,
   workspace,
 } from "vscode";
+import { IDisposable } from "./model";
 
-export class UIInformation {
-  private mStatusbar: StatusBarItem | null;
-  private mIsActive: boolean;
+export class UIInformation implements IDisposable {
+  private mStatusbar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
+  private mIsActive = true;
+  private mDisposables: IDisposable[] = [];
 
-  public constructor(
-    private mContext: ExtensionContext,
-    private mDisposables: Disposable[],
+  constructor(
     private mConfigHandler: CCConfigHandler,
     private mEditor: TextEditor | undefined,
     private mClearcase: ClearCase | null
   ) {
-    this.mIsActive = true;
     this.handleConfigState();
-    this.mStatusbar = null;
-  }
 
-  public createStatusbarItem() {
-    this.mStatusbar = window.createStatusBarItem(StatusBarAlignment.Left);
-  }
-
-  public bindEvents() {
     // configuration change event
-    this.mConfigHandler.onDidChangeConfiguration(this.handleConfigState, this);
+    this.mConfigHandler.onDidChangeConfiguration(() => this.handleConfigState());
 
-    this.mDisposables.push(workspace.onDidOpenTextDocument(this.receiveDocument, this));
-    this.mDisposables.push(workspace.onDidSaveTextDocument(this.receiveDocument, this));
-    this.mDisposables.push(window.onDidChangeActiveTextEditor(this.receiveEditor, this));
-    this.mDisposables.push(window.onDidChangeTextEditorViewColumn(this.receiveEditorColumn, this));
+    this.mDisposables.push(workspace.onDidOpenTextDocument((document) => this.receiveDocument(document)));
+    this.mDisposables.push(workspace.onDidSaveTextDocument((document) => this.receiveDocument(document)));
+    this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.receiveEditor(editor)));
+    this.mDisposables.push(window.onDidChangeTextEditorViewColumn((event) => this.receiveEditorColumn(event)));
+    if (this.mClearcase) {
+      this.mDisposables.push(this.mClearcase.onCommandExecuted(() => { this.initialQuery(); }));
+    }
+
+    this.initialQuery();
   }
 
-  public receiveEditorColumn(event: TextEditorViewColumnChangeEvent) {
+  private receiveEditorColumn(event: TextEditorViewColumnChangeEvent) {
     if (event && this.mIsActive) {
       this.mEditor = event.textEditor;
       this.queryVersionInformation(this.mEditor.document.uri);
     }
   }
 
-  public receiveDocument(event: any) {
-    if (event && this.mIsActive && existsSync(event.uri.fsPath)) {
-      this.queryVersionInformation(event.uri);
+  private receiveDocument(document: TextDocument) {
+    if (document && this.mIsActive && existsSync(document.uri.fsPath)) {
+      this.queryVersionInformation(document.uri);
     }
   }
 
-  public receiveEditor(event: TextEditor | undefined) {
-    if (event && this.mIsActive) {
-      this.mEditor = event;
-      this.queryVersionInformation(event.document.uri);
+  private receiveEditor(editor: TextEditor | undefined) {
+    if (editor && this.mIsActive) {
+      this.mEditor = editor;
+      this.queryVersionInformation(editor.document.uri);
     }
   }
 
@@ -73,24 +69,20 @@ export class UIInformation {
     }
   }
 
-  public initialQuery() {
-    if (this.mIsActive && this.mEditor && this.mEditor.document) {
+  initialQuery(): void {
+    if (this.mIsActive && this.mEditor?.document) {
       this.queryVersionInformation(this.mEditor.document.uri);
     }
   }
 
-  public queryVersionInformation(iUri: Uri) {
+  private queryVersionInformation(iUri: Uri) {
     this.mClearcase
       ?.getVersionInformation(iUri)
-      .then((value) => {
-        this.updateStatusbar(value);
-      })
-      .catch((error) => {
-        this.updateStatusbar("");
-      });
+      .then((value) => this.updateStatusbar(value))
+      .catch(() => this.updateStatusbar(""));
   }
 
-  public async updateStatusbar(iFileInfo: string) {
+  private async updateStatusbar(iFileInfo: string) {
     if (iFileInfo !== undefined) {
       if ((await this.mClearcase?.hasConfigspec()) === true || iFileInfo !== "") {
         let version = "view private";
@@ -109,8 +101,8 @@ export class UIInformation {
     }
   }
 
-  public dispose() {
+  dispose(): void {
     this.mStatusbar?.dispose();
-    this.mDisposables.forEach(disposable => disposable.dispose());
+    this.mDisposables.forEach((disposable) => disposable.dispose());
   }
 }

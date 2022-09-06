@@ -1,4 +1,4 @@
-import { Event, Disposable, Uri, workspace } from "vscode";
+import { Event, Uri, workspace } from "vscode";
 
 export interface IDisposable {
   dispose(): void;
@@ -10,41 +10,35 @@ export function dispose<T extends IDisposable>(disposables: T[]): T[] {
 }
 
 export class ModelHandler {
-  private mModels: Model[] | undefined;
+  private mModels: Model[] = [];
 
-  public constructor() { }
-
-  public init() {
-    this.mModels = [];
-  }
-
-  public addWatcher(filter: string = "**"): Model {
-    let lM = new Model();
+  addWatcher(filter = "**"): Model {
+    const lM = new Model();
     lM.init(filter);
     this.mModels?.push(lM);
     return lM;
   }
 }
 
-export class Model implements Disposable {
-  private disposables: Disposable[] = [];
+export class Model implements IDisposable {
+  private disposables: IDisposable[] = [];
   private _onWorkspaceCreated!: Event<Uri>;
   private _onWorkspaceChanged!: Event<Uri>;
   private _onWorkspaceDeleted!: Event<Uri>;
 
-  public get onWorkspaceCreated(): Event<Uri> {
+  get onWorkspaceCreated(): Event<Uri> {
     return this._onWorkspaceCreated;
   }
-  public get onWorkspaceChanged(): Event<Uri> {
+
+  get onWorkspaceChanged(): Event<Uri> {
     return this._onWorkspaceChanged;
   }
-  public get onWorkspaceDeleted(): Event<Uri> {
+
+  get onWorkspaceDeleted(): Event<Uri> {
     return this._onWorkspaceDeleted;
   }
 
-  constructor() { }
-
-  public init(filter: string = "**") {
+  init(filter = "**"): void {
     const fsWatcher = workspace.createFileSystemWatcher(filter);
     this._onWorkspaceCreated = fsWatcher.onDidCreate;
     this._onWorkspaceChanged = fsWatcher.onDidChange;

@@ -1,7 +1,6 @@
 import {
   DecorationOptions,
   DecorationRenderOptions,
-  ExtensionContext,
   Range,
   TextEditor,
   TextEditorDecorationType,
@@ -9,17 +8,18 @@ import {
 } from "vscode";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { CCConfiguration } from "./ccConfiguration";
+import { IDisposable } from "./model";
 
-export class CCAnnotationController {
+export class CCAnnotationController implements IDisposable {
   private mDecorationType: TextEditorDecorationType;
-  private mIsActive: boolean;
+  private mIsActive = false;
   private mConfiguration: CCConfiguration;
+  private mDisposables: IDisposable[] = [];
 
-  constructor(private editor: TextEditor, private context: ExtensionContext, private configHandler: CCConfigHandler) {
-    this.mIsActive = false;
-    window.onDidChangeActiveTextEditor(this.onActiveEditorChange, this, this.context.subscriptions);
-    this.configHandler.onDidChangeConfiguration(this.onConfigurationChanged, this);
-    let ro: DecorationRenderOptions = {
+  constructor(private editor: TextEditor, private configHandler: CCConfigHandler) {
+    this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChange(editor)));
+    this.mDisposables.push(this.configHandler.onDidChangeConfiguration(() => this.onConfigurationChanged()));
+    const ro: DecorationRenderOptions = {
       isWholeLine: false,
       before: {
         margin: "0 1em 0 0",
@@ -32,24 +32,24 @@ export class CCAnnotationController {
     this.mConfiguration = this.configHandler.configuration;
   }
 
-  onActiveEditorChange(event: TextEditor | undefined): any {
-    if (event) {
+  private onActiveEditorChange(editor: TextEditor | undefined): void {
+    if (editor) {
       this.mIsActive = false;
-      this.editor = event;
+      this.editor = editor;
     }
   }
 
-  onConfigurationChanged() {
+  private onConfigurationChanged() {
     this.mConfiguration = this.configHandler.configuration;
   }
 
-  setAnnotationInText(annotationText: string) {
+  setAnnotationInText(annotationText: string): void {
     let deco: DecorationOptions[] = [];
-    let maxWidth: number = 0;
+    let maxWidth = 0;
     if (this.mIsActive === false) {
-      let textLines = annotationText.split(/[\n\r]+/);
-      let textLineParts = textLines.map((l) => {
-        let parts = l.split(" | ");
+      const textLines = annotationText.split(/[\n\r]+/);
+      const textLineParts = textLines.map((l) => {
+        const parts = l.split(" | ");
         parts[0] = parts[0].replace(/\\/g, "/");
         if (parts[0].length > maxWidth) {
           maxWidth = parts[0].length;
@@ -64,26 +64,20 @@ export class CCAnnotationController {
     this.editor.setDecorations(this.mDecorationType, deco);
   }
 
-  getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
-    let max: number = 0;
-    let deco: DecorationOptions[] = [];
+  private getDecoration(iLines: string[][], iMaxWidth: number): DecorationOptions[] {
+    const deco: DecorationOptions[] = [];
     for (let lineNr = 0; lineNr < iLines.length; lineNr++) {
       let line = iLines[lineNr][0].replace(/ /gi, "\u00A0");
       while (line.length < iMaxWidth) {
         line = line.concat("\u00A0");
       }
-      deco.push(this.createLineDecoration(line, lineNr, 0, max));
+      deco.push(this.createLineDecoration(line, lineNr, 0));
     }
     return deco;
   }
 
-  private createLineDecoration(
-    iLinePart: string,
-    iLineNr: number,
-    iCharStart: number,
-    iWidth: number
-  ): DecorationOptions {
-    let charLen = iLinePart.length;
+  private createLineDecoration(iLinePart: string, iLineNr: number, iCharStart: number): DecorationOptions {
+    const charLen = iLinePart.length;
     let range = window.activeTextEditor?.document.validateRange(new Range(iLineNr, iCharStart, iLineNr, charLen));
     if (range === undefined) {
       range = new Range(0, 0, 0, 0);
@@ -101,5 +95,7 @@ export class CCAnnotationController {
     };
   }
 
-  dispose() {}
+  dispose(): void {
+    // do nothing.
+  }
 }

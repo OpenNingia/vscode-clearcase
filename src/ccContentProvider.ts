@@ -1,16 +1,30 @@
-import { workspace, Uri, Disposable, TextDocumentContentProvider, QuickDiffProvider, CancellationToken } from "vscode";
+import {
+  workspace,
+  Uri,
+  TextDocumentContentProvider,
+  QuickDiffProvider,
+  CancellationToken,
+  ProviderResult,
+} from "vscode";
 import { ClearCase } from "./clearcase";
+import { IDisposable } from "./model";
 import { toCcUri, fromCcUri } from "./uri";
 
-export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, Disposable {
-  constructor(private mCcHandler: ClearCase | null, private m_disposals: Disposable[]) {
+export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, IDisposable {
+  private mDisposals: IDisposable[] = [];
+
+  constructor(private mCcHandler: ClearCase | null) {
     if (this.mCcHandler !== null) {
-      this.m_disposals.push(workspace.registerTextDocumentContentProvider("cc", this));
-      this.m_disposals.push(workspace.registerTextDocumentContentProvider("cc-orig", this));
+      this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc", this));
+      this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc-orig", this));
     }
   }
 
-  async provideTextDocumentContent(uri: Uri, token: CancellationToken): Promise<string> {
+  provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
+    return this.getTextDocumentContent(uri, token);
+  }
+
+  private async getTextDocumentContent(uri: Uri, token: CancellationToken): Promise<string> {
     if (token.isCancellationRequested === true) {
       return "canceled";
     }
@@ -19,7 +33,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       uri = uri.with({ scheme: "cc", path: uri.query });
     }
 
-    let { path, version } = fromCcUri(uri);
+    const { path, version } = fromCcUri(uri);
 
     try {
       return this.mCcHandler ? await this.mCcHandler.readFileAtVersion(path, version) : "";
@@ -30,14 +44,22 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
     return "";
   }
 
-  async provideOriginalResource(uri: Uri): Promise<Uri | undefined> {
+  provideOriginalResource(uri: Uri, token: CancellationToken): ProviderResult<Uri> {
+    return this.getOriginalResource(uri, token);
+  }
+
+  async getOriginalResource(uri: Uri, token?: CancellationToken): Promise<Uri | undefined> {
+    if (token?.isCancellationRequested === true) {
+      return undefined;
+    }
+
     if (uri.scheme !== "file") {
       return;
     }
 
-    let currentVersion = this.mCcHandler ? await this.mCcHandler.getVersionInformation(uri, false) : "";
+    const currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? "";
     if (currentVersion !== "") {
-      let isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
+      const isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
 
       if (isCheckedOut) {
         return toCcUri(uri, currentVersion.replace("CHECKEDOUT", "LATEST"));
@@ -47,6 +69,6 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
   }
 
   dispose(): void {
-    this.m_disposals.forEach((d) => d.dispose());
+    this.mDisposals.forEach((d) => d.dispose());
   }
 }
