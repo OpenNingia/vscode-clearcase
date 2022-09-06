@@ -2,8 +2,6 @@ import { CCConfigHandler } from "./ccConfigHandler";
 import { ClearCase } from "./clearcase";
 import { existsSync } from "fs";
 import {
-  Disposable,
-  ExtensionContext,
   StatusBarAlignment,
   StatusBarItem,
   TextDocument,
@@ -13,28 +11,20 @@ import {
   window,
   workspace,
 } from "vscode";
+import { IDisposable } from "./model";
 
-export class UIInformation {
-  private mStatusbar: StatusBarItem | null;
-  private mIsActive: boolean;
+export class UIInformation implements IDisposable {
+  private mStatusbar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
+  private mIsActive = true;
+  private mDisposables: IDisposable[] = [];
 
   constructor(
-    private mContext: ExtensionContext,
-    private mDisposables: Disposable[],
     private mConfigHandler: CCConfigHandler,
     private mEditor: TextEditor | undefined,
     private mClearcase: ClearCase | null
   ) {
-    this.mIsActive = true;
     this.handleConfigState();
-    this.mStatusbar = null;
-  }
 
-  createStatusbarItem(): void {
-    this.mStatusbar = window.createStatusBarItem(StatusBarAlignment.Left);
-  }
-
-  bindEvents(): void {
     // configuration change event
     this.mConfigHandler.onDidChangeConfiguration(() => this.handleConfigState());
 
@@ -42,6 +32,11 @@ export class UIInformation {
     this.mDisposables.push(workspace.onDidSaveTextDocument((document) => this.receiveDocument(document)));
     this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.receiveEditor(editor)));
     this.mDisposables.push(window.onDidChangeTextEditorViewColumn((event) => this.receiveEditorColumn(event)));
+    if (this.mClearcase) {
+      this.mDisposables.push(this.mClearcase.onCommandExecuted(() => { this.initialQuery(); }));
+    }
+
+    this.initialQuery();
   }
 
   private receiveEditorColumn(event: TextEditorViewColumnChangeEvent) {

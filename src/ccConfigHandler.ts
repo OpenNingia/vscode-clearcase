@@ -1,23 +1,23 @@
 "use strict";
 
-import { Disposable, Event, EventEmitter, ExtensionContext, workspace, WorkspaceConfiguration } from "vscode";
+import { Event, EventEmitter, workspace, WorkspaceConfiguration } from "vscode";
 import { CCConfiguration, ConfigurationProperty } from "./ccConfiguration";
+import { IDisposable } from "./model";
 
-export class CCConfigHandler {
-  private mConfigChanged: EventEmitter<string[]>;
-  private mConfiguration: CCConfiguration;
-  private mChangeIdents: string[];
+export class CCConfigHandler implements IDisposable {
+  private mConfigChanged = new EventEmitter<string[]>();
+  private mConfiguration = new CCConfiguration();
+  private mChangeIdents: string[] = [];
+  private mDisposables: IDisposable[] = [];
 
-  constructor(private context: ExtensionContext, private disposables: Disposable[]) {
-    this.mChangeIdents = [];
-    this.mConfigChanged = new EventEmitter<string[]>();
-    this.mConfiguration = new CCConfiguration();
-
+  constructor() {
     this.loadConfig();
 
-    this.disposables.push(
-      workspace.onDidChangeConfiguration(() => this.handleChangedConfig(), this, this.context.subscriptions)
-    );
+    this.mDisposables.push(workspace.onDidChangeConfiguration(() => this.handleChangedConfig()));
+  }
+
+  dispose(): void {
+    this.mDisposables.forEach((d) => d.dispose());
   }
 
   get onDidChangeConfiguration(): Event<string[]> {
@@ -76,7 +76,7 @@ export class CCConfigHandler {
     }
     return false;
   }
-  
+
   private handleChangedConfig(): void {
     if (this.loadConfig()) {
       this.mConfigChanged.fire(this.mChangeIdents);

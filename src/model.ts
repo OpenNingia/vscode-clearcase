@@ -1,4 +1,4 @@
-import { Event, Disposable, Uri, workspace } from "vscode";
+import { Event, Uri, workspace } from "vscode";
 
 export interface IDisposable {
   dispose(): void;
@@ -10,11 +10,7 @@ export function dispose<T extends IDisposable>(disposables: T[]): T[] {
 }
 
 export class ModelHandler {
-  private mModels: Model[] | undefined;
-
-  init(): void {
-    this.mModels = [];
-  }
+  private mModels: Model[] = [];
 
   addWatcher(filter = "**"): Model {
     const lM = new Model();
@@ -24,8 +20,8 @@ export class ModelHandler {
   }
 }
 
-export class Model implements Disposable {
-  private disposables: Disposable[] = [];
+export class Model implements IDisposable {
+  private disposables: IDisposable[] = [];
   private _onWorkspaceCreated!: Event<Uri>;
   private _onWorkspaceChanged!: Event<Uri>;
   private _onWorkspaceDeleted!: Event<Uri>;
@@ -33,7 +29,7 @@ export class Model implements Disposable {
   get onWorkspaceCreated(): Event<Uri> {
     return this._onWorkspaceCreated;
   }
-  
+
   get onWorkspaceChanged(): Event<Uri> {
     return this._onWorkspaceChanged;
   }

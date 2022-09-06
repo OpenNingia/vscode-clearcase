@@ -3,7 +3,6 @@ import {
   scm,
   SourceControlResourceGroup,
   Uri,
-  Disposable,
   OutputChannel,
   commands,
   workspace,
@@ -25,7 +24,7 @@ import { CCScmResource, ResourceGroupType } from "./ccScmResource";
 import { CCScmStatus } from "./ccScmStatus";
 import { ClearCase, ViewType } from "./clearcase";
 import { LocalizeFunc, loadMessageBundle } from "vscode-nls";
-import { ModelHandler } from "./model";
+import { IDisposable, ModelHandler } from "./model";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { CCAnnotationController } from "./ccAnnotateController";
 import { CCCodeLensProvider } from "./ccAnnotateLensProvider";
@@ -40,7 +39,7 @@ import { getErrorMessage } from "./errormessage";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
-export class CCScmProvider {
+export class CCScmProvider implements IDisposable {
   private mCCContentProvider: CCContentProvider | null = null;
   private mCCHandler: ClearCase | null = null;
   private mIgnoreFileEv: ModelHandler | null = null;
@@ -50,6 +49,7 @@ export class CCScmProvider {
   private mIsUpdatingUntracked: boolean | null = null;
   private mListLock: Lock | null = null;
   private mIgnores: IgnoreHandler | null = null;
+  private mDisposables: IDisposable[] = [];
 
   private mWindowChangedEvent: EventEmitter<void> = new EventEmitter<void>();
 
@@ -62,14 +62,13 @@ export class CCScmProvider {
 
   constructor(
     private mContext: ExtensionContext,
-    private mDisposables: Disposable[],
     private outputChannel: OutputChannel,
     private configHandler: CCConfigHandler
   ) { }
 
   async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
-    this.mCCHandler = new ClearCase(this.mContext, this.configHandler, this.outputChannel);
+    this.mCCHandler = new ClearCase(this.configHandler, this.outputChannel);
     if (this.configHandler.configuration.useRemoteClient.value === true) {
       if (this.configHandler.configuration.webserverPassword.value !== "") {
         if (this.clearCase) {
@@ -110,9 +109,9 @@ export class CCScmProvider {
   }
 
   private async startExtension(): Promise<boolean> {
-    let isView: boolean | undefined = false;
+    let isView = false;
     try {
-      isView = await this.mCCHandler?.checkIsView(undefined);
+      isView = (await this.mCCHandler?.checkIsView(undefined)) ?? false;
     } catch (error) {
       isView = false;
     }
@@ -129,9 +128,10 @@ export class CCScmProvider {
       this.mCCUntrackedGrp = this.mCCScm.createResourceGroup("cc_untracked", "View private");
       this.mCCCheckedoutGrp.hideWhenEmpty = true;
       this.mCCUntrackedGrp.hideWhenEmpty = true;
-      this.mCCContentProvider = new CCContentProvider(this.mCCHandler, this.mDisposables);
+      this.mCCContentProvider = new CCContentProvider(this.mCCHandler);
 
-      this.mContext.subscriptions.push(this.mCCScm);
+      this.mDisposables.push(this.mCCScm);
+      this.mDisposables.push(this.mCCContentProvider);
 
       this.mCCScm.inputBox.placeholder = "Message (press Ctrl+Enter to checkin all files)";
       this.mCCScm.acceptInputCommand = {
@@ -143,11 +143,8 @@ export class CCScmProvider {
       }
 
       this.mIgnoreFileEv = new ModelHandler();
-      this.mIgnoreFileEv.init();
       this.mIgnores = new IgnoreHandler(this.mIgnoreFileEv);
-      this.mIgnores.onFilterRefreshed.event(() => {
-        this.filterUntrackedList();
-      }, this);
+      this.mIgnores.onFilterRefreshed(() => this.filterUntrackedList());
 
       this.clearCase?.onCommandExecuted((evArgs: Uri) => {
         this.handleChangeFiles(evArgs);
@@ -169,13 +166,8 @@ export class CCScmProvider {
     return this.mCCHandler;
   }
 
-  updateIsView(): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.clearCase
-        ?.checkIsView(window.activeTextEditor)
-        .then(() => resolve(this.clearCase?.isView ?? false))
-        .catch(() => reject(false));
-    });
+  async updateIsView(): Promise<boolean> {
+    return this.clearCase?.checkIsView(window.activeTextEditor) ?? false;
   }
 
   private async handleChangeFiles(fileObj: Uri) {
@@ -502,9 +494,9 @@ export class CCScmProvider {
       );
 
       if (window.activeTextEditor !== undefined) {
-        const annoCtrl = new CCAnnotationController(window.activeTextEditor, this.mContext, this.configHandler);
+        const annoCtrl = new CCAnnotationController(window.activeTextEditor, this.configHandler);
+        this.mDisposables.push(annoCtrl);
 
-        this.mContext.subscriptions.push(annoCtrl);
         this.mDisposables.push(
           commands.registerCommand(
             "extension.ccAnnotate",
@@ -518,10 +510,10 @@ export class CCScmProvider {
         );
       }
 
-      this.mContext.subscriptions.push(
+      this.mDisposables.push(
         languages.registerCodeLensProvider(
           CCCodeLensProvider.selector,
-          new CCCodeLensProvider(this.mContext, this.configHandler, this)
+          new CCCodeLensProvider(this.configHandler, this)
         )
       );
     }
@@ -689,7 +681,7 @@ export class CCScmProvider {
         preview: true,
       };
 
-      const prevUri = await this.mCCContentProvider?.provideOriginalResource(fileObj);
+      const prevUri = await this.mCCContentProvider?.getOriginalResource(fileObj);
       if (prevUri !== undefined) {
         const fn = path.basename(fileObj.fsPath);
         const { version } = fromCcUri(prevUri);

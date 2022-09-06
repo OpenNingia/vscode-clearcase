@@ -2,14 +2,13 @@ import { accessSync } from "fs";
 import { workspace } from "vscode";
 
 class FileType {
-  constructor(public found: boolean, public name: string) {}
+  constructor(public found: boolean, public name: string) { }
 }
 
 export class MappedList {
-  private mUntrackedList: Map<string, FileType[]> | null;
+  private mUntrackedList: Map<string, FileType[]> | null = null;
 
   constructor() {
-    this.mUntrackedList = null;
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
       this.mUntrackedList = new Map<string, FileType[]>();
       workspace.workspaceFolders.forEach((val) => {
