@@ -309,7 +309,7 @@ export class ClearCase {
       try {
         await this.runCleartoolCommand(cmd, dirname(path), null, () => this.mUpdateEvent.fire(doc));
       } catch (error) {
-        this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + error);
+        this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + getErrorMessage(error));
         return false;
       }
       return true;
@@ -882,7 +882,7 @@ export class ClearCase {
 
     const outputChannel = this.outputChannel;
     const isView = this.isView;
-   
+
     return new Promise<void>((resolve, reject) => {
       let cmdErrMsg = "";
 
@@ -896,9 +896,9 @@ export class ClearCase {
         if (typeof data === "string") {
           res = data;
           allDataStr += data;
-        } else {
+        } else if (Buffer.isBuffer(data)) {
           allData = Buffer.concat([allData, data], allData.length + data.length);
-          res = JSON.stringify(data);
+          res = data.toString();
         }
         if (onData !== null && typeof onData === "function") {
           onData(res.split(/\r\n|\r|\n/).filter((s: string) => s.length > 0));
@@ -906,11 +906,11 @@ export class ClearCase {
       });
 
       command.stderr.on("data", (data) => {
-        let msg: string;
+        let msg = "";
         if (typeof data === "string") {
           msg = data;
-        } else {
-          msg = JSON.stringify(data);
+        } else if (Buffer.isBuffer(data)) {
+          msg = data.toString();
         }
         if (onError !== undefined && typeof onError === "function") {
           onError(msg);
