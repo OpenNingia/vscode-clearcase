@@ -1,5 +1,21 @@
 ## Release Notes
 
+### 4.2.0
+
+_Feature_
+
+- context entries are dependend of file state (checkout/checkin)
+
+_Bugfix_
+
+Thanks to @jmue
+
+- #120
+- #121
+- #122
+- #123
+- #124
+
 ### 4.1.1
 
 _Bugfix_
