@@ -64,7 +64,7 @@ export class CCScmProvider implements IDisposable {
     private mContext: ExtensionContext,
     private outputChannel: OutputChannel,
     private configHandler: CCConfigHandler
-  ) { }
+  ) {}
 
   async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
@@ -227,6 +227,8 @@ export class CCScmProvider implements IDisposable {
         }
       } catch (error) {
         this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
+      } finally {
+        this.mWindowChangedEvent.fire();
       }
     }
     this.mListLock?.release();

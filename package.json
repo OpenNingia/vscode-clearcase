@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "4.1.1",
+  "version": "4.2.0-rc.1",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -15,7 +15,7 @@
   },
   "icon": "Assets/images/icon.png",
   "engines": {
-    "vscode": "^1.56.0"
+    "vscode": "^1.70.0"
   },
   "categories": [
     "Programming Languages",
@@ -253,7 +253,7 @@
         {
           "command": "extension.ccCheckout",
           "group": "cc@2",
-          "when": "vscode-clearcase:enabled"
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccItemProperties",
@@ -285,7 +285,7 @@
         {
           "command": "extension.ccCheckout",
           "group": "cc@2",
-          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
         },
         {
           "command": "extension.ccComparePrevious",
@@ -680,7 +680,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
+    "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "deploy": "vsce publish",
     "webpack": "webpack --mode development",
