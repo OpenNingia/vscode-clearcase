@@ -123,10 +123,7 @@ export class ClearCase {
 
   private mWebviewPassword = "";
 
-  constructor(
-    private configHandler: CCConfigHandler,
-    private outputChannel: OutputChannel
-  ) {
+  constructor(private configHandler: CCConfigHandler, private outputChannel: OutputChannel) {
     if (this.configHandler.configuration.useRemoteClient.value === true) {
       this.mExecCmd = new Cleartool(
         this.configHandler.configuration.webserverUsername.value,
@@ -229,19 +226,21 @@ export class ClearCase {
     return false;
   }
 
-  async execOnSCMFile(doc: Uri, func: (arg: Uri) => void): Promise<void> {
-    const path = doc.fsPath;
+  async execOnSCMFile(docs: Uri[], func: (arg: Uri) => void): Promise<void> {
+    for (const doc of docs) {
+      const path = doc.fsPath;
 
-    await this.runCleartoolCommand(
-      new CCArgs(["ls"], path),
-      dirname(path),
-      null,
-      () => func(doc),
-      (error: string) => {
-        this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
-        window.showErrorMessage(`${path} is not a valid ClearCase object.`);
-      }
-    );
+      await this.runCleartoolCommand(
+        new CCArgs(["ls"], path),
+        dirname(path),
+        null,
+        () => func(doc),
+        (error: string) => {
+          this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
+          window.showErrorMessage(`${path} is not a valid ClearCase object.`);
+        }
+      );
+    }
   }
 
   runClearCaseExplorer(doc: Uri): void {
