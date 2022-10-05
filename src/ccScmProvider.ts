@@ -525,7 +525,7 @@ export class CCScmProvider implements IDisposable {
     this.mDisposables.push(
       commands.registerCommand(
         cmdName,
-        (fileObj: Uri | CCScmResource) => {
+        (fileObj: Uri | CCScmResource, additional?: Uri[] | CCScmResource[]) => {
           let file: Uri | null = null;
           if (fileObj instanceof Uri) {
             file = fileObj;
@@ -538,8 +538,22 @@ export class CCScmProvider implements IDisposable {
               file = window.activeTextEditor.document.uri;
             }
           }
-          if (file !== null) {
-            this.clearCase?.execOnSCMFile(file, cmd);
+          let files: Uri[] = [];
+          if (additional && additional?.length > 0) {
+            files = additional.map((v: Uri | CCScmResource) => {
+              if (v instanceof Uri) {
+                return v;
+              }
+              if (v instanceof CCScmResource) {
+                return v.resourceUri;
+              }
+              return Uri.parse("");
+            });
+          } else if (file !== null) {
+            files.push(file);
+          }
+          if (files.length > 0) {
+            this.clearCase?.execOnSCMFile(files, cmd);
           }
         },
         this
