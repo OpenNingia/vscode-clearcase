@@ -64,7 +64,7 @@ export class CCScmProvider implements IDisposable {
     private mContext: ExtensionContext,
     private outputChannel: OutputChannel,
     private configHandler: CCConfigHandler
-  ) {}
+  ) { }
 
   async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
@@ -521,7 +521,7 @@ export class CCScmProvider implements IDisposable {
     }
   }
 
-  private registerCommand(cmdName: string, cmd: (fileObj: Uri) => void) {
+  private registerCommand(cmdName: string, cmd: (fileObj: Uri[]) => void) {
     this.mDisposables.push(
       commands.registerCommand(
         cmdName,
@@ -656,7 +656,7 @@ export class CCScmProvider implements IDisposable {
           this.clearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
             if (state === true) {
               this.clearCase
-                ?.checkoutFile(event.document.uri)
+                ?.checkoutFile([event.document.uri])
                 .then((isCheckedOut) => {
                   if (isCheckedOut === true) {
                     event.document.save();
