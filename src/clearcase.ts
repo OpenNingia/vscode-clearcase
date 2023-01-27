@@ -237,10 +237,12 @@ export class ClearCase {
       new CCArgs(["ls"], [docs[0]?.fsPath]),
       dirname(docs[0]?.fsPath),
       null,
-      () => func(docs),
-      (error: string) => {
-        this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
-        window.showErrorMessage(`${docs[0]?.fsPath} is not a valid ClearCase object.`);
+      (code: number, _output: string, error: string) => {
+        if (code !== 0 || error.length > 0) {
+          window.showErrorMessage(`${docs[0]?.fsPath} is not a valid ClearCase object.`);
+        } else {
+          func(docs);
+        }
       }
     );
   }
@@ -668,8 +670,10 @@ export class ClearCase {
         new CCArgs(["update"], [updateFsObj]),
         cwd,
         () => this.mUpdateEvent.fire([filePath]),
-        (result: string) => (resultOut = result),
-        (error: string) => (errorRes = error)
+        (_code: number, output: string, error: string) => {
+          errorRes = error;
+          resultOut = output;
+        }
       );
       if (errorRes.length > 0) {
         throw new Error(errorRes);
@@ -919,19 +923,16 @@ export class ClearCase {
       });
 
       command.on("close", (code) => {
-        if (code !== 0) {
-          outputChannel.appendLine(cmdErrMsg);
-          if (isView && cmdErrMsg !== "") {
-            window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
-            reject(cmdErrMsg);
-          }
-          if (typeof onFinished === "function") {
-            onFinished("error");
-          }
-        } else {
-          if (typeof onFinished === "function") {
-            onFinished(allData.length > 0 ? allData.toString() : allDataStr);
-          }
+        if (cmdErrMsg !== "") {
+          //  If something was printed on stderr, log it, regardless of the exit code
+          outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
+        }
+        if (code !== 0 && isView && cmdErrMsg !== "") {
+          window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+          reject(cmdErrMsg);
+        }
+        if (typeof onFinished === "function") {
+          onFinished(code, allData.length > 0 ? allData.toString() : allDataStr, cmdErrMsg);
         }
         resolve();
       });
