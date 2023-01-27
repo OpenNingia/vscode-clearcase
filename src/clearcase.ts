@@ -39,34 +39,40 @@ export enum ViewType {
 
 export class CCArgs {
   public params: string[] = [];
-  private mFile: string | undefined;
+  private mFiles: string[] = [];
   private mVersion: string | undefined;
 
-  constructor(params: string[], file?: string, version?: string) {
+  constructor(params: string[], file?: string[], version?: string) {
     this.params = [...params];
-    this.mFile = file;
+    if (file) {
+      this.mFiles = [...file];
+    }
     this.mVersion = version;
   }
 
   private toString(): string {
-    return this.params.reduce((a: string, s: string) => `${a} ${s}`) + ` ${this.mFile}`;
+    return this.params.reduce((a: string, s: string) => `${a} ${s}`) + ` ${this.mFiles}`;
   }
 
   getCmd(): string[] {
-    if (this.mFile !== undefined && this.mVersion === undefined) {
-      return [...this.params, this.mFile];
-    } else if (this.mFile !== undefined && this.mVersion !== undefined && this.mVersion !== "") {
-      return [...this.params, `${this.mFile}@@${this.mVersion}`];
+    if (this.mFiles !== undefined && this.mVersion === undefined) {
+      return [...this.params, ...this.mFiles];
+    } else if (this.mFiles !== undefined && this.mVersion !== undefined && this.mVersion !== "") {
+      return [...this.params, `${this.mFiles[0]}@@${this.mVersion}`];
     }
     return this.params;
   }
 
-  get file(): string | undefined {
-    return this.mFile;
+  get files(): string[] {
+    return this.mFiles;
   }
 
-  set file(v: string | undefined) {
-    this.mFile = v;
+  set files(v: string[]) {
+    this.mFiles = [...v];
+  }
+
+  set file(v: string) {
+    this.mFiles.push(v);
   }
 }
 
@@ -116,7 +122,7 @@ export class ClearCase {
 
   private mIsCCView = false;
   private mViewType: ViewType = ViewType.unknown;
-  private mUpdateEvent = new EventEmitter<Uri>();
+  private mUpdateEvent = new EventEmitter<Uri[]>();
 
   private mUntrackedList = new MappedList();
   private mExecCmd: CleartoolIf;
@@ -161,7 +167,7 @@ export class ClearCase {
     return this.mViewType;
   }
 
-  get onCommandExecuted(): Event<Uri> {
+  get onCommandExecuted(): Event<Uri[]> {
     return this.mUpdateEvent.event;
   }
 
@@ -226,38 +232,32 @@ export class ClearCase {
     return false;
   }
 
-  async execOnSCMFile(docs: Uri[], func: (arg: Uri) => void): Promise<void> {
-    for (const doc of docs) {
-      const path = doc.fsPath;
-
-      await this.runCleartoolCommand(
-        new CCArgs(["ls"], path),
-        dirname(path),
-        null,
-        (code: number, _output: string, error: string) => {
-          if (code !== 0 || error.length > 0) {
-            window.showErrorMessage(`${path} is not a valid ClearCase object.`);
-          } else {
-            func(doc);
-          }
-        }
-      );
-    }
+  async execOnSCMFile(docs: Uri[], func: (arg: Uri[]) => void): Promise<void> {
+    await this.runCleartoolCommand(
+      new CCArgs(["ls"], [docs[0]?.fsPath]),
+      dirname(docs[0]?.fsPath),
+      null,
+      () => func(docs),
+      (error: string) => {
+        this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
+        window.showErrorMessage(`${docs[0]?.fsPath} is not a valid ClearCase object.`);
+      }
+    );
   }
 
-  runClearCaseExplorer(doc: Uri): void {
-    const path = doc.fsPath;
-    exec('clearexplorer "' + path + '"');
+  runClearCaseExplorer(docs: Uri[]): void {
+    exec('clearexplorer "' + docs[0]?.fsPath + '"');
   }
 
-  async checkoutFile(doc: Uri): Promise<boolean> {
-    const path = doc.fsPath;
+  async checkoutFile(docs: Uri[]): Promise<boolean> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     const coArgTmpl = this.configHandler.configuration.checkoutCommand.value;
     const defComment = this.configHandler.configuration.defaultComment.value;
 
     if (useClearDlg) {
-      exec('cleardlg /checkout "' + path + '"', () => this.mUpdateEvent.fire(doc));
+      for (const doc of docs) {
+        exec(`cleardlg /checkout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+      }
       return true;
     } else {
       let comment = "";
@@ -292,12 +292,20 @@ export class ClearCase {
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        cmd.params[idx] = this.wslPath(path, false);
-      } else {
-        cmd.file = path;
+        if (docs.length === 1) {
+          cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+        } else {
+          cmd.params[idx] = "";
+        }
       }
+      if (docs.length > 1 || idx === -1) {
+        cmd.files = docs.map((d: Uri) => {
+          return this.wslPath(d.fsPath, false);
+        });
+      }
+
       try {
-        await this.runCleartoolCommand(cmd, dirname(path), null, () => this.mUpdateEvent.fire(doc));
+        await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
       } catch (error) {
         this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + getErrorMessage(error));
         return false;
@@ -315,7 +323,7 @@ export class ClearCase {
       if (this.isReadOnly(doc) === false) {
         try {
           await doc.save();
-          this.mUpdateEvent.fire(doc.uri);
+          this.mUpdateEvent.fire([doc.uri]);
         } catch (error) {
           // do nothing.
         }
@@ -325,38 +333,45 @@ export class ClearCase {
     });
   }
 
-  async undoCheckoutFile(doc: Uri): Promise<void> {
-    const path = doc.fsPath;
+  async undoCheckoutFile(docs: Uri[]): Promise<void> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
-      exec('cleardlg /uncheckout "' + path + '"', () => this.mUpdateEvent.fire(doc));
+      for (const doc of docs) {
+        exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+      }
     } else {
       const uncoKeepFile = this.configHandler.configuration.uncoKeepFile.value;
       let rm = "-rm";
       if (uncoKeepFile) {
         rm = "-keep";
       }
-      await this.runCleartoolCommand(new CCArgs(["unco", rm], path), dirname(path), null, () =>
-        this.mUpdateEvent.fire(doc)
+      const files = docs.map((d: Uri) => {
+        return this.wslPath(d.fsPath, false);
+      });
+
+      await this.runCleartoolCommand(new CCArgs(["unco", rm], files), dirname(docs[0]?.fsPath), null, () =>
+        this.mUpdateEvent.fire(docs)
       );
     }
   }
 
-  async createVersionedObject(doc: Uri): Promise<void> {
-    const path = doc.fsPath;
-    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], path), dirname(path), null, () =>
-      this.mUpdateEvent.fire(doc)
-    );
+  async createVersionedObject(docs: Uri[]): Promise<void> {
+    const files = docs.map((d: Uri) => {
+      return this.wslPath(d.fsPath, false);
+    });
+
+    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
   }
 
-  async checkinFile(doc: Uri): Promise<void> {
-    const path = doc.fsPath;
+  async checkinFile(docs: Uri[]): Promise<void> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     const ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
     const defComment = this.configHandler.configuration.defaultComment.value;
 
     if (useClearDlg) {
-      exec('cleardlg /checkin "' + path + '"', () => this.mUpdateEvent.fire(doc));
+      for (const doc of docs) {
+        exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+      }
     } else {
       let comment = "";
       const cmdOpts = ciArgTmpl.trim().split(/\s+/);
@@ -387,41 +402,54 @@ export class ClearCase {
         }
       }
 
-      const cmd: CCArgs = new CCArgs(["ci"], path);
+      const cmd: CCArgs = new CCArgs(["ci"]);
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        cmd.params[idx] = this.wslPath(path, false);
-      } else {
-        cmd.file = path;
+        if (docs.length === 1) {
+          cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+        } else {
+          cmd.params[idx] = "";
+        }
       }
-
-      await this.runCleartoolCommand(cmd, dirname(path), null, () => this.mUpdateEvent.fire(doc));
-    }
-  }
-
-  async checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
-    for (const fileObj of fileObjs) {
-      const cmd: CCArgs = new CCArgs(["ci", "-nc"], fileObj.fsPath);
-      if (comment !== "") {
-        cmd.params = ["ci", "-c", comment];
-      }
-      if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-        await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-          this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`);
+      if (docs.length > 1 || idx === -1) {
+        cmd.files = docs.map((d: Uri) => {
+          return this.wslPath(d.fsPath, false);
         });
       }
+
+      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
     }
   }
 
-  versionTree(doc: Uri): void {
-    const path = doc.fsPath;
-    this.runCleartoolCommand(new CCArgs(["lsvtree", "-graphical"], path), dirname(path), null);
+  async checkinFiles(docs: Uri[], comment: string): Promise<void> {
+    const cmd: CCArgs = new CCArgs(["ci"]);
+    if (comment !== "") {
+      cmd.params.push("-c");
+      cmd.params.push(comment);
+    } else {
+      cmd.params.push("-nc");
+    }
+    cmd.files = docs.map((d: Uri) => {
+      return this.wslPath(d.fsPath, false);
+    });
+    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
+      await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+        this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`);
+      });
+    }
   }
 
-  diffWithPrevious(doc: Uri): void {
-    const path = doc.fsPath;
-    this.runCleartoolCommand(new CCArgs(["diff", "-graph", "-pred"], path), dirname(path), null);
+  versionTree(docs: Uri[]): void {
+    for (const doc of docs) {
+      this.runCleartoolCommand(new CCArgs(["lsvtree", "-graphical"], [doc.fsPath]), dirname(doc.fsPath), null);
+    }
+  }
+
+  diffWithPrevious(docs: Uri[]): void {
+    for (const doc of docs) {
+      this.runCleartoolCommand(new CCArgs(["diff", "-graph", "-pred"], [doc.fsPath]), dirname(doc.fsPath), null);
+    }
   }
 
   /**
@@ -561,7 +589,7 @@ export class ClearCase {
       } else {
         let fileVers = "";
         this.runCleartoolCommand(
-          new CCArgs(["ls", "-d", "-short"], iUri.fsPath),
+          new CCArgs(["ls", "-d", "-short"], [iUri.fsPath]),
           workspace.workspaceFolders[0].uri.fsPath,
           null,
           (code: number, output: string, error: string) => {
@@ -637,13 +665,11 @@ export class ClearCase {
 
       let errorRes = "";
       await this.runCleartoolCommand(
-        new CCArgs(["update"], updateFsObj),
+        new CCArgs(["update"], [updateFsObj]),
         cwd,
-        () => this.mUpdateEvent.fire(filePath),
-        (_code: number, output: string, error: string) => {
-          errorRes = error;
-          resultOut = output;
-        }
+        () => this.mUpdateEvent.fire([filePath]),
+        (result: string) => (resultOut = result),
+        (error: string) => (errorRes = error)
       );
       if (errorRes.length > 0) {
         throw new Error(errorRes);
@@ -653,9 +679,10 @@ export class ClearCase {
     return resultOut;
   }
 
-  itemProperties(doc: Uri): void {
-    const path = doc.fsPath;
-    exec('cleardescribe "' + path + '"');
+  itemProperties(docs: Uri[]): void {
+    for (const doc of docs) {
+      exec(`cleardescribe ${doc.fsPath}`);
+    }
   }
 
   async annotate(fileUri: Uri, ctrl: CCAnnotationController): Promise<void> {
@@ -822,7 +849,7 @@ export class ClearCase {
     }
     if (workspace.workspaceFolders !== undefined) {
       await this.runCleartoolCommand(
-        new CCArgs(["get", "-to", tempFile], fsPath, version),
+        new CCArgs(["get", "-to", tempFile], [fsPath], version),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
         (_code: number, output: string, _error: string) => {
@@ -848,14 +875,12 @@ export class ClearCase {
       return Promise.reject();
     }
     // convert path to run cleartool windows cmd
-    if (cmd.file) {
-      // wsl mount point for external drives is /mnt
-      // convert backslash to slash
-      cmd.file = this.wslPath(cmd.file, false);
-    }
-    if (cmd.file !== undefined && !fs.existsSync(cmd.file)) {
-      return Promise.reject();
-    }
+    // wsl mount point for external drives is /mnt
+    // convert backslash to slash
+    cmd.files = cmd.files.map((f) => this.wslPath(f, false));
+    // if (cmd.files !== undefined && !fs.existsSync(cmd.files)) {
+    //   return Promise.reject();
+    // }
 
     const outputChannel = this.outputChannel;
     const isView = this.isView;
@@ -894,15 +919,19 @@ export class ClearCase {
       });
 
       command.on("close", (code) => {
-        if (cmdErrMsg !== "") {
-          //  If something was printed on stderr, log it, regardless of the exit code
-          outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
-        }
-        if (code !== 0 && isView && cmdErrMsg !== "") {
-          window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
-        }
-        if (typeof onFinished === "function") {
-          onFinished(code, allData.length > 0 ? allData.toString() : allDataStr, cmdErrMsg);
+        if (code !== 0) {
+          outputChannel.appendLine(cmdErrMsg);
+          if (isView && cmdErrMsg !== "") {
+            window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+            reject(cmdErrMsg);
+          }
+          if (typeof onFinished === "function") {
+            onFinished("error");
+          }
+        } else {
+          if (typeof onFinished === "function") {
+            onFinished(allData.length > 0 ? allData.toString() : allDataStr);
+          }
         }
         resolve();
       });

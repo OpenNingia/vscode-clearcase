@@ -76,10 +76,12 @@ export class UIInformation implements IDisposable {
   }
 
   private queryVersionInformation(iUri: Uri) {
-    this.mClearcase
-      ?.getVersionInformation(iUri)
-      .then((value) => this.updateStatusbar(value))
-      .catch(() => this.updateStatusbar(""));
+    if (iUri.scheme !== "output") {
+      this.mClearcase
+        ?.getVersionInformation(iUri)
+        .then((value) => this.updateStatusbar(value))
+        .catch(() => this.updateStatusbar(""));
+    }
   }
 
   private async updateStatusbar(iFileInfo: string) {

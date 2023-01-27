@@ -64,7 +64,7 @@ export class CCScmProvider implements IDisposable {
     private mContext: ExtensionContext,
     private outputChannel: OutputChannel,
     private configHandler: CCConfigHandler
-  ) {}
+  ) { }
 
   async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
@@ -146,7 +146,7 @@ export class CCScmProvider implements IDisposable {
       this.mIgnores = new IgnoreHandler(this.mIgnoreFileEv);
       this.mIgnores.onFilterRefreshed(() => this.filterUntrackedList());
 
-      this.clearCase?.onCommandExecuted((evArgs: Uri) => {
+      this.clearCase?.onCommandExecuted((evArgs: Uri[]) => {
         this.handleChangeFiles(evArgs);
       });
 
@@ -170,65 +170,65 @@ export class CCScmProvider implements IDisposable {
     return this.clearCase?.checkIsView(window.activeTextEditor) ?? false;
   }
 
-  private async handleChangeFiles(fileObj: Uri) {
+  private async handleChangeFiles(fileObjs: Uri[]) {
     let version = "";
     if (this.mListLock?.reserve()) {
-      try {
-        version = (await this.clearCase?.getVersionInformation(fileObj)) ?? "";
-        let checkoutsChanged = false;
-        let untrackedChanged = false;
-        let filteredUntracked: SourceControlResourceState[] = [];
-        const filteredCheckedout =
-          this.mCCCheckedoutGrp?.resourceStates.filter((item) => {
-            if (item.resourceUri.fsPath !== fileObj.fsPath) {
-              return true;
-            }
-
-            checkoutsChanged = true;
-            return false;
-          }) ?? [];
-        if (checkoutsChanged === false) {
-          filteredUntracked =
-            this.mCCUntrackedGrp?.resourceStates.filter((item) => {
+      for (const fileObj of fileObjs) {
+        try {
+          version = (await this.clearCase?.getVersionInformation(fileObj)) ?? "";
+          let checkoutsChanged = false;
+          let untrackedChanged = false;
+          let filteredUntracked: SourceControlResourceState[] = [];
+          const filteredCheckedout =
+            this.mCCCheckedoutGrp?.resourceStates.filter((item) => {
               if (item.resourceUri.fsPath !== fileObj.fsPath) {
                 return true;
               }
 
-              untrackedChanged = true;
+              checkoutsChanged = true;
               return false;
             }) ?? [];
-        }
-        // file is checked out, add to resource state list
-        if (version.match(/checkedout/i) !== null) {
-          filteredCheckedout?.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.modified));
-          checkoutsChanged = true;
-        }
-        // file has no version information, so it is view private
-        if (version === "" && this.clearCase !== null) {
-          if (this.clearCase.untrackedList.exists(fileObj.fsPath) === false) {
-            this.clearCase.untrackedList.addString(fileObj.fsPath);
-            this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
+          if (checkoutsChanged === false) {
+            filteredUntracked =
+              this.mCCUntrackedGrp?.resourceStates.filter((item) => {
+                if (item.resourceUri.fsPath !== fileObj.fsPath) {
+                  return true;
+                }
+
+                untrackedChanged = true;
+                return false;
+              }) ?? [];
           }
-          const ign = this.mIgnores?.getFolderIgnore(path.dirname(fileObj.fsPath));
-          if (ign !== null && ign?.ignore.ignores(fileObj.fsPath) === false) {
-            filteredUntracked.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.untracked));
-            untrackedChanged = true;
+          // file is checked out, add to resource state list
+          if (version.match(/checkedout/i) !== null) {
+            filteredCheckedout?.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.modified));
+            checkoutsChanged = true;
           }
-        }
-        if (checkoutsChanged) {
-          if (this.mCCCheckedoutGrp !== null) {
-            this.mCCCheckedoutGrp.resourceStates = filteredCheckedout?.sort((a, b) => CCScmResource.sort(a, b)) || [];
+          // file has no version information, so it is view private
+          if (version === "" && this.clearCase !== null) {
+            if (this.clearCase.untrackedList.exists(fileObj.fsPath) === false) {
+              this.clearCase.untrackedList.addString(fileObj.fsPath);
+              this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
+            }
+            const ign = this.mIgnores?.getFolderIgnore(path.dirname(fileObj.fsPath));
+            if (ign !== null && ign?.ignore.ignores(fileObj.fsPath) === false) {
+              filteredUntracked.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.untracked));
+              untrackedChanged = true;
+            }
           }
-        }
-        if (untrackedChanged) {
-          if (this.mCCUntrackedGrp !== null) {
-            this.mCCUntrackedGrp.resourceStates = filteredUntracked?.sort((a, b) => CCScmResource.sort(a, b)) || [];
+          if (checkoutsChanged) {
+            if (this.mCCCheckedoutGrp !== null) {
+              this.mCCCheckedoutGrp.resourceStates = filteredCheckedout?.sort((a, b) => CCScmResource.sort(a, b)) || [];
+            }
           }
+          if (untrackedChanged) {
+            if (this.mCCUntrackedGrp !== null) {
+              this.mCCUntrackedGrp.resourceStates = filteredUntracked?.sort((a, b) => CCScmResource.sort(a, b)) || [];
+            }
+          }
+        } catch (error) {
+          this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
         }
-      } catch (error) {
-        this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
-      } finally {
-        this.mWindowChangedEvent.fire();
       }
     }
     this.mListLock?.release();
@@ -521,7 +521,7 @@ export class CCScmProvider implements IDisposable {
     }
   }
 
-  private registerCommand(cmdName: string, cmd: (fileObj: Uri) => void) {
+  private registerCommand(cmdName: string, cmd: (fileObj: Uri[]) => void) {
     this.mDisposables.push(
       commands.registerCommand(
         cmdName,
@@ -553,7 +553,7 @@ export class CCScmProvider implements IDisposable {
             files.push(file);
           }
           if (files.length > 0) {
-            this.clearCase?.execOnSCMFile(files, cmd);
+            cmd(files);
           }
         },
         this
@@ -656,7 +656,7 @@ export class CCScmProvider implements IDisposable {
           this.clearCase.isClearcaseObject(event.document.uri).then((state: boolean) => {
             if (state === true) {
               this.clearCase
-                ?.checkoutFile(event.document.uri)
+                ?.checkoutFile([event.document.uri])
                 .then((isCheckedOut) => {
                   if (isCheckedOut === true) {
                     event.document.save();
@@ -676,7 +676,7 @@ export class CCScmProvider implements IDisposable {
           this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
         }
         if (version === "") {
-          this.handleChangeFiles(event.document.uri);
+          this.handleChangeFiles([event.document.uri]);
         }
       }
     } catch (error) {
@@ -720,12 +720,13 @@ export class CCScmProvider implements IDisposable {
   }
 
   private async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<void> {
-    await this.clearCase?.checkIsView(editor);
     this.updateCheckedOutList();
-    if (editor?.document.uri) {
-      this.updateUntrackedListWFile(editor.document.uri);
+    if (editor?.document.uri.scheme !== "output") {
+      if (editor?.document.uri) {
+        this.updateUntrackedListWFile(editor.document.uri);
+      }
+      this.mWindowChangedEvent.fire();
     }
-    this.mWindowChangedEvent.fire();
   }
 
   dispose(): void {
