@@ -44,8 +44,9 @@ export class CCArgs {
 
   constructor(params: string[], file?: string[], version?: string) {
     this.params = [...params];
-    if (file)
+    if (file) {
       this.mFiles = [...file];
+    }
     this.mVersion = version;
   }
 
@@ -254,7 +255,7 @@ export class ClearCase {
     const defComment = this.configHandler.configuration.defaultComment.value;
 
     if (useClearDlg) {
-      for (let doc of docs) {
+      for (const doc of docs) {
         exec(`cleardlg /checkout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
       }
       return true;
@@ -291,7 +292,7 @@ export class ClearCase {
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        if (docs.length == 1) {
+        if (docs.length === 1) {
           cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
         } else {
           cmd.params[idx] = "";
@@ -335,7 +336,7 @@ export class ClearCase {
   async undoCheckoutFile(docs: Uri[]): Promise<void> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
-      for (let doc of docs) {
+      for (const doc of docs) {
         exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
       }
     } else {
@@ -344,7 +345,7 @@ export class ClearCase {
       if (uncoKeepFile) {
         rm = "-keep";
       }
-      let files = docs.map((d: Uri) => {
+      const files = docs.map((d: Uri) => {
         return this.wslPath(d.fsPath, false);
       });
 
@@ -355,7 +356,7 @@ export class ClearCase {
   }
 
   async createVersionedObject(docs: Uri[]): Promise<void> {
-    let files = docs.map((d: Uri) => {
+    const files = docs.map((d: Uri) => {
       return this.wslPath(d.fsPath, false);
     });
 
@@ -368,7 +369,7 @@ export class ClearCase {
     const defComment = this.configHandler.configuration.defaultComment.value;
 
     if (useClearDlg) {
-      for (let doc of docs) {
+      for (const doc of docs) {
         exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
       }
     } else {
@@ -405,7 +406,7 @@ export class ClearCase {
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        if (docs.length == 1) {
+        if (docs.length === 1) {
           cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
         } else {
           cmd.params[idx] = "";
@@ -440,13 +441,13 @@ export class ClearCase {
   }
 
   versionTree(docs: Uri[]): void {
-    for (let doc of docs) {
+    for (const doc of docs) {
       this.runCleartoolCommand(new CCArgs(["lsvtree", "-graphical"], [doc.fsPath]), dirname(doc.fsPath), null);
     }
   }
 
   diffWithPrevious(docs: Uri[]): void {
-    for (let doc of docs) {
+    for (const doc of docs) {
       this.runCleartoolCommand(new CCArgs(["diff", "-graph", "-pred"], [doc.fsPath]), dirname(doc.fsPath), null);
     }
   }
@@ -683,7 +684,7 @@ export class ClearCase {
   }
 
   itemProperties(docs: Uri[]): void {
-    for (let doc of docs) {
+    for (const doc of docs) {
       exec(`cleardescribe ${doc.fsPath}`);
     }
   }

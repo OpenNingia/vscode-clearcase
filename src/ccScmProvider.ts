@@ -173,7 +173,7 @@ export class CCScmProvider implements IDisposable {
   private async handleChangeFiles(fileObjs: Uri[]) {
     let version = "";
     if (this.mListLock?.reserve()) {
-      for (let fileObj of fileObjs) {
+      for (const fileObj of fileObjs) {
         try {
           version = (await this.clearCase?.getVersionInformation(fileObj)) ?? "";
           let checkoutsChanged = false;
