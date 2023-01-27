@@ -930,6 +930,7 @@ export class ClearCase {
           outputChannel.appendLine(cmdErrMsg);
           if (isView && cmdErrMsg !== "") {
             window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+            reject(cmdErrMsg);
           }
           if (typeof onFinished === "function") {
             onFinished("error");
