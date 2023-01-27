@@ -289,9 +289,14 @@ export class ClearCase {
       }
       const cmd: CCArgs = new CCArgs(["co"]);
       cmd.params = cmd.params.concat(cmdOpts);
-      cmd.files = docs.map((d: Uri) => {
-        return this.wslPath(d.fsPath, false);
-      });
+      idx = cmd.params.indexOf("${filename}");
+      if (idx > -1) {
+        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+      } else {
+        cmd.files = docs.map((d: Uri) => {
+          return this.wslPath(d.fsPath, false);
+        });
+      }
 
       try {
         await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs[0]));
@@ -393,9 +398,14 @@ export class ClearCase {
 
       const cmd: CCArgs = new CCArgs(["ci"]);
       cmd.params = cmd.params.concat(cmdOpts);
-      cmd.files = docs.map((d: Uri) => {
-        return this.wslPath(d.fsPath, false);
-      });
+      idx = cmd.params.indexOf("${filename}");
+      if (idx > -1) {
+        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+      } else {
+        cmd.files = docs.map((d: Uri) => {
+          return this.wslPath(d.fsPath, false);
+        });
+      }
 
       await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs[0]));
     }

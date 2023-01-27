@@ -553,7 +553,7 @@ export class CCScmProvider implements IDisposable {
             files.push(file);
           }
           if (files.length > 0) {
-            this.clearCase?.execOnSCMFile(files, cmd);
+            cmd(files);
           }
         },
         this
@@ -720,7 +720,6 @@ export class CCScmProvider implements IDisposable {
   }
 
   private async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<void> {
-    await this.clearCase?.checkIsView(editor);
     this.updateCheckedOutList();
     if (editor?.document.uri) {
       this.updateUntrackedListWFile(editor.document.uri);
