@@ -1,5 +1,16 @@
 ## Release Notes
 
+### 4.3.0
+
+_Feature_
+
+- it is now possible to select multiple files and execute a clearcase command on those files
+
+_Bugfixes_
+
+- fixes error message loop when saving a checked in file and the checkout branch does not exist in the vob
+- fixes error log output if log window gets selected
+
 ### 4.2.0
 
 _Feature_
