@@ -121,7 +121,7 @@ export class ClearCase {
 
   private mIsCCView = false;
   private mViewType: ViewType = ViewType.unknown;
-  private mUpdateEvent = new EventEmitter<Uri>();
+  private mUpdateEvent = new EventEmitter<Uri[]>();
 
   private mUntrackedList = new MappedList();
   private mExecCmd: CleartoolIf;
@@ -166,7 +166,7 @@ export class ClearCase {
     return this.mViewType;
   }
 
-  get onCommandExecuted(): Event<Uri> {
+  get onCommandExecuted(): Event<Uri[]> {
     return this.mUpdateEvent.event;
   }
 
@@ -255,7 +255,7 @@ export class ClearCase {
 
     if (useClearDlg) {
       for (let doc of docs) {
-        exec(`cleardlg /checkout ${doc.fsPath}`, () => this.mUpdateEvent.fire(doc));
+        exec(`cleardlg /checkout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
       }
       return true;
     } else {
@@ -299,7 +299,7 @@ export class ClearCase {
       }
 
       try {
-        await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs[0]));
+        await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
       } catch (error) {
         this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + getErrorMessage(error));
         return false;
@@ -317,7 +317,7 @@ export class ClearCase {
       if (this.isReadOnly(doc) === false) {
         try {
           await doc.save();
-          this.mUpdateEvent.fire(doc.uri);
+          this.mUpdateEvent.fire([doc.uri]);
         } catch (error) {
           // do nothing.
         }
@@ -331,7 +331,7 @@ export class ClearCase {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       for (let doc of docs) {
-        exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire(doc));
+        exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
       }
     } else {
       const uncoKeepFile = this.configHandler.configuration.uncoKeepFile.value;
@@ -344,7 +344,7 @@ export class ClearCase {
       });
 
       await this.runCleartoolCommand(new CCArgs(["unco", rm], files), dirname(docs[0]?.fsPath), null, () =>
-        this.mUpdateEvent.fire(docs[0])
+        this.mUpdateEvent.fire(docs)
       );
     }
   }
@@ -354,7 +354,7 @@ export class ClearCase {
       return this.wslPath(d.fsPath, false);
     });
 
-    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs[0]));
+    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
   }
 
   async checkinFile(docs: Uri[]): Promise<void> {
@@ -364,7 +364,7 @@ export class ClearCase {
 
     if (useClearDlg) {
       for (let doc of docs) {
-        exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire(doc));
+        exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
       }
     } else {
       let comment = "";
@@ -407,21 +407,25 @@ export class ClearCase {
         });
       }
 
-      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs[0]));
+      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
     }
   }
 
-  async checkinFiles(fileObjs: Uri[], comment: string): Promise<void> {
-    for (const fileObj of fileObjs) {
-      const cmd: CCArgs = new CCArgs(["ci", "-nc"], [fileObj.fsPath]);
-      if (comment !== "") {
-        cmd.params = ["ci", "-c", comment];
-      }
-      if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-        await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-          this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`);
-        });
-      }
+  async checkinFiles(docs: Uri[], comment: string): Promise<void> {
+    const cmd: CCArgs = new CCArgs(["ci"]);
+    if (comment !== "") {
+      cmd.params.push("-c");
+      cmd.params.push(comment);
+    } else {
+      cmd.params.push("-nc");
+    }
+    cmd.files = docs.map((d: Uri) => {
+      return this.wslPath(d.fsPath, false);
+    });
+    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
+      await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+        this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`);
+      });
     }
   }
 
@@ -656,7 +660,7 @@ export class ClearCase {
       await this.runCleartoolCommand(
         new CCArgs(["update"], [updateFsObj]),
         cwd,
-        () => this.mUpdateEvent.fire(filePath),
+        () => this.mUpdateEvent.fire([filePath]),
         (result: string) => (resultOut = result),
         (error: string) => (errorRes = error)
       );
