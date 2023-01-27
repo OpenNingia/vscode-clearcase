@@ -466,21 +466,26 @@ export class ClearCase {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
       const cmd: CCArgs = new CCArgs(["lsco", ...cmdOpts]);
-      await this.runCleartoolCommand(cmd, wsf, null, (result: string) => {
-        if (result.length > 0) {
-          const results: string[] = result.trim().split(/\r\n|\r|\n/);
-          resNew = results.map((e) => {
-            if (e.startsWith("\\") && type() === "Windows_NT") {
-              e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
-            }
-            if (runInWsl === true) {
-              // e = this.wslPath(e, true, runInWsl);
-              e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
-            }
-            return e;
-          });
+      await this.runCleartoolCommand(
+        cmd,
+        wsf,
+        null,
+        (_code: number, output: string, _error: string) => {
+          if (output.length > 0) {
+            const results: string[] = output.trim().split(/\r\n|\r|\n/);
+            resNew = results.map((e) => {
+              if (e.startsWith("\\") && type() === "Windows_NT") {
+                e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
+              }
+              if (runInWsl === true) {
+                // e = this.wslPath(e, true, runInWsl);
+                e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+              }
+              return e;
+            });
+          }
         }
-      });
+      );
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error));
     }
@@ -544,17 +549,9 @@ export class ClearCase {
           cmd,
           workspace.workspaceFolders[0].uri.fsPath,
           null,
-          (finishRes: string) => {
-            if (finishRes === "error") {
-              result = false;
-            } else {
-              result = true;
-            }
-          },
-          (errorRes: string) => {
-            if (errorRes.length > 0) {
-              result = false;
-            }
+          (code: number, _output: string, error: string) => {
+            //  Success only if command exit code is 0 and nothing on stderr
+            result = (code === 0 && error.length === 0);
           }
         );
       }
@@ -595,10 +592,9 @@ export class ClearCase {
           new CCArgs(["ls", "-d", "-short"], [iUri.fsPath]),
           workspace.workspaceFolders[0].uri.fsPath,
           null,
-          (result: string) => (fileVers = this.getVersionString(result, normalize)),
-          (error: string) => {
-            this.outputChannel.appendLine(`clearcase, exec error: ${error}`);
-            fileVers = "?";
+          (code: number, output: string, error: string) => {
+            fileVers = (code === 0 && error.length === 0) ?
+              this.getVersionString(output, normalize) : "?";
           }
         ).then(() => resolve(fileVers));
       }
@@ -711,11 +707,9 @@ export class ClearCase {
         new CCArgs(["annotate", "-out", "-", "-nhe", "-fmt", `"${fmt}${sep}"`, `${fileP}`]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (result: string) => {
-          resultOut = result;
-        },
-        (error: string) => {
+        (_code: number, output: string, error: string) => {
           errorRes = error;
+          resultOut = output;
         }
       );
       if (errorRes.length > 0) {
@@ -744,11 +738,9 @@ export class ClearCase {
         new CCArgs(["lsactivity", "-cac", "-fmt", `"%n"`]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (result: string) => {
-          resultOut = result;
-        },
-        (error: string) => {
+        (_code: number, output: string, error: string) => {
           errorRes = error;
+          resultOut = output;
         }
       );
       if (errorRes.length > 0) {
@@ -767,8 +759,9 @@ export class ClearCase {
         new CCArgs(["lsactivity"]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (result: string) => {
-          const lines = result.split(/[\n\r]+/);
+        (_code: number, output: string, error: string) => {
+          errorRes = error;
+          const lines = output.split(/[\n\r]+/);
           for (const line of lines) {
             const parts = line.split(" ");
             if (parts.length >= 7) {
@@ -788,9 +781,6 @@ export class ClearCase {
               });
             }
           }
-        },
-        (error: string) => {
-          errorRes = error;
         }
       );
       if (errorRes.length > 0) {
@@ -830,11 +820,9 @@ export class ClearCase {
         new CCArgs(["setactivity", `${id}`]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (result: string) => {
-          resultOut = result;
-        },
-        (error: string) => {
+        (_code: number, output: string, error: string) => {
           errorRes = error;
+          resultOut = output;
         }
       );
       if (errorRes.length > 0) {
@@ -864,11 +852,9 @@ export class ClearCase {
         new CCArgs(["get", "-to", tempFile], [fsPath], version),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (result: string) => {
-          console.log(result);
-        },
-        (error: string) => {
-          console.error(error);
+        (_code: number, output: string, _error: string) => {
+          //  Only log stdout contents here; stderr is logged by runCleartoolCommand if non-empty
+          console.log(output);
         }
       );
     }
@@ -879,8 +865,7 @@ export class ClearCase {
     cmd: CCArgs,
     cwd: string,
     onData: ((data: string[]) => void) | null,
-    onFinished?: (result: string) => void,
-    onError?: (result: string) => void
+    onFinished?: (code: number, output: string, error: string) => void
   ): Promise<void> {
     const executable: string = this.mExecCmd.executable();
     try {
@@ -923,17 +908,14 @@ export class ClearCase {
       });
 
       command.stderr.on("data", (data) => {
+        //  Accumulate contents from stderr in cmdErrMsg, which will only be processed on "close"
         let msg = "";
         if (typeof data === "string") {
           msg = data;
         } else if (Buffer.isBuffer(data)) {
           msg = data.toString();
         }
-        if (onError !== undefined && typeof onError === "function") {
-          onError(msg);
-        } else {
-          cmdErrMsg = `${cmdErrMsg}${msg}`;
-        }
+        cmdErrMsg = `${cmdErrMsg}${msg}`;
       });
 
       command.on("close", (code) => {
@@ -978,8 +960,8 @@ export class ClearCase {
         new CCArgs(this.lsView),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (result: string) => {
-          lines = result.split(/\r\n|\r|\n/).filter((s) => s.length > 0);
+        (_code: number, output: string, _error: string) => {
+          lines = output.split(/\r\n|\r|\n/).filter((s) => s.length > 0);
           const resLines: string[] = lines.filter(filterGlobalPathLines);
           if (resLines.length === 0) {
             return;

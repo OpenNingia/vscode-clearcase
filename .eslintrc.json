@@ -29,6 +29,8 @@
         "@typescript-eslint/prefer-string-starts-ends-with": "error",
         "@typescript-eslint/restrict-plus-operands": "error",
         "@typescript-eslint/unbound-method": "error",
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
         "curly": "error",
         "eqeqeq": "warn",
         "no-throw-literal": "warn",
