@@ -721,10 +721,12 @@ export class CCScmProvider implements IDisposable {
 
   private async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<void> {
     this.updateCheckedOutList();
-    if (editor?.document.uri) {
-      this.updateUntrackedListWFile(editor.document.uri);
+    if (editor?.document.uri.scheme !== "output") {
+      if (editor?.document.uri) {
+        this.updateUntrackedListWFile(editor.document.uri);
+      }
+      this.mWindowChangedEvent.fire();
     }
-    this.mWindowChangedEvent.fire();
   }
 
   dispose(): void {
