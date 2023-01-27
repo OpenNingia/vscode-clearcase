@@ -291,8 +291,13 @@ export class ClearCase {
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
-      } else {
+        if (docs.length == 1) {
+          cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+        } else {
+          cmd.params[idx] = "";
+        }
+      }
+      if (docs.length > 1 || idx === -1) {
         cmd.files = docs.map((d: Uri) => {
           return this.wslPath(d.fsPath, false);
         });
@@ -400,8 +405,13 @@ export class ClearCase {
       cmd.params = cmd.params.concat(cmdOpts);
       idx = cmd.params.indexOf("${filename}");
       if (idx > -1) {
-        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
-      } else {
+        if (docs.length == 1) {
+          cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+        } else {
+          cmd.params[idx] = "";
+        }
+      }
+      if (docs.length > 1 || idx === -1) {
         cmd.files = docs.map((d: Uri) => {
           return this.wslPath(d.fsPath, false);
         });
