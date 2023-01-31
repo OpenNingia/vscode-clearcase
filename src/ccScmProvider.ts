@@ -617,6 +617,35 @@ export class CCScmProvider implements IDisposable {
 
     this.mDisposables.push(
       commands.registerCommand(
+        "extension.ccCheckinSelected",
+        (...resources: CCScmResource[]) => {
+          window.withProgress(
+            {
+              location: ProgressLocation.SourceControl,
+              title: "Checkin all files",
+              cancellable: false,
+            },
+            async (process) => {
+              const fileObjs: Uri[] =
+                resources?.map((val: CCScmResource) => {
+                  return val.resourceUri;
+                }) ?? [];
+              if (this.mCCScm !== null) {
+                const checkinComment = this.mCCScm.inputBox.value || "";
+                await this.clearCase?.checkinFiles(fileObjs, checkinComment);
+                this.mCCScm.inputBox.value = "";
+                this.updateCheckedOutList();
+                process.report({ message: "Checkin finished." });
+              }
+            }
+          );
+        },
+        this
+      )
+    );
+
+    this.mDisposables.push(
+      commands.registerCommand(
         "extension.ccRefreshFileList",
         () => {
           this.updateCheckedOutList();

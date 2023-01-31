@@ -62,6 +62,15 @@
         }
       },
       {
+        "command": "extension.ccCheckinSelected",
+        "title": "Checkin Selected",
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/light/check.svg",
+          "dark": "./Assets/icons/dark/check.svg"
+        }
+      },
+      {
         "command": "extension.ccVersionTree",
         "title": "Version Tree",
         "category": "Clearcase"
@@ -379,6 +388,11 @@
         {
           "command": "extension.ccDeleteViewPrivate",
           "when": "scmProvider == cc && scmResourceGroup == cc_untracked && vscode-clearcase:enabled",
+          "group": "cc_file"
+        },
+        {
+          "command": "extension.ccCheckinSelected",
+          "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
           "group": "cc_file"
         }
       ]
