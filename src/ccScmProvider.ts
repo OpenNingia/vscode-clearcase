@@ -29,7 +29,7 @@ import { CCConfigHandler } from "./ccConfigHandler";
 import { CCAnnotationController } from "./ccAnnotateController";
 import { CCCodeLensProvider } from "./ccAnnotateLensProvider";
 import { CCContentProvider } from "./ccContentProvider";
-import { unlink, statSync, access } from "fs";
+import { unlink, statSync, access, existsSync, mkdirSync } from "fs";
 import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
@@ -156,6 +156,30 @@ export class CCScmProvider implements IDisposable {
 
       this.updateCheckedOutList();
       this.filterUntrackedList();
+
+      const cfgTemp = this.configHandler.configuration.tempDir.value;
+
+      if (!existsSync(cfgTemp)) {
+        const userActions: MessageItem[] = [{ title: "Create Directory" }, { title: "Open Settings" }, { title: "Ignore" }];
+        const userAction = await window.showInformationMessage(`The configured temp folder ${cfgTemp} does not exist. Do you want to created it or change the settings?`, ...userActions);
+
+        switch (userAction?.title) {
+          case userActions[0].title: {
+            try {
+              mkdirSync(cfgTemp);
+            }
+            catch (error) {
+              window.showErrorMessage(`Could not create temp folder ${error}`);
+            }
+            break;
+          }
+          case userActions[1].title: {
+            commands.executeCommand("workbench.action.openSettings", "@ext:openningia.vscode-clearcase tempDir");
+            break;
+          }
+        }
+      }
+
       return true;
     } else {
       return false;
