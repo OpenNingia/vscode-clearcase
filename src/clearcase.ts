@@ -586,7 +586,9 @@ export class ClearCase {
    */
   async getVersionInformation(iUri: Uri, normalize = true): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (iUri === undefined || workspace.workspaceFolders === undefined) {
+      if (iUri === undefined ||
+        workspace.workspaceFolders === undefined ||
+        this.checkIfInWorkspace(iUri.fsPath) === false) {
         reject("");
       } else {
         let fileVers = "";
@@ -1040,5 +1042,27 @@ export class ClearCase {
       }
     }
     return path;
+  }
+
+  /**
+   * check if the file is within the current workspace
+   * avoid error messages related to files edited outside the current workspace
+   */
+  private checkIfInWorkspace(file: string): boolean {
+    let ret = false;
+    if (workspace.workspaceFolders && file !== "") {
+      for (const wsPath of workspace.workspaceFolders) {
+        try {
+          fs.accessSync(wsPath.uri.fsPath, fs.constants.F_OK);
+          ret = file.includes(wsPath.uri.fsPath);
+          if (ret === true) {
+            break;
+          }
+        } catch (e) {
+          ret = false;
+        }
+      }
+    }
+    return ret;
   }
 }
