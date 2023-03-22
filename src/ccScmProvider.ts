@@ -229,7 +229,7 @@ export class CCScmProvider implements IDisposable {
             checkoutsChanged = true;
           }
           // file has no version information, so it is view private
-          if (version === "" && this.clearCase !== null) {
+          if (version.indexOf("private") !== -1 && this.clearCase !== null) {
             if (this.clearCase.untrackedList.exists(fileObj.fsPath) === false) {
               this.clearCase.untrackedList.addString(fileObj.fsPath);
               this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
