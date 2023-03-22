@@ -1,5 +1,17 @@
 ## Release Notes
 
+### 4.4.1
+
+_Improvement_
+
+- Optimized the version aggregation of a file by using the `cleartool describe` command
+
+### 4.4.0
+
+_Feature_
+
+- Checkin all selected files in the SMC view at once
+
 ### 4.3.0
 
 _Feature_
