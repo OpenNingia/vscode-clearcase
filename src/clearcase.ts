@@ -615,7 +615,7 @@ export class ClearCase {
       const res = iFileInfo.replace(/"/g, '').split("||");
       if (res.length > 1 && res[0] === "version") {
         return normalize ? res[1].replace(/\\/g, "/").trim() : res[1].trim();
-      } else if( res[0].indexOf("private") !== -1 ) {
+      } else if( res[0].includes("private") ) {
         return res[0];
       } else {
         return "not in a VOB";
