@@ -586,14 +586,12 @@ export class ClearCase {
    */
   async getVersionInformation(iUri: Uri, normalize = true): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (iUri === undefined ||
-        workspace.workspaceFolders === undefined ||
-        this.checkIfInWorkspace(iUri.fsPath) === false) {
+      if (iUri === undefined || workspace.workspaceFolders === undefined) {
         reject("");
       } else {
         let fileVers = "";
         this.runCleartoolCommand(
-          new CCArgs(["ls", "-d", "-short"], [iUri.fsPath]),
+          new CCArgs(["describe", "-fmt", `"%m||%Vn"`], [iUri.fsPath]),
           workspace.workspaceFolders[0].uri.fsPath,
           null,
           (code: number, output: string, error: string) => {
@@ -614,9 +612,13 @@ export class ClearCase {
    */
   getVersionString(iFileInfo: string, normalize: boolean): string {
     if (iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "") {
-      const res = iFileInfo.split("@@");
-      if (res.length > 1) {
+      const res = iFileInfo.replace(/\"/g, '').split("||");
+      if (res.length > 1 && res[0] === "version") {
         return normalize ? res[1].replace(/\\/g, "/").trim() : res[1].trim();
+      } else if( res[0].indexOf("private") !== -1 ) {
+        return res[0];
+      } else {
+        return "not in a VOB";
       }
     }
     return "";
