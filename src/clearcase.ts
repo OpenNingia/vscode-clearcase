@@ -612,7 +612,7 @@ export class ClearCase {
    */
   getVersionString(iFileInfo: string, normalize: boolean): string {
     if (iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "") {
-      const res = iFileInfo.replace(/\"/g, '').split("||");
+      const res = iFileInfo.replace(/"/g, '').split("||");
       if (res.length > 1 && res[0] === "version") {
         return normalize ? res[1].replace(/\\/g, "/").trim() : res[1].trim();
       } else if( res[0].indexOf("private") !== -1 ) {
