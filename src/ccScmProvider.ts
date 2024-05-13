@@ -143,8 +143,8 @@ export class CCScmProvider implements IDisposable {
       }
 
       this.mIgnoreFileEv = new ModelHandler();
-      this.mIgnores = new IgnoreHandler(this.mIgnoreFileEv);
-      this.mIgnores.onFilterRefreshed(() => this.filterUntrackedList());
+      // this.mIgnores = new IgnoreHandler(this.mIgnoreFileEv);
+      // this.mIgnores.onFilterRefreshed(() => this.filterUntrackedList());
 
       this.clearCase?.onCommandExecuted((evArgs: Uri[]) => {
         this.handleChangeFiles(evArgs);
