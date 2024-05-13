@@ -360,8 +360,8 @@ export class ClearCase {
       const userAction = await window.showInformationMessage(`Do you want to checkout the current file?`, ...userActions);
       switch (userAction?.title) {
         case userActions[0].title: {
-          await doc.save();
           await this.checkoutFile([doc.uri]);
+          await doc.save();
           break;
         }
         case userActions[1].title: {
