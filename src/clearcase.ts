@@ -7,7 +7,6 @@ import * as tmp from "tmp";
 import {
   Event,
   EventEmitter,
-  InputBoxOptions,
   MessageItem,
   OutputChannel,
   QuickPickItem,
