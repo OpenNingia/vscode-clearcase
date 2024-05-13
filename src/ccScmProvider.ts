@@ -400,8 +400,8 @@ export class CCScmProvider implements IDisposable {
   bindCommands(): void {
     if (this.clearCase !== null) {
       this.registerCommand("extension.ccExplorer", (fileObj) => this.clearCase?.runClearCaseExplorer(fileObj));
-      this.registerCommand("extension.ccCheckout", (fileObj) => this.clearCase?.checkoutFile(fileObj));
-      this.registerCommand("extension.ccCheckin", (fileObj) => this.clearCase?.checkinFile(fileObj));
+      this.registerCommand("extension.ccCheckout", (fileObj) => this.clearCase?.checkoutFileAction(fileObj));
+      this.registerCommand("extension.ccCheckin", (fileObj) => this.clearCase?.checkinFileAction(fileObj));
       this.registerCommand("extension.ccUndoCheckout", (fileObj) => this.clearCase?.undoCheckoutFile(fileObj));
       this.registerCommand("extension.ccVersionTree", (fileObj) => this.clearCase?.versionTree(fileObj));
       this.registerCommand("extension.ccComparePrevious", (fileObj) => this.clearCase?.diffWithPrevious(fileObj));
