@@ -28,7 +28,7 @@
     "keybindings"
   ],
   "activationEvents": [
-    "*"
+    "onStartupFinished"
   ],
   "main": "./dist/extension",
   "contributes": {
