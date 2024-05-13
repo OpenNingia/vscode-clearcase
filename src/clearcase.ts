@@ -7,6 +7,8 @@ import * as tmp from "tmp";
 import {
   Event,
   EventEmitter,
+  InputBoxOptions,
+  MessageItem,
   OutputChannel,
   QuickPickItem,
   TextDocument,
@@ -138,7 +140,7 @@ export class ClearCase {
         this.configHandler.configuration.executable.value
       );
     } else {
-      this.mExecCmd = new Cleartool();
+      this.mExecCmd = new Cleartool("", "", "", this.configHandler.configuration.executable.value);
     }
     this.configHandler.onDidChangeConfiguration((datas: string[]) => {
       const hasChangedUseRemote = datas.find((val) => {
@@ -251,110 +253,162 @@ export class ClearCase {
     exec('clearexplorer "' + docs[0]?.fsPath + '"');
   }
 
-  async checkoutFile(docs: Uri[]): Promise<boolean> {
-    const useClearDlg = this.configHandler.configuration.useClearDlg.value;
-    const coArgTmpl = this.configHandler.configuration.checkoutCommand.value;
-    const defComment = this.configHandler.configuration.defaultComment.value;
 
+  async checkoutFileAction(docs: Uri[]): Promise<boolean> {
+    const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       for (const doc of docs) {
-        exec(`cleardlg /checkout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+        if( type() === "Windows_NT" ){
+          exec(`cleardlg /checkout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+          return true;
+        } else {
+          const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
+          const userAction = await window.showInformationMessage(`Do you want to checkout the current file?`, ...userActions);
+          switch (userAction?.title) {
+            case userActions[0].title: {
+              return await this.checkoutFile([doc]);
+            }
+            case userActions[1].title: {
+              break;
+            }
+          }
+        }
       }
       return true;
     } else {
-      let comment = "";
-      const cmdOpts = coArgTmpl.trim().split(/\s+/);
-      let idx = cmdOpts.indexOf("${comment}");
-      if (idx > -1) {
-        if (defComment) {
-          comment = defComment;
-        } else {
-          comment =
-            (await window.showInputBox({
-              ignoreFocusOut: true,
-              prompt: "Checkout comment",
-            })) ?? "";
-        }
-        cmdOpts[idx] = comment;
-      } else {
-        let pI = cmdOpts.indexOf("-comment");
-        if (pI > -1) {
-          cmdOpts.splice(pI, 1);
-        }
-        pI = cmdOpts.indexOf("-c");
-        if (pI > -1) {
-          cmdOpts.splice(pI, 1);
-        }
-        pI = cmdOpts.indexOf("-nc");
-        if (pI === -1) {
-          cmdOpts.push("-nc");
-        }
-      }
-      const cmd: CCArgs = new CCArgs(["co"]);
-      cmd.params = cmd.params.concat(cmdOpts);
-      idx = cmd.params.indexOf("${filename}");
-      if (idx > -1) {
-        if (docs.length === 1) {
-          cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
-        } else {
-          cmd.params[idx] = "";
-        }
-      }
-      if (docs.length > 1 || idx === -1) {
-        cmd.files = docs.map((d: Uri) => {
-          return this.wslPath(d.fsPath, false);
-        });
-      }
-
-      try {
-        await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
-      } catch (error) {
-        this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + getErrorMessage(error));
-        return false;
-      }
-      return true;
+      return await this.checkoutFile(docs);
     }
+  }
+
+  async checkoutFile(docs: Uri[]): Promise<boolean> {
+    const coArgTmpl = this.configHandler.configuration.checkoutCommand.value;
+    const defComment = this.configHandler.configuration.defaultComment.value;
+
+    let comment = "";
+    const cmdOpts = coArgTmpl.trim().split(/\s+/);
+    let idx = cmdOpts.indexOf("${comment}");
+    if (idx > -1) {
+      if (defComment) {
+        comment = defComment;
+      } else {
+        comment =
+          (await window.showInputBox({
+            ignoreFocusOut: true,
+            prompt: "Checkout comment",
+          })) ?? "";
+      }
+      cmdOpts[idx] = comment;
+    } else {
+      let pI = cmdOpts.indexOf("-comment");
+      if (pI > -1) {
+        cmdOpts.splice(pI, 1);
+      }
+      pI = cmdOpts.indexOf("-c");
+      if (pI > -1) {
+        cmdOpts.splice(pI, 1);
+      }
+      pI = cmdOpts.indexOf("-nc");
+      if (pI === -1) {
+        cmdOpts.push("-nc");
+      }
+    }
+    const cmd: CCArgs = new CCArgs(["co"]);
+    cmd.params = cmd.params.concat(cmdOpts);
+    idx = cmd.params.indexOf("${filename}");
+    if (idx > -1) {
+      if (docs.length === 1) {
+        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+      } else {
+        cmd.params[idx] = "";
+      }
+    }
+    if (docs.length > 1 || idx === -1) {
+      cmd.files = docs.map((d: Uri) => {
+        return this.wslPath(d.fsPath, false);
+      });
+    }
+
+    try {
+      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+    } catch (error) {
+      this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + getErrorMessage(error));
+      return false;
+    }
+    return true;
   }
 
   async checkoutAndSaveFile(doc: TextDocument): Promise<void> {
     const path = doc.fileName;
-    exec('cleardlg /checkout "' + path + '"', async () => {
-      // only trigger save if checkout did work
-      // If not and the user canceled this dialog the save event is
-      // retriggered because of that save.
-      if (this.isReadOnly(doc) === false) {
-        try {
-          await doc.save();
-          this.mUpdateEvent.fire([doc.uri]);
-        } catch (error) {
-          // do nothing.
+    if( type() === "Windows_NT" ){
+      exec('cleardlg /checkout "' + path + '"', async () => {
+        // only trigger save if checkout did work
+        // If not and the user canceled this dialog the save event is
+        // retriggered because of that save.
+        if (this.isReadOnly(doc) === false) {
+          try {
+            await doc.save();
+            this.mUpdateEvent.fire([doc.uri]);
+          } catch (error) {
+            // do nothing.
+          }
+        } else {
+          window.showErrorMessage("Could not save file.");
         }
-      } else {
-        window.showErrorMessage("Could not save file.");
+      });
+    } else {
+      const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
+      const userAction = await window.showInformationMessage(`Do you want to checkout the current file?`, ...userActions);
+      switch (userAction?.title) {
+        case userActions[0].title: {
+          await this.checkoutFile([doc.uri]);
+          await doc.save();
+          break;
+        }
+        case userActions[1].title: {
+          break;
+        }
       }
-    });
+    }
   }
 
-  async undoCheckoutFile(docs: Uri[]): Promise<void> {
+  async undoCheckoutFileAction(docs: Uri[]): Promise<void> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       for (const doc of docs) {
-        exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+        if( type() === "Windows_NT" ){
+          exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+        } else {
+          const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
+          const userAction = await window.showInformationMessage(`Do you want to undo checkout the current file?`, ...userActions);
+          switch (userAction?.title) {
+            case userActions[0].title: {
+              await this.undoCheckoutFile([doc]);
+              break;
+            }
+            case userActions[1].title: {
+              break;
+            }
+          }
+        }
       }
     } else {
-      const uncoKeepFile = this.configHandler.configuration.uncoKeepFile.value;
-      let rm = "-rm";
-      if (uncoKeepFile) {
-        rm = "-keep";
-      }
-      const files = docs.map((d: Uri) => {
-        return this.wslPath(d.fsPath, false);
-      });
-
-      await this.runCleartoolCommand(new CCArgs(["unco", rm], files), dirname(docs[0]?.fsPath), null, () =>
-        this.mUpdateEvent.fire(docs)
-      );
+      await this.undoCheckoutFile(docs);
     }
+  }
+
+  async undoCheckoutFile(docs: Uri[]): Promise<void> {
+    const uncoKeepFile = this.configHandler.configuration.uncoKeepFile.value;
+    let rm = "-rm";
+    if (uncoKeepFile) {
+      rm = "-keep";
+    }
+    const files = docs.map((d: Uri) => {
+      return this.wslPath(d.fsPath, false);
+    });
+
+    await this.runCleartoolCommand(new CCArgs(["unco", rm], files), dirname(docs[0]?.fsPath), null, () =>
+      this.mUpdateEvent.fire(docs)
+    );
   }
 
   async createVersionedObject(docs: Uri[]): Promise<void> {
@@ -365,63 +419,81 @@ export class ClearCase {
     await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
   }
 
-  async checkinFile(docs: Uri[]): Promise<void> {
+  async checkinFileAction(docs: Uri[]): Promise<void> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
+    if (useClearDlg) {
+      for (const doc of docs) {
+        if( type() === "Windows_NT" ){
+          exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+        } else {
+          const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
+          const userAction = await window.showInformationMessage(`Do you want to checkin the current file?`, ...userActions);
+          switch (userAction?.title) {
+            case userActions[0].title: {
+              await this.checkinFile([doc]);
+              break;
+            }
+            case userActions[1].title: {
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      await this.checkinFile(docs);
+    }
+  }
+
+  async checkinFile(docs: Uri[]): Promise<void> {
     const ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
     const defComment = this.configHandler.configuration.defaultComment.value;
 
-    if (useClearDlg) {
-      for (const doc of docs) {
-        exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
-      }
-    } else {
-      let comment = "";
-      const cmdOpts = ciArgTmpl.trim().split(/\s+/);
-      let idx = cmdOpts.indexOf("${comment}");
-      if (idx > -1) {
-        if (defComment) {
-          comment = defComment;
-        } else {
-          comment =
-            (await window.showInputBox({
-              ignoreFocusOut: true,
-              prompt: "Checkin comment",
-            })) ?? "";
-        }
-        cmdOpts[idx] = comment;
+    let comment = "";
+    const cmdOpts = ciArgTmpl.trim().split(/\s+/);
+    let idx = cmdOpts.indexOf("${comment}");
+    if (idx > -1) {
+      if (defComment) {
+        comment = defComment;
       } else {
-        let pI = cmdOpts.indexOf("-comment");
-        if (pI > -1) {
-          cmdOpts.splice(pI, 1);
-        }
-        pI = cmdOpts.indexOf("-c");
-        if (pI > -1) {
-          cmdOpts.splice(pI, 1);
-        }
-        pI = cmdOpts.indexOf("-nc");
-        if (pI === -1) {
-          cmdOpts.push("-nc");
-        }
+        comment =
+          (await window.showInputBox({
+            ignoreFocusOut: true,
+            prompt: "Checkin comment",
+          })) ?? "";
       }
-
-      const cmd: CCArgs = new CCArgs(["ci"]);
-      cmd.params = cmd.params.concat(cmdOpts);
-      idx = cmd.params.indexOf("${filename}");
-      if (idx > -1) {
-        if (docs.length === 1) {
-          cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
-        } else {
-          cmd.params[idx] = "";
-        }
+      cmdOpts[idx] = comment;
+    } else {
+      let pI = cmdOpts.indexOf("-comment");
+      if (pI > -1) {
+        cmdOpts.splice(pI, 1);
       }
-      if (docs.length > 1 || idx === -1) {
-        cmd.files = docs.map((d: Uri) => {
-          return this.wslPath(d.fsPath, false);
-        });
+      pI = cmdOpts.indexOf("-c");
+      if (pI > -1) {
+        cmdOpts.splice(pI, 1);
       }
-
-      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+      pI = cmdOpts.indexOf("-nc");
+      if (pI === -1) {
+        cmdOpts.push("-nc");
+      }
     }
+
+    const cmd: CCArgs = new CCArgs(["ci"]);
+    cmd.params = cmd.params.concat(cmdOpts);
+    idx = cmd.params.indexOf("${filename}");
+    if (idx > -1) {
+      if (docs.length === 1) {
+        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+      } else {
+        cmd.params[idx] = "";
+      }
+    }
+    if (docs.length > 1 || idx === -1) {
+      cmd.files = docs.map((d: Uri) => {
+        return this.wslPath(d.fsPath, false);
+      });
+    }
+
+    await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
   }
 
   async checkinFiles(docs: Uri[], comment: string): Promise<void> {
