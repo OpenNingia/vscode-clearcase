@@ -339,43 +339,76 @@ export class ClearCase {
 
   async checkoutAndSaveFile(doc: TextDocument): Promise<void> {
     const path = doc.fileName;
-    exec('cleardlg /checkout "' + path + '"', async () => {
-      // only trigger save if checkout did work
-      // If not and the user canceled this dialog the save event is
-      // retriggered because of that save.
-      if (this.isReadOnly(doc) === false) {
-        try {
-          await doc.save();
-          this.mUpdateEvent.fire([doc.uri]);
-        } catch (error) {
-          // do nothing.
+    if( type() === "Windows_NT" ){
+      exec('cleardlg /checkout "' + path + '"', async () => {
+        // only trigger save if checkout did work
+        // If not and the user canceled this dialog the save event is
+        // retriggered because of that save.
+        if (this.isReadOnly(doc) === false) {
+          try {
+            await doc.save();
+            this.mUpdateEvent.fire([doc.uri]);
+          } catch (error) {
+            // do nothing.
+          }
+        } else {
+          window.showErrorMessage("Could not save file.");
         }
-      } else {
-        window.showErrorMessage("Could not save file.");
+      });
+    } else {
+      const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
+      const userAction = await window.showInformationMessage(`Do you want to checkout the current file?`, ...userActions);
+      switch (userAction?.title) {
+        case userActions[0].title: {
+          await doc.save();
+          await this.checkoutFile([doc.uri]);
+          break;
+        }
+        case userActions[1].title: {
+          break;
+        }
       }
-    });
+    }
   }
 
-  async undoCheckoutFile(docs: Uri[]): Promise<void> {
+  async undoCheckoutFileAction(docs: Uri[]): Promise<void> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       for (const doc of docs) {
-        exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+        if( type() === "Windows_NT" ){
+          exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
+        } else {
+          const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
+          const userAction = await window.showInformationMessage(`Do you want to undo checkout the current file?`, ...userActions);
+          switch (userAction?.title) {
+            case userActions[0].title: {
+              await this.undoCheckoutFile([doc]);
+              break;
+            }
+            case userActions[1].title: {
+              break;
+            }
+          }
+        }
       }
     } else {
-      const uncoKeepFile = this.configHandler.configuration.uncoKeepFile.value;
-      let rm = "-rm";
-      if (uncoKeepFile) {
-        rm = "-keep";
-      }
-      const files = docs.map((d: Uri) => {
-        return this.wslPath(d.fsPath, false);
-      });
-
-      await this.runCleartoolCommand(new CCArgs(["unco", rm], files), dirname(docs[0]?.fsPath), null, () =>
-        this.mUpdateEvent.fire(docs)
-      );
+      await this.undoCheckoutFile(docs);
     }
+  }
+
+  async undoCheckoutFile(docs: Uri[]): Promise<void> {
+    const uncoKeepFile = this.configHandler.configuration.uncoKeepFile.value;
+    let rm = "-rm";
+    if (uncoKeepFile) {
+      rm = "-keep";
+    }
+    const files = docs.map((d: Uri) => {
+      return this.wslPath(d.fsPath, false);
+    });
+
+    await this.runCleartoolCommand(new CCArgs(["unco", rm], files), dirname(docs[0]?.fsPath), null, () =>
+      this.mUpdateEvent.fire(docs)
+    );
   }
 
   async createVersionedObject(docs: Uri[]): Promise<void> {
