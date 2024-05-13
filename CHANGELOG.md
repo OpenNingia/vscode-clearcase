@@ -1,5 +1,15 @@
 ## Release Notes
 
+### 4.5.0
+
+_Feature_
+
+- Use dialog box for checkin, checkout and undo checkout in linux
+
+_Bugfixes_
+
+- use the configured clearcase binary
+
 ### 4.4.1
 
 _Improvement_
