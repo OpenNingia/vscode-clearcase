@@ -116,6 +116,9 @@ export class CCScmProvider implements IDisposable {
       isView = false;
     }
     if (isView) {
+      if( this.configHandler.configuration.detectWslEnvironment.value ) {
+        this.mCCHandler?.detectIsWsl();
+      }
       const d = this.clearCase ? this.clearCase.viewType === ViewType.dynamic : false;
       commands.executeCommand("setContext", "vscode-clearcase:enabled", isView);
       commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
@@ -157,8 +160,10 @@ export class CCScmProvider implements IDisposable {
       this.updateCheckedOutList();
       this.filterUntrackedList();
 
-      const cfgTemp = this.configHandler.configuration.tempDir.value;
-
+      let cfgTemp = this.configHandler.configuration.tempDir.value;
+      if( this.mCCHandler?.isRunningInWsl() ) {
+        cfgTemp = this.mCCHandler.wslPath(cfgTemp);
+      }
       if (!existsSync(cfgTemp)) {
         const userActions: MessageItem[] = [{ title: "Create Directory" }, { title: "Open Settings" }, { title: "Ignore" }];
         const userAction = await window.showInformationMessage(`The configured temp folder ${cfgTemp} does not exist. Do you want to created it or change the settings?`, ...userActions);

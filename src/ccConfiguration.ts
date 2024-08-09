@@ -1,3 +1,8 @@
+export class PathMapping {
+  host = "";
+  wsl = "";
+}
+
 export class ConfigurationProperty<T> {
   private mChanged: boolean;
 
@@ -42,11 +47,13 @@ export class CCConfiguration {
   private mViewPrivateFiles = new ConfigurationProperty<string>("(hh|cpp|def|c|h|txt)$");
   private mExecutable = new ConfigurationProperty<string>("cleartool.exe");
   private mTempDir = new ConfigurationProperty<string>("c:\\Temp");
-  private mIsWslEnv = new ConfigurationProperty<boolean>(false);
   private mUseRemoteClient = new ConfigurationProperty<boolean>(false);
   private mWebserverUsername = new ConfigurationProperty<string>("");
   private mWebserverPassword = new ConfigurationProperty<string>("");
   private mWebserverAddress = new ConfigurationProperty<string>("");
+  private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
+  private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
+  private mDiffEncoding = new ConfigurationProperty<string>("");
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -104,10 +111,6 @@ export class CCConfiguration {
     return this.mTempDir;
   }
 
-  get isWslEnv(): ConfigurationProperty<boolean> {
-    return this.mIsWslEnv;
-  }
-
   get useRemoteClient(): ConfigurationProperty<boolean> {
     return this.mUseRemoteClient;
   }
@@ -122,5 +125,17 @@ export class CCConfiguration {
 
   get webserverAddress(): ConfigurationProperty<string> {
     return this.mWebserverAddress;
+  }
+
+  get detectWslEnvironment(): ConfigurationProperty<boolean> {
+    return this.mDetectWslEnvironment;
+  }
+
+  get pathMapping(): ConfigurationProperty<PathMapping[]> {
+    return this.mPathMapping;
+  }
+
+  get diffViewEncoding(): ConfigurationProperty<string> {
+    return this.mDiffEncoding;
   }
 }

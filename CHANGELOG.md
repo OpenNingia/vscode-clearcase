@@ -1,5 +1,15 @@
 ## Release Notes
 
+### 4.6.0
+_Feature_
+- activate automatic detection of wsl environment `vscode-clearcase.wsl.detectEnvironment`
+- added a path mapping setting. This is used to map a windows drive letter to a wsl mount point
+  `vscode-clearcase.wsl.pathMapping`
+- set the encoding of the internal diff viewer `vscode-clearcase.diffViewerEncoding`
+
+_Bugfixes_
+- correct usage of temp directory in wsl environment
+
 ### 4.5.0
 
 _Feature_
