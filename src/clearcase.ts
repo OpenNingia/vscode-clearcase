@@ -20,6 +20,7 @@ import { CCAnnotationController } from "./ccAnnotateController";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { getErrorMessage } from "./errormessage";
 import { MappedList } from "./mappedlist";
+import { PathMapping } from "./ccConfiguration";
 
 export enum EventActions {
   add = 0,
@@ -1133,14 +1134,37 @@ export class ClearCase {
   }
 
   public wslPath(path: string, toLinux = true, runInWsl?: boolean): string {
-    if (runInWsl === undefined) {
-      runInWsl = this.isRunningInWsl();
-    }
-    if (runInWsl === true) {
+    let newPath = this.getMappedPath(path, toLinux);
+    if( this.isRunningInWsl() ) {
       if (toLinux === true) {
-        return path.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+        return newPath.replace(/\\/g, "/");
       } else {
-        return path.replace(/^\/mnt\/([A-Za-z])/, `$1:`).replace(/\//g, "\\");
+        return newPath.replace(/\//g, "\\");
+      }
+    }
+    return path;
+  }
+
+  public getMappedPath(path: string, toLinux: boolean): string {
+    if( this.isRunningInWsl() ) {
+      if( this.configHandler.configuration.pathMapping.value.length > 0 ) {
+        for(let p of this.configHandler.configuration.pathMapping.value) {
+          if( toLinux === false ) {
+            if( path.startsWith(p.wsl) ) {
+              return path.replace(p.wsl, p.host);
+            }
+          } else {
+            if( path.startsWith(p.host) ) {
+              return path.replace(p.host, p.wsl);
+            }
+          }
+        }
+      } else {
+        if (toLinux === true) {
+          return path.replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+        } else {
+          return path.replace(/^\/mnt\/([A-Za-z])/, `$1:`);
+        }
       }
     }
     return path;

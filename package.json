@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "4.6.0",
+  "version": "4.6.0-beta.4",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -526,13 +526,33 @@
           "type": "boolean",
           "default": "false",
           "markdownDescription": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation",
-          "order": 41
+          "order": 43
         },
         "vscode-clearcase.detectWslEnvironment": {
           "type": "boolean",
           "default": "false",
           "markdownDescription": "Set this to true to automatically detect if you are working in a WSL environment. (ignores `#vscode-clearcase.isWslEnvironment`)",
           "order": 41
+        },
+        "vscode-clearcase.wslPathMapping": {
+          "type": "array",
+          "markdownDescription": "Set array of paths and there related mapped paths in wsl environment, i.e. {host: \"g:\\\\\", wsl: \"/mnt/g/\"}",
+          "order": 44,
+          "items": {
+            "type": "object",
+            "title": "Path Mapping",
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "Path in host"
+              },
+              "wsl": {
+                "type": "string",
+                "description": "Path in wsl"
+              }
+            },
+            "default": []
+          }
         },
         "vscode-clearcase.tempDir": {
           "type": "string",

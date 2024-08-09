@@ -1,3 +1,8 @@
+export class PathMapping {
+  host: string = "";
+  wsl: string = "";
+}
+
 export class ConfigurationProperty<T> {
   private mChanged: boolean;
 
@@ -48,6 +53,7 @@ export class CCConfiguration {
   private mWebserverPassword = new ConfigurationProperty<string>("");
   private mWebserverAddress = new ConfigurationProperty<string>("");
   private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
+  private mPathMapping = new ConfigurationProperty<PathMapping[]>([])
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -127,5 +133,9 @@ export class CCConfiguration {
 
   get detectWslEnvironment(): ConfigurationProperty<boolean> {
     return this.mDetectWslEnvironment;
+  }
+
+  get pathMapping(): ConfigurationProperty<PathMapping[]> {
+    return this.mPathMapping;
   }
 }

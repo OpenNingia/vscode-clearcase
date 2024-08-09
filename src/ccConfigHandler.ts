@@ -1,7 +1,7 @@
 "use strict";
 
 import { Event, EventEmitter, workspace, WorkspaceConfiguration } from "vscode";
-import { CCConfiguration, ConfigurationProperty } from "./ccConfiguration";
+import { CCConfiguration, ConfigurationProperty, PathMapping } from "./ccConfiguration";
 import { IDisposable } from "./model";
 
 export class CCConfigHandler implements IDisposable {
@@ -72,6 +72,7 @@ export class CCConfigHandler implements IDisposable {
       );
       this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.webserverAddress);
       this.setChangeConfigDate<boolean>(config, "detectWslEnvironment", this.mConfiguration.detectWslEnvironment);
+      this.setChangeConfigDate<PathMapping[]>(config, "wslPathMapping", this.mConfiguration.pathMapping);
 
       return true;
     }
