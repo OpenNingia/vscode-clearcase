@@ -1,7 +1,7 @@
-import { exec, spawn, ChildProcess } from "child_process";
+import { exec, spawn, ChildProcess, spawnSync } from "child_process";
 import * as fs from "fs";
 import { type } from "os";
-import { dirname, join } from "path";
+import { dirname, join, basename } from "path";
 
 import * as tmp from "tmp";
 import {
@@ -119,9 +119,10 @@ export class ClearCase {
   private readonly lsView: string[] = ["lsview", "-cview", "-long"];
 
   private readonly rxViewType = new RegExp("\\.(vws|stg)$", "i");
-  private readonly rxViewAttr = new RegExp("(view attributes\\:)([\\,\\t \\w\\d]*)(webview)", "i");
+  private readonly rxViewAttr = new RegExp("(view attributes\\:)\\s*(snapshot)", "i");
 
   private mIsCCView = false;
+  private mIsWslEnv = false;
   private mViewType: ViewType = ViewType.unknown;
   private mUpdateEvent = new EventEmitter<Uri[]>();
 
@@ -216,6 +217,22 @@ export class ClearCase {
     this.mIsCCView = isView;
 
     return isView;
+  }
+
+  async detectIsWsl(): Promise<boolean> {
+    this.mIsWslEnv = false;
+    if (type() !== "Windows_NT") {
+      // check if wslpath executeable is available
+      try {
+        fs.accessSync("/usr/bin/wslpath", fs.constants.R_OK);
+      } catch {
+        return false;
+      }
+    } else {
+      return false;
+    }
+    this.mIsWslEnv = true;
+    return true;
   }
 
   async loginWebview(): Promise<boolean> {
@@ -615,21 +632,25 @@ export class ClearCase {
    */
   async hasConfigspec(): Promise<boolean> {
     let result = false;
-    try {
-      if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-        const cmd: CCArgs = new CCArgs(["catcs"]);
-        await this.runCleartoolCommand(
-          cmd,
-          workspace.workspaceFolders[0].uri.fsPath,
-          null,
-          (code: number, _output: string, error: string) => {
-            //  Success only if command exit code is 0 and nothing on stderr
-            result = (code === 0 && error.length === 0);
-          }
-        );
+    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
+      try {
+        for(let p of workspace.workspaceFolders){
+          const cmd: CCArgs = new CCArgs(["catcs"]);
+          await this.runCleartoolCommand(
+            cmd,
+            workspace.workspaceFolders[0].uri.fsPath,
+            null,
+            (code: number, _output: string, error: string) => {
+              //  Success only if command exit code is 0 and nothing on stderr
+              result = (code === 0 && error.length === 0);
+            }
+          );
+          if( result !== false )
+            break;
+        }
+      } catch (error) {
+        result = false;
       }
-    } catch (error) {
-      result = false;
     }
     return result;
   }
@@ -656,22 +677,21 @@ export class ClearCase {
    * @returns Promise<string>
    */
   async getVersionInformation(iUri: Uri, normalize = true): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      if (iUri === undefined || workspace.workspaceFolders === undefined) {
-        reject("");
-      } else {
-        let fileVers = "";
-        this.runCleartoolCommand(
-          new CCArgs(["describe", "-fmt", `"%m||%Vn"`], [iUri.fsPath]),
-          workspace.workspaceFolders[0].uri.fsPath,
-          null,
-          (code: number, output: string, error: string) => {
-            fileVers = (code === 0 && error.length === 0) ?
-              this.getVersionString(output, normalize) : "?";
-          }
-        ).then(() => resolve(fileVers));
-      }
-    });
+    if (iUri !== undefined && this.isView === true ) {
+      let fileVers = "";
+      const cwd = dirname(iUri.fsPath);
+      await this.runCleartoolCommand(
+        new CCArgs(["describe", "-fmt", `"%m||%Vn"`], [iUri.fsPath]),
+        cwd,
+        null,
+        (code: number, output: string, error: string) => {
+          fileVers = (code === 0 && error.length === 0) ?
+            this.getVersionString(output, normalize) : "?";
+        }
+      )
+      return fileVers;
+    }
+    return "";
   }
 
   /**
@@ -940,7 +960,7 @@ export class ClearCase {
     return fs.readFileSync(ret.fsPath, { encoding: "utf-8" });
   }
 
-  private runCleartoolCommand(
+  private async runCleartoolCommand(
     cmd: CCArgs,
     cwd: string,
     onData: ((data: string[]) => void) | null,
@@ -964,14 +984,35 @@ export class ClearCase {
     const outputChannel = this.outputChannel;
     const isView = this.isView;
 
-    return new Promise<void>((resolve, reject) => {
       let cmdErrMsg = "";
 
       outputChannel.appendLine(cmd.getCmd().toString());
       let allData: Buffer = Buffer.alloc(0);
       let allDataStr = "";
-      const command = spawn(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
+      const command = spawnSync(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
 
+      if( command.stderr.length > 0 ) {
+        let msg = command.stderr;
+        if( Buffer.isBuffer(msg) ) {
+          msg = msg.toString();
+        }
+        window.showErrorMessage(`${msg}`, { modal: false });
+        return Promise.reject(msg);
+      } else if( command.stdout.length > 0 ) {
+        if (typeof onFinished === "function") {
+          let msg = command.stdout;
+          if( Buffer.isBuffer(msg) ) {
+            msg = msg.toString();
+          }
+          let msgErr = command.stderr;
+          if( Buffer.isBuffer(msgErr) ) {
+            msgErr = msgErr.toString();
+          }
+          onFinished(Number(command.signal), msg, msgErr);
+        }
+        return Promise.resolve();
+      }
+      /*
       command.stdout.on("data", (data) => {
         let res = "";
         if (typeof data === "string") {
@@ -1004,20 +1045,20 @@ export class ClearCase {
         }
         if (code !== 0 && isView && cmdErrMsg !== "") {
           window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
-          reject(cmdErrMsg);
+          return Promise.reject(cmdErrMsg);
         }
         if (typeof onFinished === "function") {
           onFinished(code, allData.length > 0 ? allData.toString() : allDataStr, cmdErrMsg);
         }
-        resolve();
+        return Promise.resolve();
       });
 
       command.on("error", (error) => {
         const msg = `Cleartool error: Cleartool command error: ${error.message}`;
         outputChannel.appendLine(msg);
-        reject(error.message);
+        return Promise.reject(error.message);
       });
-    });
+      */
   }
 
   private async detectViewType(): Promise<ViewType> {
@@ -1028,8 +1069,8 @@ export class ClearCase {
       if (l.length === 0) {
         return false;
       }
-      const ma: RegExpMatchArray | null = l.match(this.rxViewType);
-      return !!ma && ma.length > 0;
+      return ( l.match(/view uuid: ([\w\.:]+)/gi) ||
+               l.match(/view attributes:\s+snapshot/gi) );
     };
     if (workspace.workspaceFolders !== undefined) {
       await this.runCleartoolCommand(
@@ -1042,13 +1083,13 @@ export class ClearCase {
           if (resLines.length === 0) {
             return;
           }
-          if (resLines[0].endsWith(".vws")) {
-            viewType = ViewType.dynamic;
-          } else {
+          if (resLines.length > 1 && resLines[1].match(/View attributes: snapshot/)) {
             viewType = ViewType.snapshot;
             if (resLines.length > 1 && resLines[1].match(/webview/i)) {
               viewType = ViewType.webview;
             }
+          } else {
+            viewType = ViewType.dynamic;
           }
         }
       );
@@ -1056,20 +1097,8 @@ export class ClearCase {
     return viewType;
   }
 
-  private isRunningInWsl(): boolean {
-    return this.configHandler.configuration.isWslEnv.value;
-
-    if (type() !== "Windows_NT") {
-      // check if wslpath executeable is available
-      try {
-        fs.accessSync("/usr/bin/wslpath", fs.constants.R_OK);
-      } catch {
-        return false;
-      }
-    } else {
-      return false;
-    }
-    return true;
+  public isRunningInWsl(): boolean {
+    return this.mIsWslEnv || this.configHandler.configuration.isWslEnv.value;
   }
 
   /**
@@ -1103,7 +1132,7 @@ export class ClearCase {
     });
   }
 
-  private wslPath(path: string, toLinux = true, runInWsl?: boolean): string {
+  public wslPath(path: string, toLinux = true, runInWsl?: boolean): string {
     if (runInWsl === undefined) {
       runInWsl = this.isRunningInWsl();
     }

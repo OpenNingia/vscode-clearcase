@@ -86,13 +86,11 @@ export class UIInformation implements IDisposable {
 
   private async updateStatusbar(iFileInfo: string) {
     if (iFileInfo !== undefined) {
-      if ((await this.mClearcase?.hasConfigspec()) === true || iFileInfo !== "") {
-        let version = "view private";
-        if (iFileInfo !== "") {
-          version = iFileInfo;
-        }
+      let version = "view private";
+      if ( iFileInfo !== "" ) {
+        version = iFileInfo;
         if (this.mStatusbar !== null) {
-          this.mStatusbar.text = "[" + version + "]";
+          this.mStatusbar.text = `[${version}]`;
         }
         this.mStatusbar?.show();
       } else {

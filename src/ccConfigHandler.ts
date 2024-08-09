@@ -11,9 +11,9 @@ export class CCConfigHandler implements IDisposable {
   private mDisposables: IDisposable[] = [];
 
   constructor() {
-    this.loadConfig();
-
+    // this.loadConfig();
     this.mDisposables.push(workspace.onDidChangeConfiguration(() => this.handleChangedConfig()));
+    this.handleChangedConfig();
   }
 
   dispose(): void {
@@ -71,6 +71,7 @@ export class CCConfigHandler implements IDisposable {
         this.mConfiguration.webserverPassword
       );
       this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.webserverAddress);
+      this.setChangeConfigDate<boolean>(config, "detectWslEnvironment", this.mConfiguration.detectWslEnvironment);
 
       return true;
     }

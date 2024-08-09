@@ -47,6 +47,7 @@ export class CCConfiguration {
   private mWebserverUsername = new ConfigurationProperty<string>("");
   private mWebserverPassword = new ConfigurationProperty<string>("");
   private mWebserverAddress = new ConfigurationProperty<string>("");
+  private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -122,5 +123,9 @@ export class CCConfiguration {
 
   get webserverAddress(): ConfigurationProperty<string> {
     return this.mWebserverAddress;
+  }
+
+  get detectWslEnvironment(): ConfigurationProperty<boolean> {
+    return this.mDetectWslEnvironment;
   }
 }

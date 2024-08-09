@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "4.5.0",
+  "version": "4.6.0",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -526,6 +526,12 @@
           "type": "boolean",
           "default": "false",
           "markdownDescription": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation",
+          "order": 41
+        },
+        "vscode-clearcase.detectWslEnvironment": {
+          "type": "boolean",
+          "default": "false",
+          "markdownDescription": "Set this to true to automatically detect if you are working in a WSL environment. (ignores `#vscode-clearcase.isWslEnvironment`)",
           "order": 41
         },
         "vscode-clearcase.tempDir": {
