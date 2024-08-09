@@ -275,7 +275,7 @@ export class ClearCase {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       for (const doc of docs) {
-        if( type() === "Windows_NT" ){
+        if (type() === "Windows_NT") {
           exec(`cleardlg /checkout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
           return true;
         } else {
@@ -356,7 +356,7 @@ export class ClearCase {
 
   async checkoutAndSaveFile(doc: TextDocument): Promise<void> {
     const path = doc.fileName;
-    if( type() === "Windows_NT" ){
+    if (type() === "Windows_NT") {
       exec('cleardlg /checkout "' + path + '"', async () => {
         // only trigger save if checkout did work
         // If not and the user canceled this dialog the save event is
@@ -392,7 +392,7 @@ export class ClearCase {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       for (const doc of docs) {
-        if( type() === "Windows_NT" ){
+        if (type() === "Windows_NT") {
           exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
         } else {
           const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
@@ -440,7 +440,7 @@ export class ClearCase {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
       for (const doc of docs) {
-        if( type() === "Windows_NT" ){
+        if (type() === "Windows_NT") {
           exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
         } else {
           const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
@@ -635,7 +635,7 @@ export class ClearCase {
     let result = false;
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
       try {
-        for(let p of workspace.workspaceFolders){
+        for (let p of workspace.workspaceFolders) {
           const cmd: CCArgs = new CCArgs(["catcs"]);
           await this.runCleartoolCommand(
             cmd,
@@ -646,7 +646,7 @@ export class ClearCase {
               result = (code === 0 && error.length === 0);
             }
           );
-          if( result !== false )
+          if (result !== false)
             break;
         }
       } catch (error) {
@@ -678,7 +678,7 @@ export class ClearCase {
    * @returns Promise<string>
    */
   async getVersionInformation(iUri: Uri, normalize = true): Promise<string> {
-    if (iUri !== undefined && this.isView === true ) {
+    if (iUri !== undefined && this.isView === true) {
       let fileVers = "";
       const cwd = dirname(iUri.fsPath);
       await this.runCleartoolCommand(
@@ -707,7 +707,7 @@ export class ClearCase {
       const res = iFileInfo.replace(/"/g, '').split("||");
       if (res.length > 1 && res[0] === "version") {
         return normalize ? res[1].replace(/\\/g, "/").trim() : res[1].trim();
-      } else if( res[0].includes("private") ) {
+      } else if (res[0].includes("private")) {
         return res[0];
       } else {
         return "not in a VOB";
@@ -958,7 +958,10 @@ export class ClearCase {
         }
       );
     }
-    return fs.readFileSync(ret.fsPath, { encoding: "utf-8" });
+    const enc = this.configHandler.configuration.diffViewEncoding.value !== "" ?
+      this.configHandler.configuration.diffViewEncoding.value :
+      "utf8";
+    return fs.readFileSync(ret.fsPath, { encoding: enc });
   }
 
   private async runCleartoolCommand(
@@ -985,81 +988,81 @@ export class ClearCase {
     const outputChannel = this.outputChannel;
     const isView = this.isView;
 
-      let cmdErrMsg = "";
+    let cmdErrMsg = "";
 
-      outputChannel.appendLine(cmd.getCmd().toString());
-      let allData: Buffer = Buffer.alloc(0);
-      let allDataStr = "";
-      const command = spawnSync(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
+    outputChannel.appendLine(cmd.getCmd().toString());
+    let allData: Buffer = Buffer.alloc(0);
+    let allDataStr = "";
+    const command = spawnSync(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
 
-      if( command.stderr.length > 0 ) {
-        let msg = command.stderr;
-        if( Buffer.isBuffer(msg) ) {
+    if (command.stderr.length > 0) {
+      let msg = command.stderr;
+      if (Buffer.isBuffer(msg)) {
+        msg = msg.toString();
+      }
+      window.showErrorMessage(`${msg}`, { modal: false });
+      return Promise.reject(msg);
+    } else if (command.stdout.length > 0) {
+      if (typeof onFinished === "function") {
+        let msg = command.stdout;
+        if (Buffer.isBuffer(msg)) {
           msg = msg.toString();
         }
-        window.showErrorMessage(`${msg}`, { modal: false });
-        return Promise.reject(msg);
-      } else if( command.stdout.length > 0 ) {
-        if (typeof onFinished === "function") {
-          let msg = command.stdout;
-          if( Buffer.isBuffer(msg) ) {
-            msg = msg.toString();
-          }
-          let msgErr = command.stderr;
-          if( Buffer.isBuffer(msgErr) ) {
-            msgErr = msgErr.toString();
-          }
-          onFinished(Number(command.signal), msg, msgErr);
+        let msgErr = command.stderr;
+        if (Buffer.isBuffer(msgErr)) {
+          msgErr = msgErr.toString();
         }
-        return Promise.resolve();
+        onFinished(Number(command.signal), msg, msgErr);
       }
-      /*
-      command.stdout.on("data", (data) => {
-        let res = "";
-        if (typeof data === "string") {
-          res = data;
-          allDataStr += data;
-        } else if (Buffer.isBuffer(data)) {
-          allData = Buffer.concat([allData, data], allData.length + data.length);
-          res = data.toString();
-        }
-        if (onData !== null && typeof onData === "function") {
-          onData(res.split(/\r\n|\r|\n/).filter((s: string) => s.length > 0));
-        }
-      });
+      return Promise.resolve();
+    }
+    /*
+    command.stdout.on("data", (data) => {
+      let res = "";
+      if (typeof data === "string") {
+        res = data;
+        allDataStr += data;
+      } else if (Buffer.isBuffer(data)) {
+        allData = Buffer.concat([allData, data], allData.length + data.length);
+        res = data.toString();
+      }
+      if (onData !== null && typeof onData === "function") {
+        onData(res.split(/\r\n|\r|\n/).filter((s: string) => s.length > 0));
+      }
+    });
 
-      command.stderr.on("data", (data) => {
-        //  Accumulate contents from stderr in cmdErrMsg, which will only be processed on "close"
-        let msg = "";
-        if (typeof data === "string") {
-          msg = data;
-        } else if (Buffer.isBuffer(data)) {
-          msg = data.toString();
-        }
-        cmdErrMsg = `${cmdErrMsg}${msg}`;
-      });
+    command.stderr.on("data", (data) => {
+      //  Accumulate contents from stderr in cmdErrMsg, which will only be processed on "close"
+      let msg = "";
+      if (typeof data === "string") {
+        msg = data;
+      } else if (Buffer.isBuffer(data)) {
+        msg = data.toString();
+      }
+      cmdErrMsg = `${cmdErrMsg}${msg}`;
+    });
 
-      command.on("close", (code) => {
-        if (cmdErrMsg !== "") {
-          //  If something was printed on stderr, log it, regardless of the exit code
-          outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
-        }
-        if (code !== 0 && isView && cmdErrMsg !== "") {
-          window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
-          return Promise.reject(cmdErrMsg);
-        }
-        if (typeof onFinished === "function") {
-          onFinished(code, allData.length > 0 ? allData.toString() : allDataStr, cmdErrMsg);
-        }
-        return Promise.resolve();
-      });
+    command.on("close", (code) => {
+      if (cmdErrMsg !== "") {
+        //  If something was printed on stderr, log it, regardless of the exit code
+        outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
+      }
+      if (code !== 0 && isView && cmdErrMsg !== "") {
+        window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+        return Promise.reject(cmdErrMsg);
+      }
+      if (typeof onFinished === "function") {
+        onFinished(code, allData.length > 0 ? allData.toString() : allDataStr, cmdErrMsg);
+      }
+      return Promise.resolve();
+    });
 
-      command.on("error", (error) => {
-        const msg = `Cleartool error: Cleartool command error: ${error.message}`;
-        outputChannel.appendLine(msg);
-        return Promise.reject(error.message);
-      });
-      */
+    command.on("error", (error) => {
+      const msg = `Cleartool error: Cleartool command error: ${error.message}`;
+      outputChannel.appendLine(msg);
+      return Promise.reject(error.message);
+    });
+    */
   }
 
   private async detectViewType(): Promise<ViewType> {
@@ -1070,8 +1073,8 @@ export class ClearCase {
       if (l.length === 0) {
         return false;
       }
-      return ( l.match(/view uuid: ([\w\.:]+)/gi) ||
-               l.match(/view attributes:\s+snapshot/gi) );
+      return (l.match(/view uuid: ([\w\.:]+)/gi) ||
+        l.match(/view attributes:\s+snapshot/gi));
     };
     if (workspace.workspaceFolders !== undefined) {
       await this.runCleartoolCommand(
@@ -1099,7 +1102,7 @@ export class ClearCase {
   }
 
   public isRunningInWsl(): boolean {
-    return this.mIsWslEnv || this.configHandler.configuration.isWslEnv.value;
+    return this.mIsWslEnv;
   }
 
   /**
@@ -1135,7 +1138,7 @@ export class ClearCase {
 
   public wslPath(path: string, toLinux = true, runInWsl?: boolean): string {
     let newPath = this.getMappedPath(path, toLinux);
-    if( this.isRunningInWsl() ) {
+    if (this.isRunningInWsl()) {
       if (toLinux === true) {
         return newPath.replace(/\\/g, "/");
       } else {
@@ -1146,15 +1149,15 @@ export class ClearCase {
   }
 
   public getMappedPath(path: string, toLinux: boolean): string {
-    if( this.isRunningInWsl() ) {
-      if( this.configHandler.configuration.pathMapping.value.length > 0 ) {
-        for(let p of this.configHandler.configuration.pathMapping.value) {
-          if( toLinux === false ) {
-            if( path.startsWith(p.wsl) ) {
+    if (this.isRunningInWsl()) {
+      if (this.configHandler.configuration.pathMapping.value.length > 0) {
+        for (let p of this.configHandler.configuration.pathMapping.value) {
+          if (toLinux === false) {
+            if (path.startsWith(p.wsl)) {
               return path.replace(p.wsl, p.host);
             }
           } else {
-            if( path.startsWith(p.host) ) {
+            if (path.startsWith(p.host)) {
               return path.replace(p.host, p.wsl);
             }
           }

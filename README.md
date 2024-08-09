@@ -52,6 +52,17 @@ You can use this extenion in a WSL environment and a windows clearcase installat
 
 If the above settings are correct everything else is handled by the extension transparantly.
 
+If the windows drives are not mounted in the default `/mnt/<letter>` paths one can use a mapping in the settings
+
+```
+vscode-clearcase.wsl.pathMapping: [
+  {
+    "host": "c:\\", "wsl": "/mnt/c",
+    "host": "d:\\", "wsl": "/external/d"
+  }
+]
+```
+
 ## Requirements
 
 A valid ClearCase installation within the system's PATH or a valid executable path setup in the **extension** preferences value.

@@ -56,7 +56,6 @@ export class CCConfigHandler implements IDisposable {
       this.setChangeConfigDate<string>(config, "cleartool.defaultComment", this.mConfiguration.defaultComment);
       this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);
       this.setChangeConfigDate<string>(config, "cleartool.executable", this.mConfiguration.executable);
-      this.setChangeConfigDate<boolean>(config, "isWslEnvironment", this.mConfiguration.isWslEnv);
       this.setChangeConfigDate<string>(config, "tempDir", this.mConfiguration.tempDir);
       this.setChangeConfigDate<boolean>(config, "cleartool.undoCheckoutKeepFile", this.mConfiguration.uncoKeepFile);
       this.setChangeConfigDate<boolean>(config, "remoteCleartool.enable", this.mConfiguration.useRemoteClient);
@@ -71,8 +70,9 @@ export class CCConfigHandler implements IDisposable {
         this.mConfiguration.webserverPassword
       );
       this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.webserverAddress);
-      this.setChangeConfigDate<boolean>(config, "detectWslEnvironment", this.mConfiguration.detectWslEnvironment);
-      this.setChangeConfigDate<PathMapping[]>(config, "wslPathMapping", this.mConfiguration.pathMapping);
+      this.setChangeConfigDate<boolean>(config, "wsl.detectEnvironment", this.mConfiguration.detectWslEnvironment);
+      this.setChangeConfigDate<PathMapping[]>(config, "wsl.pathMapping", this.mConfiguration.pathMapping);
+      this.setChangeConfigDate<string>(config, "diffViewerEncoding", this.mConfiguration.diffViewEncoding);
 
       return true;
     }

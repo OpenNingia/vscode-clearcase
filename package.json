@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "4.6.0-beta.4",
+  "version": "4.6.0-beta.6",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -450,6 +450,25 @@
           "markdownDescription": "Shows the current file clearcase version information.",
           "order": 0
         },
+        "vscode-clearcase.diffViewerEncoding": {
+          "type": "string",
+          "default": "utf8",
+          "markdownDescription": "Use the specified encoding for diff view.",
+          "order": 2,
+          "title": "Diff viewer encoding",
+          "enum": [
+            "utf8",
+            "utf16le",
+            "latin1",
+            "ascii"
+          ],
+          "enumItemLabels": [
+            "utf-8",
+            "utf-16le",
+            "latin-1",
+            "ascii"
+          ]
+        },
         "vscode-clearcase.cleartool.useDialog": {
           "type": "boolean",
           "default": "true",
@@ -522,22 +541,16 @@
           "markdownDescription": "The path to the cleartool executable",
           "order": 10
         },
-        "vscode-clearcase.isWslEnvironment": {
-          "type": "boolean",
-          "default": "false",
-          "markdownDescription": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation",
-          "order": 43
-        },
-        "vscode-clearcase.detectWslEnvironment": {
+        "vscode-clearcase.wsl.detectEnvironment": {
           "type": "boolean",
           "default": "false",
           "markdownDescription": "Set this to true to automatically detect if you are working in a WSL environment. (ignores `#vscode-clearcase.isWslEnvironment`)",
           "order": 41
         },
-        "vscode-clearcase.wslPathMapping": {
+        "vscode-clearcase.wsl.pathMapping": {
           "type": "array",
           "markdownDescription": "Set array of paths and there related mapped paths in wsl environment, i.e. {host: \"g:\\\\\", wsl: \"/mnt/g/\"}",
-          "order": 44,
+          "order": 42,
           "items": {
             "type": "object",
             "title": "Path Mapping",
@@ -583,90 +596,6 @@
           "default": "",
           "markdownDescription": "The network address of the clearcase server.",
           "order": 34
-        },
-        "vscode-clearcase.useClearDlg": {
-          "type": "boolean",
-          "default": "true",
-          "markdownDescription": "Use clearDlg command for checkout and checking operations.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.useDialog#`",
-          "order": 100
-        },
-        "vscode-clearcase.showAnnotationCodeLens": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Enable the 'Toggle Annotate' code lens.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.showAnnotationCodeLens#`",
-          "order": 101
-        },
-        "vscode-clearcase.annotationColor": {
-          "type": "string",
-          "default": "rgba(220, 220, 220, 0.8)",
-          "markdownDescription": "Text color of the annotation.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.color#`",
-          "order": 102
-        },
-        "vscode-clearcase.annotationBackgroundColor": {
-          "type": "string",
-          "default": "rgba(20, 20, 20, 0.8)",
-          "markdownDescription": "Background color of the annotation.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.backgroundColor#`",
-          "order": 103
-        },
-        "vscode-clearcase.annotationFormatString": {
-          "type": "string",
-          "default": "%d %12u",
-          "markdownDescription": "The clearcase annotation format string. For documentation information goto https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.annotation.formatString#`",
-          "order": 104
-        },
-        "vscode-clearcase.checkoutCommandArgs": {
-          "type": "string",
-          "default": "-comment ${comment} ${filename}",
-          "markdownDescription": "Clearcase checkout arguments. Ignored if useClearDlg is `true`.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.checkoutCommandArguments#`",
-          "order": 105
-        },
-        "vscode-clearcase.findCheckoutsCommandArgs": {
-          "type": "string",
-          "default": "-me -cview -short -avobs",
-          "markdownDescription": "Clearcase lsco arguments.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.findCheckoutsCommandArguments#`",
-          "order": 106
-        },
-        "vscode-clearcase.checkinCommandArgs": {
-          "type": "string",
-          "default": "-comment ${comment} ${filename}",
-          "markdownDescription": "Clearcase checkin arguments. Ignored if useClearDlg is `true`.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.checkinCommandArguments#`",
-          "order": 107
-        },
-        "vscode-clearcase.defaultComment": {
-          "type": "string",
-          "default": null,
-          "markdownDescription": "Use this string instead of presenting an inputbox for checkout and checkin comments. Ignored if useClearDlg is `true`.",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.defaultComment#`",
-          "order": 108
-        },
-        "vscode-clearcase.executable": {
-          "type": "string",
-          "default": "cleartool.exe",
-          "markdownDescription": "The path to the cleartool executable",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.executable#`",
-          "order": 109
-        },
-        "vscode-clearcase.isWslEnv": {
-          "type": "boolean",
-          "default": "false",
-          "markdownDescription": "Set this to true if you are working in a WSL environment together with a ClearCase windows installation",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.isWslEnvironment#`",
-          "order": 110
-        },
-        "vscode-clearcase.uncoKeepFile": {
-          "type": "boolean",
-          "default": "true",
-          "markdownDescription": "Keep unchecked out files in current directory",
-          "markdownDeprecationMessage": "**Breaking Change** Use new configuration: `#vscode-clearcase.cleartool.uncoKeepFile#`",
-          "order": 111
         }
       }
     },
