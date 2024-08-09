@@ -1,6 +1,6 @@
 export class PathMapping {
-  host: string = "";
-  wsl: string = "";
+  host = "";
+  wsl = "";
 }
 
 export class ConfigurationProperty<T> {
@@ -52,7 +52,7 @@ export class CCConfiguration {
   private mWebserverPassword = new ConfigurationProperty<string>("");
   private mWebserverAddress = new ConfigurationProperty<string>("");
   private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
-  private mPathMapping = new ConfigurationProperty<PathMapping[]>([])
+  private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
   private mDiffEncoding = new ConfigurationProperty<string>("");
 
   get showStatusbar(): ConfigurationProperty<boolean> {

@@ -1,7 +1,7 @@
-import { exec, spawn, ChildProcess, spawnSync } from "child_process";
+import { exec, ChildProcess, spawnSync } from "child_process";
 import * as fs from "fs";
 import { type } from "os";
-import { dirname, join, basename } from "path";
+import { dirname, join } from "path";
 
 import * as tmp from "tmp";
 import {
@@ -20,7 +20,6 @@ import { CCAnnotationController } from "./ccAnnotateController";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { getErrorMessage } from "./errormessage";
 import { MappedList } from "./mappedlist";
-import { PathMapping } from "./ccConfiguration";
 
 export enum EventActions {
   add = 0,
@@ -635,19 +634,20 @@ export class ClearCase {
     let result = false;
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
       try {
-        for (let p of workspace.workspaceFolders) {
+        for (const p of workspace.workspaceFolders) {
           const cmd: CCArgs = new CCArgs(["catcs"]);
           await this.runCleartoolCommand(
             cmd,
-            workspace.workspaceFolders[0].uri.fsPath,
+            p.uri.fsPath,
             null,
             (code: number, _output: string, error: string) => {
               //  Success only if command exit code is 0 and nothing on stderr
               result = (code === 0 && error.length === 0);
             }
           );
-          if (result !== false)
+          if (result !== false) {
             break;
+          }
         }
       } catch (error) {
         result = false;
@@ -689,7 +689,7 @@ export class ClearCase {
           fileVers = (code === 0 && error.length === 0) ?
             this.getVersionString(output, normalize) : "?";
         }
-      )
+      );
       return fileVers;
     }
     return "";
@@ -937,12 +937,11 @@ export class ClearCase {
     let tempDir = this.configHandler.configuration.tempDir.value;
     let tempFile = "";
     let ret = undefined;
-    const isWsl = this.isRunningInWsl();
-    if (isWsl === true) {
-      tempDir = this.wslPath(tempDir, true, isWsl);
+    if (this.isRunningInWsl() === true) {
+      tempDir = this.wslPath(tempDir, true);
       tempFile = tmp.tmpNameSync({ tmpdir: tempDir });
       ret = Uri.file(tempFile);
-      tempFile = this.wslPath(tempFile, false, isWsl);
+      tempFile = this.wslPath(tempFile, false);
     } else {
       tempFile = tmp.tmpNameSync({ tmpdir: tempDir });
       ret = Uri.file(tempFile);
@@ -981,18 +980,10 @@ export class ClearCase {
     // wsl mount point for external drives is /mnt
     // convert backslash to slash
     cmd.files = cmd.files.map((f) => this.wslPath(f, false));
-    // if (cmd.files !== undefined && !fs.existsSync(cmd.files)) {
-    //   return Promise.reject();
-    // }
 
     const outputChannel = this.outputChannel;
-    const isView = this.isView;
-
-    let cmdErrMsg = "";
 
     outputChannel.appendLine(cmd.getCmd().toString());
-    let allData: Buffer = Buffer.alloc(0);
-    let allDataStr = "";
     const command = spawnSync(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
 
     if (command.stderr.length > 0) {
@@ -1016,53 +1007,6 @@ export class ClearCase {
       }
       return Promise.resolve();
     }
-    /*
-    command.stdout.on("data", (data) => {
-      let res = "";
-      if (typeof data === "string") {
-        res = data;
-        allDataStr += data;
-      } else if (Buffer.isBuffer(data)) {
-        allData = Buffer.concat([allData, data], allData.length + data.length);
-        res = data.toString();
-      }
-      if (onData !== null && typeof onData === "function") {
-        onData(res.split(/\r\n|\r|\n/).filter((s: string) => s.length > 0));
-      }
-    });
-
-    command.stderr.on("data", (data) => {
-      //  Accumulate contents from stderr in cmdErrMsg, which will only be processed on "close"
-      let msg = "";
-      if (typeof data === "string") {
-        msg = data;
-      } else if (Buffer.isBuffer(data)) {
-        msg = data.toString();
-      }
-      cmdErrMsg = `${cmdErrMsg}${msg}`;
-    });
-
-    command.on("close", (code) => {
-      if (cmdErrMsg !== "") {
-        //  If something was printed on stderr, log it, regardless of the exit code
-        outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
-      }
-      if (code !== 0 && isView && cmdErrMsg !== "") {
-        window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
-        return Promise.reject(cmdErrMsg);
-      }
-      if (typeof onFinished === "function") {
-        onFinished(code, allData.length > 0 ? allData.toString() : allDataStr, cmdErrMsg);
-      }
-      return Promise.resolve();
-    });
-
-    command.on("error", (error) => {
-      const msg = `Cleartool error: Cleartool command error: ${error.message}`;
-      outputChannel.appendLine(msg);
-      return Promise.reject(error.message);
-    });
-    */
   }
 
   private async detectViewType(): Promise<ViewType> {
@@ -1073,7 +1017,7 @@ export class ClearCase {
       if (l.length === 0) {
         return false;
       }
-      return (l.match(/view uuid: ([\w\.:]+)/gi) ||
+      return (l.match(/view uuid: ([\w.:]+)/gi) ??
         l.match(/view attributes:\s+snapshot/gi));
     };
     if (workspace.workspaceFolders !== undefined) {
@@ -1136,8 +1080,8 @@ export class ClearCase {
     });
   }
 
-  public wslPath(path: string, toLinux = true, runInWsl?: boolean): string {
-    let newPath = this.getMappedPath(path, toLinux);
+  public wslPath(path: string, toLinux = true): string {
+    const newPath = this.getMappedPath(path, toLinux);
     if (this.isRunningInWsl()) {
       if (toLinux === true) {
         return newPath.replace(/\\/g, "/");
@@ -1151,7 +1095,7 @@ export class ClearCase {
   public getMappedPath(path: string, toLinux: boolean): string {
     if (this.isRunningInWsl()) {
       if (this.configHandler.configuration.pathMapping.value.length > 0) {
-        for (let p of this.configHandler.configuration.pathMapping.value) {
+        for (const p of this.configHandler.configuration.pathMapping.value) {
           if (toLinux === false) {
             if (path.startsWith(p.wsl)) {
               return path.replace(p.wsl, p.host);
