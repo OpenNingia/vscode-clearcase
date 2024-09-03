@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 4.6.1
+_Bugfix_
+- fixed synchrous command execution. Clearcase commands did block each other.
+
 ### 4.6.0
 _Feature_
 - activate automatic detection of wsl environment `vscode-clearcase.wsl.detectEnvironment`
