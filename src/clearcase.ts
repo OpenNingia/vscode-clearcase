@@ -1,4 +1,4 @@
-import { exec, ChildProcess, spawnSync } from "child_process";
+import { exec, ChildProcess, spawn } from "child_process";
 import * as fs from "fs";
 import { type } from "os";
 import { dirname, join } from "path";
@@ -984,29 +984,43 @@ export class ClearCase {
     const outputChannel = this.outputChannel;
 
     outputChannel.appendLine(cmd.getCmd().toString());
-    const command = spawnSync(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
+    const command = spawn(executable, cmd.getCmd(), { cwd: cwd, env: process.env });
 
-    if (command.stderr.length > 0) {
-      let msg = command.stderr;
-      if (Buffer.isBuffer(msg)) {
-        msg = msg.toString();
-      }
-      window.showErrorMessage(`${msg}`, { modal: false });
-      return Promise.reject(msg);
-    } else if (command.stdout.length > 0) {
-      if (typeof onFinished === "function") {
-        let msg = command.stdout;
-        if (Buffer.isBuffer(msg)) {
-          msg = msg.toString();
+    let allData: Buffer = Buffer.alloc(0);
+    let cmdErrMsg = "";
+    return new Promise<void>(resolveFct => {
+      command.stdout.on("data", data => {
+        let res = "";
+        if (Buffer.isBuffer(data)) {
+          allData = Buffer.concat([allData, data], allData.length + data.length);
+          res = data.toString();
         }
-        let msgErr = command.stderr;
-        if (Buffer.isBuffer(msgErr)) {
-          msgErr = msgErr.toString();
+        if (onData !== null && typeof onData === "function") {
+          onData(res.split(/\r\n|\r|\n/).filter((s: string) => s.length > 0));
         }
-        onFinished(Number(command.signal), msg, msgErr);
-      }
-      return Promise.resolve();
-    }
+      });
+      command.stderr.on("data", data => {
+        let msg = "";
+        if (Buffer.isBuffer(data)) {
+          msg = data.toString();
+        }
+        cmdErrMsg = `${cmdErrMsg}${msg}`;
+      });
+
+      command.on("close", (code) => {
+        if (cmdErrMsg !== "") {
+          //  If something was printed on stderr, log it, regardless of the exit code
+          outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
+        }
+        if (code !== 0 && this.isView && cmdErrMsg !== "") {
+          window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+        }
+        if (typeof onFinished === "function") {
+          onFinished(code, allData.toString(), cmdErrMsg);
+        }
+        resolveFct();
+      });
+    });
   }
 
   private async detectViewType(): Promise<ViewType> {
