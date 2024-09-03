@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 4.6.2
+_Bugfix_
+- fixed endless loop of cleartool command in case of an error
+
 ### 4.6.1
 _Bugfix_
 - fixed synchrous command execution. Clearcase commands did block each other.
