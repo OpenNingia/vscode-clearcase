@@ -988,7 +988,7 @@ export class ClearCase {
 
     let allData: Buffer = Buffer.alloc(0);
     let cmdErrMsg = "";
-    return new Promise<void>(resolveFct => {
+    return new Promise<void>((resolve, reject) => {
       command.stdout.on("data", data => {
         let res = "";
         if (Buffer.isBuffer(data)) {
@@ -1014,11 +1014,12 @@ export class ClearCase {
         }
         if (code !== 0 && this.isView && cmdErrMsg !== "") {
           window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+          reject();
         }
         if (typeof onFinished === "function") {
           onFinished(code, allData.toString(), cmdErrMsg);
         }
-        resolveFct();
+        resolve();
       });
     });
   }
