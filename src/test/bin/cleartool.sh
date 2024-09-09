@@ -12,6 +12,7 @@ doDescribe=0
 
 theComment=""
 theFormat=""
+theFile=""
 
 usage() {
   echo "cleartool.sh - simulate cleartool for test purpose"
@@ -23,7 +24,15 @@ usage() {
 }
 
 checkin() {
-  echo "checkin version"
+  echo "Checked in \"$theFile\" version \"/main/dev_01/2\"."
+}
+
+checkout() {
+  echo "Checked out \"$theFile\" from version \"/main/dev_01/1\"."
+}
+
+uncheckout() {
+  echo "Checkout cancelled for \"$theFile\"."
 }
 
 # $@ is all command line parameters passed to the script.
@@ -42,7 +51,7 @@ while true; do
     exit 0
     ;;
   ci | checkin)
-    checkin
+    doCheckin=1
     ;;
   co | checkout)
     doCheckout=1
@@ -71,13 +80,24 @@ while true; do
     shift
     theFormat="$1"
     ;;
+  *)
+    theFile="$1"
+    ;;
   --)
     shift
     break
     ;;
   esac
   shift
-  if [ $#==0 ]; then
+  if [ $# -eq 0 ]; then
     break
   fi
 done
+
+if [ $doCheckin -eq 1 ]; then
+  checkin
+elif [ $doCheckout -eq 1 ]; then
+  checkout
+elif [ $doUncheckout -eq 1 ]; then
+  uncheckout
+fi
