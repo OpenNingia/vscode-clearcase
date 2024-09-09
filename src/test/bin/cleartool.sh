@@ -57,7 +57,7 @@ while true; do
     doCheckout=1
     ;;
   unco | uncheckout)
-    doCheckout=1
+    doUncheckout=1
     ;;
   lsvtree)
     doTree=1
