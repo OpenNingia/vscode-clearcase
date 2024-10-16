@@ -112,4 +112,20 @@ suite("Extension Test Suite", () => {
       `Checkout cancelled for "${path.join(testDir, "simple01.txt")}".\n`
     );
   });
+
+  test("Cleartool checkout file already checked out", async () => {
+    configHandler.configuration.useClearDlg.value = false;
+    configHandler.configuration.checkoutCommand.value = "-nc ${filename}";
+
+    const file = path.join(testDir, "simple04.txt");
+
+    const fileUri = vscode.Uri.parse(file);
+    await provider.clearCase?.checkoutFile([fileUri]);
+    assert.strictEqual(outputChannel.getLine(0), `co,-nc,${file}\n`);
+    assert.strictEqual(
+      outputChannel.getLastLine(),
+      `cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
+    );
+  });
+
 });

@@ -28,11 +28,34 @@ checkin() {
 }
 
 checkout() {
-  echo "Checked out \"$theFile\" from version \"/main/dev_01/1\"."
+  if [ ! ${theFile#*simple02.txt} ]; then
+    # checkin file not found
+    error 1
+  elif [ ! ${theFile#*simple03.txt} ]; then
+    # checkin not checked out
+    error 2
+  elif [ ! ${theFile#*simple04.txt} ]; then
+    # checkout checked out
+    error 3
+  else
+    echo "Checked out \"$theFile\" from version \"/main/dev_01/1\"."
+  fi
 }
 
 uncheckout() {
   echo "Checkout cancelled for \"$theFile\"."
+}
+
+error() {
+  local state=$1
+  if [ $state -eq 1 ]; then # file not found
+    echo "cleartool: Error: Unable to access \"$theFile\": No such file or directory."
+  elif [ $state -eq 2 ]; then #checkin file not checked out
+    echo "cleartool: Error: No branch of element is checked out to view \"myhost:/home/user/viewstore/myview.vws\"."
+    echo "cleartool: Error: Unable to find checked out version for \"$theFile\"."
+  elif [ $state -eq 3 ]; then #check out already checked out
+    echo "cleartool: Error: Element \"$theFile\" is already checked out to view \"myview\"."
+  fi
 }
 
 # $@ is all command line parameters passed to the script.
