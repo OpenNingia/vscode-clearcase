@@ -1011,6 +1011,8 @@ export class ClearCase {
         if (cmdErrMsg !== "") {
           //  If something was printed on stderr, log it, regardless of the exit code
           outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
+        } else {
+          outputChannel.appendLine(`${allData.toString()}`);
         }
         if (code !== 0 && this.isView && cmdErrMsg !== "") {
           window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
