@@ -12,7 +12,6 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log("[vscode-clearcase] starting!");
-
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with  registerCommand
   // The commandId parameter must match the command field in package.json
@@ -55,6 +54,11 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
+    // Set context as a global as some tests depend on it
+  /* eslint-disable */
+	(global as any).testExtensionContext = context;
+  /* eslint-enable */
+
   const disposables: Disposable[] = [];
   context.subscriptions.push(new Disposable(() => Disposable.from(...disposables).dispose()));
   if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {

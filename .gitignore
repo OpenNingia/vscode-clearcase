@@ -4,3 +4,5 @@ node_modules
 .vscode-test/
 *.vsix
 npm-debug.log
+webpack.config.js*
+findmerge*

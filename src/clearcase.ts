@@ -988,7 +988,7 @@ export class ClearCase {
 
     let allData: Buffer = Buffer.alloc(0);
     let cmdErrMsg = "";
-    return new Promise<void>(resolveFct => {
+    return new Promise<void>((resolve, reject) => {
       command.stdout.on("data", data => {
         let res = "";
         if (Buffer.isBuffer(data)) {
@@ -1011,14 +1011,17 @@ export class ClearCase {
         if (cmdErrMsg !== "") {
           //  If something was printed on stderr, log it, regardless of the exit code
           outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`);
+        } else {
+          outputChannel.appendLine(`${allData.toString()}`);
         }
         if (code !== 0 && this.isView && cmdErrMsg !== "") {
           window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
+          reject();
         }
         if (typeof onFinished === "function") {
           onFinished(code, allData.toString(), cmdErrMsg);
         }
-        resolveFct();
+        resolve();
       });
     });
   }
