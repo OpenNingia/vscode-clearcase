@@ -11,6 +11,10 @@ import { after, before, beforeEach } from "mocha";
 import SuiteOutputChannel from "../mock/SuiteOutputChannel";
 // import * as myExtension from '../../extension';
 
+//const WS_ROOT = process.env["WS_ROOT"] ? process.env["WS_ROOT"] : "";
+const TEST_HOME = process.env["HOME"] ? process.env["HOME"] : "-";
+const TEST_USER = process.env["USER"] ? process.env["USER"] : "-";
+
 suite("Extension Test Suite", () => {
   vscode.window.showInformationMessage("Start all tests.");
   let extensionContext: vscode.ExtensionContext;
@@ -126,6 +130,41 @@ suite("Extension Test Suite", () => {
       outputChannel.getLastLine(),
       `cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
     );
+  });
+
+  test("Extension: Path names with environment variable", async () => {
+    configHandler.configuration.tempDir.value = "${env:HOME}/tmp";
+    assert.strictEqual(`${TEST_HOME}/tmp`, configHandler.configuration.tempDir.value);
+  });
+
+  test("Extension: Path names with multiple environment variables", async () => {
+    configHandler.configuration.tempDir.value = "${env:HOME}/tmp/${env:USER}";
+    assert.strictEqual(`${TEST_HOME}/tmp/${TEST_USER}`, configHandler.configuration.tempDir.value);
+  });
+
+  test("Extension: Path names with invalid variable 1", async () => {
+    configHandler.configuration.tempDir.value = "${HOME}/tmp";
+    assert.strictEqual('${HOME}/tmp', configHandler.configuration.tempDir.value);
+  });
+
+  test("Extension: Path names with invalid variable 2", async () => {
+    configHandler.configuration.tempDir.value = "{HOME}/tmp";
+    assert.strictEqual('{HOME}/tmp', configHandler.configuration.tempDir.value);
+  });
+
+  test("Extension: Path names with invalid variable 3", async () => {
+    configHandler.configuration.tempDir.value = "{env:}/tmp";
+    assert.strictEqual('{env:}/tmp', configHandler.configuration.tempDir.value);
+  });
+
+  test("Extension: Path names with invalid variable 4", async () => {
+    configHandler.configuration.tempDir.value = "${env:}/tmp";
+    assert.strictEqual('${env:}/tmp', configHandler.configuration.tempDir.value);
+  });
+
+  test("Extension: Path names with invalid variable 5", async () => {
+    configHandler.configuration.tempDir.value = "${env:}/tmp/${env:USER}";
+    assert.strictEqual('${env:}/tmp' + `/${TEST_USER}`, configHandler.configuration.tempDir.value);
   });
 
 });

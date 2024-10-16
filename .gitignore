@@ -5,3 +5,4 @@ node_modules
 *.vsix
 npm-debug.log
 webpack.config.js*
+findmerge*

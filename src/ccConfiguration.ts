@@ -3,6 +3,32 @@ export class PathMapping {
   wsl = "";
 }
 
+export class Variables {
+  static parse<T>(value: T): T {
+    if (value === null || value === "" || typeof value !== "string") {
+      return value;
+    }
+
+    // get env variable
+    const idx = value.indexOf("env:");
+    let retVal = value as string;
+    if (idx > 0) {
+      const matches = value.matchAll(/\$\{env:(\w+)\}/gi);
+      for (const subgrp of matches) {
+        if (subgrp.length > 0) {
+          if (subgrp[1] in process.env) {
+            const v = process.env[subgrp[1]];
+            if (v !== undefined) {
+              retVal = retVal.replace(subgrp[0], v);
+            }
+          }
+        }
+      }
+    }
+    return retVal as T;
+  }
+}
+
 export class ConfigurationProperty<T> {
   private mChanged: boolean;
 
@@ -16,7 +42,7 @@ export class ConfigurationProperty<T> {
 
   set value(value: T) {
     if (this.mProp !== value) {
-      this.mProp = value;
+      this.mProp = Variables.parse<T>(value);
       this.mChanged = true;
     }
   }
