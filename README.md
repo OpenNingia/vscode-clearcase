@@ -38,7 +38,7 @@ Clearcase commands exposed by this extensions:
      vscode-clearcase.annotationFormatString = "%d %12u"
      ```
 
-     Format string is documented at https://www.ibm.com/support/knowledgecenter/SSSH27_8.0.0/com.ibm.rational.clearcase.cc_ref.doc/topics/fmt_ccase.htm
+     Format string is documented at https://www.ibm.com/docs/en/clearcase/11.0.0?topic=information-fmt-ccase#ref_fmtccase_refsect2_36512
 
    * Syntax highlighting for ClearCase config-spec files
 
