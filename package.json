@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "4.7.0",
+  "version": "5.0.0-beta.1",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -42,6 +42,20 @@
         "command": "extension.ccCheckout",
         "title": "Checkout",
         "category": "Clearcase"
+      },
+      {
+        "command": "extension.ccHijack",
+        "title": "Hijack",
+        "category": "Clearcase"
+      },
+      {
+        "command": "extension.ccUndoHijack",
+        "title": "Undo Hijack",
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/light/clean.svg",
+          "dark": "./Assets/icons/dark/clean.svg"
+        }
       },
       {
         "command": "extension.ccCheckin",
@@ -92,6 +106,11 @@
       {
         "command": "extension.ccFindCheckouts",
         "title": "Find Checkouts",
+        "category": "Clearcase"
+      },
+      {
+        "command": "extension.ccFindViewPrivate",
+        "title": "Find View Private Files",
         "category": "Clearcase"
       },
       {
@@ -278,6 +297,16 @@
           "command": "extension.ccUndoCheckout",
           "group": "cc@4",
           "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
         }
       ],
       "editor/context": [
@@ -295,6 +324,16 @@
           "command": "extension.ccCheckout",
           "group": "cc@2",
           "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
         },
         {
           "command": "extension.ccComparePrevious",
@@ -377,7 +416,7 @@
         },
         {
           "command": "extension.ccComparePrevious",
-          "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
+          "when": "scmProvider == cc && scmResourceGroup != cc_untracked && vscode-clearcase:enabled",
           "group": "cc_file"
         },
         {
@@ -394,6 +433,11 @@
           "command": "extension.ccCheckinSelected",
           "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
           "group": "cc_file"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "when": "scmProvider == cc && scmResourceGroup == cc_hijacked && vscode-clearcase:enabled",
+          "group": "inline@1"
         }
       ]
     },
@@ -471,7 +515,7 @@
         },
         "vscode-clearcase.cleartool.useDialog": {
           "type": "boolean",
-          "default": "true",
+          "default": true,
           "markdownDescription": "Use clearDlg command for checkout and checking operations.",
           "order": 1
         },
@@ -511,6 +555,30 @@
           "markdownDescription": "Clearcase lsco arguments.",
           "order": 15
         },
+        "vscode-clearcase.cleartool.showViewPrivateFiles": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Search for view-private files in current view. The configuration is in #vscode-clearcase.cleartool.findViewPrivateCommandArguments.",
+          "order": 16
+        },
+        "vscode-clearcase.cleartool.findViewPrivateCommandArguments": {
+          "type": "string",
+          "default": "ls -rec -view_only ${env:CLEARCASE_AVOBS}",
+          "markdownDescription": "Clearcase command and arguments for searching view private files.",
+          "order": 17
+        },
+        "vscode-clearcase.cleartool.showHijackedFiles": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Search for hijacked files in current view. The configuration is in #vscode-clearcase.cleartool.findHijackedCommandArguments.",
+          "order": 18
+        },
+        "vscode-clearcase.cleartool.findHijackedCommandArguments": {
+          "type": "string",
+          "default": "ls -rec ${env:CLEARCASE_AVOBS}",
+          "markdownDescription": "Clearcase command and arguments for searching hijacked files.",
+          "order": 19
+        },
         "vscode-clearcase.cleartool.checkinCommandArguments": {
           "type": "string",
           "default": "-comment ${comment} ${filename}",
@@ -519,7 +587,7 @@
         },
         "vscode-clearcase.cleartool.undoCheckoutKeepFile": {
           "type": "boolean",
-          "default": "true",
+          "default": true,
           "markdownDescription": "Keep unchecked out files in current directory",
           "order": 14
         },
@@ -533,7 +601,7 @@
           "type": "string",
           "default": "(hh|cpp|def|c|h|txt)$",
           "markdownDescription": "Regular expression style string for file suffixes be shown as view private.",
-          "order": 16
+          "order": 20
         },
         "vscode-clearcase.cleartool.executable": {
           "type": "string",
@@ -616,6 +684,15 @@
           "light": "#007100",
           "dark": "#73C991",
           "highContrast": "#73C991"
+        }
+      },
+      {
+        "id": "ccDecoration.hijackedResourceForeground",
+        "description": "%colors.hijacked%",
+        "defaults": {
+          "light": "#054457",
+          "dark": "#70a1eb",
+          "highContrast": "#a1d3f0"
         }
       }
     ],

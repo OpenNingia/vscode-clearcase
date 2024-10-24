@@ -9,6 +9,7 @@ import {
 import { ClearCase } from "./clearcase";
 import { IDisposable } from "./model";
 import { toCcUri, fromCcUri } from "./uri";
+import { CCVersionState } from "./ccVerstionType";
 
 export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, IDisposable {
   private mDisposals: IDisposable[] = [];
@@ -59,10 +60,13 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
 
     const currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? "";
     if (currentVersion !== "") {
-      const isCheckedOut = currentVersion.match("\\b(CHECKEDOUT)\\b$");
+      const isCheckedOut = currentVersion.version.match(/(checkedout)$/i);
 
       if (isCheckedOut) {
-        return toCcUri(uri, currentVersion.replace("CHECKEDOUT", "LATEST"));
+        return toCcUri(uri, currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
+      }
+      if (currentVersion.state === CCVersionState.hijacked) {
+        return toCcUri(uri, currentVersion.version);
       }
     }
     return;

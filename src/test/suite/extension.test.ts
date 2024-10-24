@@ -6,9 +6,10 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { CCConfigHandler } from "../../ccConfigHandler";
 import { CCScmProvider } from "../../ccScmProvider";
-import { mkdirSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
+import { chmodSync, mkdirSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
 import { after, before, beforeEach } from "mocha";
 import SuiteOutputChannel from "../mock/SuiteOutputChannel";
+import { CCVersionState } from "../../ccVerstionType";
 // import * as myExtension from '../../extension';
 
 //const WS_ROOT = process.env["WS_ROOT"] ? process.env["WS_ROOT"] : "";
@@ -41,6 +42,8 @@ suite("Extension Test Suite", () => {
     writeFileSync(path.join(testDir, "simple02.txt"), "");
     writeFileSync(path.join(testDir, "simple03.txt"), "");
     writeFileSync(path.join(testDir, "simple04.txt"), "");
+    writeFileSync(path.join(testDir, "simple04_ro.txt"), "");
+    chmodSync(path.join(testDir, "simple04_ro.txt"), 0o555);
   });
 
   after(() => {
@@ -48,6 +51,7 @@ suite("Extension Test Suite", () => {
     unlinkSync(path.join(testDir, "simple02.txt"));
     unlinkSync(path.join(testDir, "simple03.txt"));
     unlinkSync(path.join(testDir, "simple04.txt"));
+    unlinkSync(path.join(testDir, "simple04_ro.txt"));
     rmdirSync(testDir);
   });
 
@@ -85,7 +89,7 @@ suite("Extension Test Suite", () => {
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearCase?.checkoutFile([file]);
-    assert.strictEqual(outputChannel.getLine(0), `co,-nc,${path.join(testDir, "simple01.txt")}\n`);
+    assert.strictEqual(outputChannel.getLine(0), `co,-usehijack,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
       outputChannel.getLastLine(),
       `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
@@ -125,7 +129,7 @@ suite("Extension Test Suite", () => {
 
     const fileUri = vscode.Uri.parse(file);
     await provider.clearCase?.checkoutFile([fileUri]);
-    assert.strictEqual(outputChannel.getLine(0), `co,-nc,${file}\n`);
+    assert.strictEqual(outputChannel.getLine(0), `co,-usehijack,-nc,${file}\n`);
     assert.strictEqual(
       outputChannel.getLastLine(),
       `cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
@@ -165,6 +169,54 @@ suite("Extension Test Suite", () => {
   test("Extension: Path names with invalid variable 5", async () => {
     configHandler.configuration.tempDir.value = "${env:}/tmp/${env:USER}";
     assert.strictEqual('${env:}/tmp' + `/${TEST_USER}`, configHandler.configuration.tempDir.value);
+  });
+
+  test("Extension: Version information of hijacked file", async () => {
+    const file = path.join(testDir, "simple04_ro.txt");
+
+    const info = `${file}@@/main/3 [hijacked]           Rule: element * A_SUPER_LABEL.0.0.1.0.1_3 [-mkbranch my_owndev]`;
+
+    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    assert.strictEqual(version?.version, "/main/3");
+    assert.strictEqual(version?.state, CCVersionState.hijacked);
+  });
+
+  test("Extension: Version information of checkedin file", async () => {
+    const file = path.join(testDir, "simple04_ro.txt");
+
+    const info = `${file}@@/main/testbranch_01/my_owndev/3      Rule: element * A_SUPER_LABEL.0.0.1.0.1_3 [-mkbranch my_owndev]`;
+
+    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    assert.strictEqual(version?.version, "/main/testbranch_01/my_owndev/3");
+    assert.strictEqual(version?.state, CCVersionState.versioned);
+  });
+
+  test("Extension: Version information of checkedout file", async () => {
+    const file = path.join(testDir, "simple04_ro.txt");
+
+    const info = `${file}@@/main/testbranch_01/my_owndev/CHECKEDOUT from /main/testbranch_01/my_owndev/0         Rule: CHECKEDOUT`;
+
+    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    assert.strictEqual(version?.version, "/main/testbranch_01/my_owndev/CHECKEDOUT");
+    assert.strictEqual(version?.state, CCVersionState.versioned);
+  });
+
+  test("Extension: Version information of view private file", async () => {
+    const file = path.join(testDir, "simple04_ro.txt");
+
+    const info = `${file}`;
+
+    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    assert.strictEqual(version?.version, "view private");
+    assert.strictEqual(version.state, CCVersionState.untracked);
+  });
+
+  test("Extension: Version information of of empty file name string", async () => {
+    const info = ``;
+
+    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    assert.strictEqual(version?.version, "not in a VOB");
+    assert.strictEqual(version?.state, CCVersionState.untracked);
   });
 
 });

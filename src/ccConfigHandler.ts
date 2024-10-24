@@ -52,6 +52,18 @@ export class CCConfigHandler implements IDisposable {
         "cleartool.findCheckoutsCommandArguments",
         this.mConfiguration.findCheckoutsCommand
       );
+      this.setChangeConfigDate<string>(
+        config,
+        "cleartool.findViewPrivateCommandArguments",
+        this.mConfiguration.findViewPrivateCommand
+      );
+      this.setChangeConfigDate<string>(
+        config,
+        "cleartool.findHijackedCommandArguments",
+        this.mConfiguration.findHijackedCommand
+      );
+      this.setChangeConfigDate<boolean>(config, "cleartool.showHijackedFiles", this.mConfiguration.showHijackedFiles);
+      this.setChangeConfigDate<boolean>(config, "cleartool.showViewPrivateFiles", this.mConfiguration.showViewPrivateFiles);
       this.setChangeConfigDate<string>(config, "cleartool.checkinCommandArguments", this.mConfiguration.checkinCommand);
       this.setChangeConfigDate<string>(config, "cleartool.defaultComment", this.mConfiguration.defaultComment);
       this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);

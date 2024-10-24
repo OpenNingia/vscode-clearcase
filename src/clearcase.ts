@@ -20,6 +20,7 @@ import { CCAnnotationController } from "./ccAnnotateController";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { getErrorMessage } from "./errormessage";
 import { MappedList } from "./mappedlist";
+import { CCVersionState, CCVersionType } from "./ccVerstionType";
 
 export enum EventActions {
   add = 0,
@@ -127,6 +128,7 @@ export class ClearCase {
   private mUpdateEvent = new EventEmitter<Uri[]>();
 
   private mUntrackedList = new MappedList();
+  private mHijackedList = new MappedList();
   private mExecCmd: CleartoolIf;
 
   private mWebviewPassword = "";
@@ -175,6 +177,10 @@ export class ClearCase {
 
   get untrackedList(): MappedList {
     return this.mUntrackedList;
+  }
+
+  get hijackedList(): MappedList {
+    return this.mHijackedList;
   }
 
   set password(val: string) {
@@ -328,6 +334,10 @@ export class ClearCase {
         cmdOpts.push("-nc");
       }
     }
+    // by default add the usehijack flag to also checkout hijacked files
+    if (!coArgTmpl.includes("usehijack")) {
+      cmdOpts.splice(0, 0, "-usehijack");
+    }
     const cmd: CCArgs = new CCArgs(["co"]);
     cmd.params = cmd.params.concat(cmdOpts);
     idx = cmd.params.indexOf("${filename}");
@@ -433,6 +443,24 @@ export class ClearCase {
     });
 
     await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+  }
+
+  async createHijackedObject(docs: Uri[]): Promise<void> {
+    if (this.mViewType === ViewType.snapshot) {
+      for (const d of docs) {
+        fs.chmodSync(d.fsPath, 0o777);
+        fs.writeFileSync(d.fsPath, fs.readFileSync(d.fsPath));
+      }
+      this.mUpdateEvent.fire(docs);
+    }
+  }
+
+  async cancelHijackedObject(docs: Uri[]): Promise<void> {
+    if (this.mViewType === ViewType.snapshot) {
+      for (const d of docs) {
+        await this.runCleartoolCommand(new CCArgs(["update", "-overwrite"], [d.fsPath]), dirname(d.fsPath), null, () => this.mUpdateEvent.fire([d]));
+      }
+    }
   }
 
   async checkinFileAction(docs: Uri[]): Promise<void> {
@@ -583,6 +611,96 @@ export class ClearCase {
   }
 
   /**
+   * Searching view private files in all vobs of the current view
+   */
+  async findViewPrivate(): Promise<string[]> {
+    const lscoArgTmpl = this.configHandler.configuration.findViewPrivateCommand.value;
+    let resNew: string[] = [];
+    let wsf = "";
+    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
+      wsf = workspace.workspaceFolders[0].uri.fsPath;
+    }
+    try {
+      const runInWsl = this.isRunningInWsl();
+      const cmdOpts = lscoArgTmpl.split(" ");
+      const cmd: CCArgs = new CCArgs([...cmdOpts]);
+      await this.runCleartoolCommand(
+        cmd,
+        wsf,
+        null,
+        (_code: number, output: string, _error: string) => {
+          if (output.length > 0) {
+            const suff = this.configHandler.configuration.viewPrivateFileSuffixes.value;
+            const suffRe = new RegExp(suff, "i");
+            const results: string[] = output.trim().split(/\r\n|\r|\n/);
+            resNew = results.filter((v) => {
+              return ((v.match(suffRe) !== null));
+            }).map((e) => {
+              if (e.startsWith("\\") && type() === "Windows_NT") {
+                e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
+              }
+              if (runInWsl === true) {
+                // e = this.wslPath(e, true, runInWsl);
+                e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+              }
+              return e;
+            });
+          }
+        }
+      );
+    } catch (error) {
+      this.outputChannel.appendLine(getErrorMessage(error));
+    }
+    return resNew;
+  }
+
+  /**
+   * Searching view private files in all vobs of the current view
+   */
+  async findHijacked(): Promise<string[]> {
+    const lscoArgTmpl = this.configHandler.configuration.findHijackedCommand.value;
+    let resNew: string[] = [];
+    let wsf = "";
+    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
+      wsf = workspace.workspaceFolders[0].uri.fsPath;
+    }
+    try {
+      const runInWsl = this.isRunningInWsl();
+      const cmdOpts = lscoArgTmpl.split(" ");
+      const cmd: CCArgs = new CCArgs([...cmdOpts]);
+      await this.runCleartoolCommand(
+        cmd,
+        wsf,
+        null,
+        (_code: number, output: string, _error: string) => {
+          if (output.length > 0) {
+            const results: string[] = output.trim().split(/\r\n|\r|\n/);
+            resNew = results.filter((v) => {
+              return ((v.match(/hijacked/i) !== null));
+            }).map((e) => {
+              if (e.startsWith("\\") && type() === "Windows_NT") {
+                e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
+              }
+              if (runInWsl === true) {
+                // e = this.wslPath(e, true, runInWsl);
+                e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+              }
+              const idx = e.indexOf("@@");
+              if (idx > -1) {
+                e = e.substring(0, idx);
+              }
+              return e;
+            });
+          }
+        }
+      );
+    } catch (error) {
+      this.outputChannel.appendLine(getErrorMessage(error));
+    }
+    return resNew;
+  }
+
+  /**
    * Searching view private objects in all workspace folders of the current project.
    * The result is filtered by the configuration 'ViewPrivateFileSuffixes'
    */
@@ -663,7 +781,7 @@ export class ClearCase {
    */
   async isClearcaseObject(iUri: Uri): Promise<boolean> {
     try {
-      return "" !== (await this.getVersionInformation(iUri));
+      return ((await this.getVersionInformation(iUri)).state !== CCVersionState.untracked);
     } catch (error) {
       return false;
     }
@@ -677,22 +795,22 @@ export class ClearCase {
    * @param iUri the uri of the file object to be checked
    * @returns Promise<string>
    */
-  async getVersionInformation(iUri: Uri, normalize = true): Promise<string> {
+  async getVersionInformation(iUri: Uri, normalize = true): Promise<CCVersionType> {
+    let fileVers = new CCVersionType();
     if (iUri !== undefined && this.isView === true) {
-      let fileVers = "";
       const cwd = dirname(iUri.fsPath);
       await this.runCleartoolCommand(
-        new CCArgs(["describe", "-fmt", `"%m||%Vn"`], [iUri.fsPath]),
+        new CCArgs(["ls"], [iUri.fsPath]),
         cwd,
         null,
         (code: number, output: string, error: string) => {
-          fileVers = (code === 0 && error.length === 0) ?
-            this.getVersionString(output, normalize) : "?";
+          if (code === 0 && error.length === 0) {
+            fileVers = this.getVersionString(output, normalize);
+          }
         }
       );
-      return fileVers;
     }
-    return "";
+    return fileVers;
   }
 
   /**
@@ -702,18 +820,24 @@ export class ClearCase {
    * @param iFileInfo a string with filename and version information
    * @returns string
    */
-  getVersionString(iFileInfo: string, normalize: boolean): string {
+  getVersionString(iFileInfo: string, normalize: boolean): CCVersionType {
+    const ver = new CCVersionType("not in a VOB");
     if (iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "") {
-      const res = iFileInfo.replace(/"/g, '').split("||");
-      if (res.length > 1 && res[0] === "version") {
-        return normalize ? res[1].replace(/\\/g, "/").trim() : res[1].trim();
-      } else if (res[0].includes("private")) {
-        return res[0];
-      } else {
-        return "not in a VOB";
+      const res = iFileInfo.match(/(((\S+)@@(\S+)(\s+\[hijacked\]){0,1}(.*){0,1})|(\S+))/i);
+      if (res) {
+        if (res.length > 0 && res[5] !== undefined) {
+          ver.version = res[4];
+          ver.state = CCVersionState.hijacked;
+        } else if (res.length > 0 && res[3] !== undefined && res[4] !== undefined) {
+          ver.version = normalize ? res[4].replace(/\\/g, "/").trim() : res[4].trim();
+          ver.state = CCVersionState.versioned;
+        } else if (res.length > 0 && res[7] !== undefined) {
+          ver.version = "view private";
+          ver.state = CCVersionState.untracked;
+        }
       }
     }
-    return "";
+    return ver;
   }
 
   async updateDir(uri: Uri): Promise<void> {

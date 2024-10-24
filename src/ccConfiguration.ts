@@ -31,9 +31,11 @@ export class Variables {
 
 export class ConfigurationProperty<T> {
   private mChanged: boolean;
+  private mProp: T;
 
-  constructor(private mProp: T) {
+  constructor(prop: T) {
     this.mChanged = true;
+    this.mProp = Variables.parse<T>(prop);
   }
 
   get value(): T {
@@ -67,6 +69,8 @@ export class CCConfiguration {
     "-comment ${comment} ${filename}"
   );
   private mFindCheckoutsCommand = new ConfigurationProperty<string>("-me -cview -short -avobs");
+  private mFindViewPrivateCommand = new ConfigurationProperty<string>("ls -rec -view_only ${env:CLEARCASE_AVOBS}");
+  private mFindHijackedCommand = new ConfigurationProperty<string>("ls -rec ${env:CLEARCASE_AVOBS}");
   private mUncoKeepFile = new ConfigurationProperty<boolean>(true);
   private mCheckinCommand = new ConfigurationProperty<string>("-comment ${comment} ${filename}");
   private mDefaultComment = new ConfigurationProperty<string>("");
@@ -80,6 +84,9 @@ export class CCConfiguration {
   private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
   private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
   private mDiffEncoding = new ConfigurationProperty<string>("");
+
+  private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
+  private mShowViewPrivateFiles = new ConfigurationProperty<boolean>(false);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -115,6 +122,22 @@ export class CCConfiguration {
 
   get findCheckoutsCommand(): ConfigurationProperty<string> {
     return this.mFindCheckoutsCommand;
+  }
+
+  get findViewPrivateCommand(): ConfigurationProperty<string> {
+    return this.mFindViewPrivateCommand;
+  }
+
+  get findHijackedCommand(): ConfigurationProperty<string> {
+    return this.mFindHijackedCommand;
+  }
+
+  get showHijackedFiles(): ConfigurationProperty<boolean> {
+    return this.mShowHijackedFiles;
+  }
+
+  get showViewPrivateFiles(): ConfigurationProperty<boolean> {
+    return this.mShowViewPrivateFiles;
   }
 
   get uncoKeepFile(): ConfigurationProperty<boolean> {

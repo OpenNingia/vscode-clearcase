@@ -7,6 +7,7 @@ export const enum ResourceGroupType {
   index,
   workingTree,
   untracked,
+  hijacked
 }
 
 const iconRootPath = path.join(path.dirname(__dirname), "Assets", "icons");
@@ -39,6 +40,8 @@ export class CCScmResource implements SourceControlResourceState {
         return "M";
       case CCScmStatus.untracked:
         return "U";
+      case CCScmStatus.hijacked:
+        return "H";
     }
   }
 
@@ -48,6 +51,8 @@ export class CCScmResource implements SourceControlResourceState {
         return "modified";
       case CCScmStatus.untracked:
         return "untracked";
+      case CCScmStatus.hijacked:
+        return "hijacked";
     }
   }
 
@@ -57,6 +62,8 @@ export class CCScmResource implements SourceControlResourceState {
         return new ThemeColor("ccDecoration.modifiedResourceForeground");
       case CCScmStatus.untracked:
         return new ThemeColor("ccDecoration.untrackedResourceForeground");
+      case CCScmStatus.hijacked:
+        return new ThemeColor("ccDecoration.hijackedResourceForeground");
     }
   }
 

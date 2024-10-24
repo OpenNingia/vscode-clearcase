@@ -15,7 +15,11 @@
 			],
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"
-			]
+			],
+			"env": {
+				"VSCODE_DEBUG_MODE": "true"
+			},
+			"preLaunchTask": "npm: webpack"
 		},
 		{
 			"name": "Run Extension",
@@ -56,7 +60,8 @@
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
-			]
+			],
+			"preLaunchTask": "npm: webpack"
 		}
 	]
 }

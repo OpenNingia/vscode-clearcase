@@ -12,6 +12,7 @@ import {
   workspace,
 } from "vscode";
 import { IDisposable } from "./model";
+import { CCVersionState, CCVersionType } from "./ccVerstionType";
 
 export class UIInformation implements IDisposable {
   private mStatusbar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
@@ -80,17 +81,28 @@ export class UIInformation implements IDisposable {
       this.mClearcase
         ?.getVersionInformation(iUri)
         .then((value) => this.updateStatusbar(value))
-        .catch(() => this.updateStatusbar(""));
+        .catch(() => this.updateStatusbar(new CCVersionType()));
     }
   }
 
-  private async updateStatusbar(iFileInfo: string) {
-    if (iFileInfo !== undefined) {
-      let version = "view private";
-      if ( iFileInfo !== "" ) {
-        version = iFileInfo;
+  private async updateStatusbar(version: CCVersionType) {
+    if (version !== undefined) {
+      if (version.version !== "") {
         if (this.mStatusbar !== null) {
-          this.mStatusbar.text = `[${version}]`;
+          switch (version.state) {
+            case CCVersionState.versioned:
+              {
+                this.mStatusbar.text = `[${version.version}]`;
+                break;
+              }
+            case CCVersionState.hijacked:
+              {
+                this.mStatusbar.text = `[HIJACKED]`;
+                break;
+              }
+            default:
+              this.mStatusbar.text = ``;
+          }
         }
         this.mStatusbar?.show();
       } else {
