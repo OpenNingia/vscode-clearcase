@@ -55,6 +55,7 @@ Depending on the view type, snapshot or dynamic, there are different commands.
 
   **Snapshot** 
   * cleartool ls -view_only -rec $CLEARCASE_AVOBS
+  
   The $CLEARCASE_AVOBS variable can be replaced by a list of vobs separated by a space
 
   **Dynamic**

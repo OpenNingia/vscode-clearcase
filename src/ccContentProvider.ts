@@ -9,10 +9,13 @@ import {
 import { ClearCase } from "./clearcase";
 import { IDisposable } from "./model";
 import { toCcUri, fromCcUri } from "./uri";
-import { CCVersionState } from "./ccVerstionType";
+import { CCVersionState, CCVersionType } from "./ccVerstionType";
 
 export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, IDisposable {
   private mDisposals: IDisposable[] = [];
+  private mOriginalContent = "";
+  private mOriginalPath = "";
+  private mOriginalVersion: CCVersionType = new CCVersionType();
 
   constructor(private mCcHandler: ClearCase | null) {
     if (this.mCcHandler !== null) {
@@ -37,9 +40,14 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
     const { path, version } = fromCcUri(uri);
 
     try {
-      return this.mCcHandler ? await this.mCcHandler.readFileAtVersion(path, version) : "";
+      // if the path did not change use the cached content
+      let cnt = "";
+      if (this.mOriginalPath === "" || this.mOriginalContent === "" || this.mOriginalPath !== uri.fsPath) {
+        this.mOriginalContent = cnt = this.mCcHandler ? await this.mCcHandler.readFileAtVersion(path, version) : "";
+      }
+      return cnt;
     } catch (err) {
-      // no-op
+      console.log(err);
     }
 
     return "";
@@ -57,9 +65,13 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
     if (uri.scheme !== "file") {
       return;
     }
-
-    const currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? "";
-    if (currentVersion !== "") {
+    let currentVersion = this.mOriginalVersion;
+    if (this.mOriginalPath !== uri.fsPath) {
+      currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? new CCVersionType();
+      this.mOriginalVersion = currentVersion;
+      this.mOriginalPath = uri.fsPath;
+    }
+    if (currentVersion) {
       const isCheckedOut = currentVersion.version.match(/(checkedout)$/i);
 
       if (isCheckedOut) {
@@ -70,6 +82,12 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       }
     }
     return;
+  }
+
+  public resetCache(): void {
+    this.mOriginalPath = "";
+    this.mOriginalContent = "";
+    this.mOriginalVersion = new CCVersionType();
   }
 
   dispose(): void {

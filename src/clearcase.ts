@@ -21,6 +21,7 @@ import { CCConfigHandler } from "./ccConfigHandler";
 import { getErrorMessage } from "./errormessage";
 import { MappedList } from "./mappedlist";
 import { CCVersionState, CCVersionType } from "./ccVerstionType";
+import { CleartoolPathMapping } from "./ccConfiguration";
 
 export enum EventActions {
   add = 0,
@@ -449,7 +450,8 @@ export class ClearCase {
     if (this.mViewType === ViewType.snapshot) {
       for (const d of docs) {
         fs.chmodSync(d.fsPath, 0o777);
-        fs.writeFileSync(d.fsPath, fs.readFileSync(d.fsPath));
+        const nowTime = new Date();
+        fs.utimesSync(d.fsPath, nowTime, nowTime);
       }
       this.mUpdateEvent.fire(docs);
     }
@@ -599,7 +601,7 @@ export class ClearCase {
                 // e = this.wslPath(e, true, runInWsl);
                 e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
               }
-              return e;
+              return this.mapPath(e);
             });
           }
         }
@@ -643,7 +645,7 @@ export class ClearCase {
                 // e = this.wslPath(e, true, runInWsl);
                 e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
               }
-              return e;
+              return this.mapPath(e);
             });
           }
         }
@@ -689,7 +691,7 @@ export class ClearCase {
               if (idx > -1) {
                 e = e.substring(0, idx);
               }
-              return e;
+              return this.mapPath(e);
             });
           }
         }
@@ -1253,6 +1255,19 @@ export class ClearCase {
         } else {
           return path.replace(/^\/mnt\/([A-Za-z])/, `$1:`);
         }
+      }
+    }
+    return path;
+  }
+
+  private mapPath(path: string): string {
+    const mapping = this.configHandler.configuration.cleartoolPathMapping.value;
+    if (mapping.length > 0) {
+      const mapped = mapping.filter((value: CleartoolPathMapping) => {
+        return path.includes(value.src);
+      });
+      if (mapped.length > 0) {
+        path = path.replace(mapped[0].src, mapped[0].link);
       }
     }
     return path;

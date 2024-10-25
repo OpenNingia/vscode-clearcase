@@ -3,30 +3,38 @@ export class PathMapping {
   wsl = "";
 }
 
+export class CleartoolPathMapping {
+  src = "";
+  link = "";
+}
+
 export class Variables {
   static parse<T>(value: T): T {
-    if (value === null || value === "" || typeof value !== "string") {
+    if ((value === null || value === "") || (typeof value !== "string")) {
       return value;
     }
 
-    // get env variable
-    const idx = value.indexOf("env:");
-    let retVal = value as string;
-    if (idx > 0) {
-      const matches = value.matchAll(/\$\{env:(\w+)\}/gi);
-      for (const subgrp of matches) {
-        if (subgrp.length > 0) {
-          if (subgrp[1] in process.env) {
-            const v = process.env[subgrp[1]];
-            if (v !== undefined) {
-              retVal = retVal.replace(subgrp[0], v);
+    if (typeof value === "string") {
+      const idx = value.indexOf("env:");
+      let retVal = value as string;
+      if (idx > 0) {
+        const matches = value.matchAll(/\$\{env:(\w+)\}/gi);
+        for (const subgrp of matches) {
+          if (subgrp.length > 0) {
+            if (subgrp[1] in process.env) {
+              const v = process.env[subgrp[1]];
+              if (v !== undefined) {
+                retVal = retVal.replace(subgrp[0], v);
+              }
             }
           }
         }
       }
+      return retVal as T;
     }
-    return retVal as T;
+    return value;
   }
+
 }
 
 export class ConfigurationProperty<T> {
@@ -83,6 +91,7 @@ export class CCConfiguration {
   private mWebserverAddress = new ConfigurationProperty<string>("");
   private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
   private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
+  private mCleartoolPathMapping = new ConfigurationProperty<CleartoolPathMapping[]>([]);
   private mDiffEncoding = new ConfigurationProperty<string>("");
 
   private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
@@ -182,6 +191,10 @@ export class CCConfiguration {
 
   get pathMapping(): ConfigurationProperty<PathMapping[]> {
     return this.mPathMapping;
+  }
+
+  get cleartoolPathMapping(): ConfigurationProperty<CleartoolPathMapping[]> {
+    return this.mCleartoolPathMapping;
   }
 
   get diffViewEncoding(): ConfigurationProperty<string> {

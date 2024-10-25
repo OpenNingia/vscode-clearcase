@@ -30,7 +30,6 @@ import { CCAnnotationController } from "./ccAnnotateController";
 import { CCCodeLensProvider } from "./ccAnnotateLensProvider";
 import { CCContentProvider } from "./ccContentProvider";
 import { unlink, statSync, access, existsSync, mkdirSync } from "fs";
-import { IgnoreHandler } from "./ccIgnoreHandler";
 import { Lock } from "./lock";
 import { fromCcUri } from "./uri";
 
@@ -47,9 +46,9 @@ export class CCScmProvider implements IDisposable {
   private mCCCheckedoutGrp: SourceControlResourceGroup | null = null;
   private mCCUntrackedGrp: SourceControlResourceGroup | null = null;
   private mCCHijackedGrp: SourceControlResourceGroup | null = null;
-  private mIsUpdatingUntracked: boolean | null = null;
+  private mIsUpdatingUntracked = false;
+  private mIsUpdatingHijacked = false;
   private mListLock: Lock | null = null;
-  private mIgnores: IgnoreHandler | null = null;
   private mDisposables: IDisposable[] = [];
   private mVersion = "0.0.0";
 
@@ -128,9 +127,9 @@ export class CCScmProvider implements IDisposable {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.mVersion = this.mContext.extension?.packageJSON?.version as string;
       // delete cache if new version is used
-      if ((this.version !== this.mContext.workspaceState.get("version", "")) || process.env["VSCODE_DEBUG_MODE"]) {
+      if ((this.mVersion !== this.mContext.workspaceState.get("version", "")) || process.env["VSCODE_DEBUG_MODE"]) {
         this.mContext.workspaceState.update("untrackedfilecache", "");
-        this.mContext.workspaceState.update("version", this.version);
+        this.mContext.workspaceState.update("version", this.mVersion);
       }
       const fileList = this.mContext.workspaceState.get("untrackedfilecache", []);
       this.clearCase?.untrackedList.parse(fileList);
@@ -302,7 +301,6 @@ export class CCScmProvider implements IDisposable {
         if (this.mCCUntrackedGrp) {
           this.mCCUntrackedGrp.resourceStates = viewPrivate.sort((a, b) => CCScmResource.sort(a, b));
         }
-        this.mIsUpdatingUntracked = false;
       });
     }
 
@@ -323,7 +321,6 @@ export class CCScmProvider implements IDisposable {
         if (this.mCCHijackedGrp) {
           this.mCCHijackedGrp.resourceStates = hijacked.sort((a, b) => CCScmResource.sort(a, b));
         }
-
       });
     }
   }
@@ -346,56 +343,49 @@ export class CCScmProvider implements IDisposable {
     });
   }
 
-  private async updateUntrackedList() {
-    await window.withProgress(
-      {
-        location: ProgressLocation.SourceControl,
-        title: "Search untracked files",
-        cancellable: false,
-      },
-      async (process) => {
-        if (this.mIsUpdatingUntracked === false || this.clearCase !== null) {
-          this.mIsUpdatingUntracked = true;
-          this.clearCase?.untrackedList.resetFoundState();
-
+  private async commandUpdateUntrackedList() {
+    if (this.mIsUpdatingUntracked === false) {
+      this.mIsUpdatingUntracked = true;
+      await window.withProgress(
+        {
+          location: ProgressLocation.SourceControl,
+          title: "Search untracked files",
+          cancellable: false,
+        },
+        async (process) => {
           const lStep = 100;
+          await this.createViewPrivateList();
 
-          await this.clearCase?.findUntracked(this.root);
           process.report({
-            message: `Folder ${this.root} checked!`,
+            message: `Searching view private files completed`,
             increment: lStep,
           });
-
-          this.clearCase?.untrackedList.cleanMap();
-          this.mContext.workspaceState.update("untrackedfilecache", this.clearCase?.untrackedList.stringify());
-          this.filterUntrackedList();
           this.mIsUpdatingUntracked = false;
         }
-      }
-    );
+      );
+    }
   }
 
-  private filterUntrackedList() {
-    let viewPrv: CCScmResource[] = [];
-    const root = this.root;
-    if (root !== undefined) {
-      const ign = this.mIgnores?.getFolderIgnore(root);
-      const d = this.clearCase?.untrackedList.getStringsByKey(root?.fsPath)?.filter(
-        (item) =>
-          // if no .ccignore file is present, show all files
-          root !== undefined &&
-          (ign === undefined || (item !== "" && ign?.ignore.ignores(path.relative(root.fsPath, item)) === false))
-      );
-      if (d !== undefined) {
-        viewPrv = viewPrv.concat(
-          d.map((val) => {
-            return new CCScmResource(ResourceGroupType.untracked, Uri.file(val), CCScmStatus.untracked);
-          })
-        );
-        if (this.mCCUntrackedGrp !== null) {
-          this.mCCUntrackedGrp.resourceStates = viewPrv.sort((a, b) => CCScmResource.sort(a, b));
+  private async commandUpdateHijackedFilesList() {
+    if (this.mIsUpdatingHijacked === false) {
+      this.mIsUpdatingHijacked = true;
+      await window.withProgress(
+        {
+          location: ProgressLocation.SourceControl,
+          title: "Search hijacked files",
+          cancellable: false,
+        },
+        async (process) => {
+          const lStep = 100;
+          await this.createHijackedList();
+
+          process.report({
+            message: `Searching hijacked files completed`,
+            increment: lStep,
+          });
+          this.mIsUpdatingHijacked = false;
         }
-      }
+      );
     }
   }
 
@@ -716,7 +706,17 @@ export class CCScmProvider implements IDisposable {
       commands.registerCommand(
         "extension.ccRefreshViewPrivateFileList",
         () => {
-          this.updateUntrackedList();
+          this.commandUpdateUntrackedList();
+        },
+        this
+      )
+    );
+
+    this.mDisposables.push(
+      commands.registerCommand(
+        "extension.ccRefreshHijackedFileList",
+        () => {
+          this.commandUpdateHijackedFilesList();
         },
         this
       )
@@ -746,9 +746,13 @@ export class CCScmProvider implements IDisposable {
   bindEvents(): void {
     this.mDisposables.push(workspace.onWillSaveTextDocument((event) => this.onWillSaveDocument(event)));
 
-    this.mDisposables.push(window.onDidChangeActiveTextEditor((event) => this.onDidChangeTextEditor(event)));
+    this.mDisposables.push(window.onDidChangeActiveTextEditor((event) => {
+      this.outputChannel.appendLine("onDidChangeActiveTextEditor");
+      this.onDidChangeTextEditor(event);
+    }));
     this.mDisposables.push(window.onDidChangeWindowState((event) => {
       if (event.focused) {
+        this.outputChannel.appendLine("OnDidChangeWindowState");
         this.onDidChangeTextEditor(window.activeTextEditor);
       }
     }));
@@ -823,18 +827,6 @@ export class CCScmProvider implements IDisposable {
     }
   }
 
-  private async updateUntrackedListWFile(fileObj: Uri) {
-    const isCCObject = await this.clearCase?.isClearcaseObject(fileObj);
-    if (isCCObject === false) {
-      const wsf = workspace.getWorkspaceFolder(fileObj);
-      if (wsf?.uri.fsPath) {
-        this.clearCase?.untrackedList.addStringByKey(fileObj.fsPath, wsf.uri.fsPath);
-      }
-      this.mContext.workspaceState.update("untrackedfilecache", this.clearCase?.untrackedList.stringify());
-      this.filterUntrackedList();
-    }
-  }
-
   private async updateHijackedList(fileObj: Uri, version: CCVersionType): Promise<boolean> {
     if (this.configHandler.configuration.showHijackedFiles.value) {
       if (this.clearCase && this.mCCHijackedGrp) {
@@ -900,6 +892,7 @@ export class CCScmProvider implements IDisposable {
   }
 
   private async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<void> {
+    this.mCCContentProvider?.resetCache();
     this.updateCheckedOutList();
     if (editor && this.clearCase && editor?.document.uri.scheme !== "output") {
       const version = await this.clearCase?.getVersionInformation(editor?.document.uri, true);

@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.0.0-beta.1",
+  "version": "5.0.0-beta.2",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -170,6 +170,15 @@
         }
       },
       {
+        "command": "extension.ccRefreshHijackedFileList",
+        "title": "Refresh hijacked file list",
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/light/open-change-base.svg",
+          "dark": "./Assets/icons/dark/open-change-base.svg"
+        }
+      },
+      {
         "command": "extension.ccAnnotate",
         "title": "Annotate",
         "category": "Clearcase"
@@ -328,7 +337,7 @@
         {
           "command": "extension.ccHijack",
           "group": "cc@5",
-          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
         },
         {
           "command": "extension.ccUndoHijack",
@@ -376,6 +385,11 @@
           "command": "extension.ccRefreshViewPrivateFileList",
           "group": "navigation",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccRefreshHijackedFileList",
+          "group": "navigation",
+          "when": "scmProvider == cc && vscode-clearcase:enabled && !vscode-clearcase:DynView"
         }
       ],
       "scm/resourceState/context": [
@@ -438,6 +452,11 @@
           "command": "extension.ccUndoHijack",
           "when": "scmProvider == cc && scmResourceGroup == cc_hijacked && vscode-clearcase:enabled",
           "group": "inline@1"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "when": "scmProvider == cc && scmResourceGroup == cc_hijacked && vscode-clearcase:enabled",
+          "group": "cc_file"
         }
       ]
     },
@@ -640,6 +659,26 @@
           "default": "c:\\Temp",
           "markdownDescription": "The temp dir used for file operations",
           "order": 50
+        },
+        "vscode-clearcase.pathMapping": {
+          "type": "array",
+          "markdownDescription": "Set the path mapping, possible usefull when working with snapshot views. Pattern: Original Path -> Linked Path",
+          "default": [],
+          "items": {
+            "type": "object",
+            "title": "Path Mapping",
+            "properties": {
+              "src": {
+                "type": "string",
+                "description": "Real path"
+              },
+              "link": {
+                "type": "string",
+                "description": "Linked path"
+              }
+            }
+          },
+          "order": 51
         },
         "vscode-clearcase.remoteCleartool.enable": {
           "type": "boolean",
