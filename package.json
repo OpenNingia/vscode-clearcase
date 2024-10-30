@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.0.0-beta.2",
+  "version": "5.0.0-beta.3",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -310,12 +310,12 @@
         {
           "command": "extension.ccHijack",
           "group": "cc@5",
-          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
         },
         {
           "command": "extension.ccUndoHijack",
           "group": "cc@5",
-          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
         }
       ],
       "editor/context": [
@@ -337,12 +337,12 @@
         {
           "command": "extension.ccHijack",
           "group": "cc@5",
-          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
         },
         {
           "command": "extension.ccUndoHijack",
           "group": "cc@5",
-          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
         },
         {
           "command": "extension.ccComparePrevious",

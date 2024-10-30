@@ -56,6 +56,8 @@ suite("Extension Test Suite", () => {
   });
 
   beforeEach(async () => {
+    process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
+
     configHandler = new CCConfigHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
@@ -78,20 +80,40 @@ suite("Extension Test Suite", () => {
     await provider.clearCase?.checkinFile([file]);
     assert.strictEqual(outputChannel.getLine(0), `ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
-      outputChannel.getLastLine(),
+      outputChannel.getLine(1),
       `Checked in "${path.join(testDir, "simple01.txt")}" version "/main/dev_01/2".\n`
     );
   });
 
-  test("Cleartool checkout file", async () => {
+  test("Cleartool checkout file (dynamic view)", async () => {
     configHandler.configuration.useClearDlg.value = false;
     configHandler.configuration.checkoutCommand.value = "-nc ${filename}";
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
+
+    process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
+    await provider.init();
+    outputChannel.clear();
+    await provider.clearCase?.checkoutFile([file]);
+    assert.strictEqual(outputChannel.getLine(0), `co,-nc,${path.join(testDir, "simple01.txt")}\n`);
+    assert.strictEqual(
+      outputChannel.getLine(1),
+      `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
+    );
+  });
+
+  test("Cleartool checkout file (snapshot view)", async () => {
+    configHandler.configuration.useClearDlg.value = false;
+    configHandler.configuration.checkoutCommand.value = "-nc ${filename}";
+
+    process.env["CLEARCASE_TEST_VIEWTYPE"] = "SNAPSHOT";
+    await provider.init();
+    const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
+    outputChannel.clear();
     await provider.clearCase?.checkoutFile([file]);
     assert.strictEqual(outputChannel.getLine(0), `co,-usehijack,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
-      outputChannel.getLastLine(),
+      outputChannel.getLine(1),
       `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
     );
   });
@@ -103,7 +125,7 @@ suite("Extension Test Suite", () => {
     await provider.clearCase?.undoCheckoutFile([file]);
     assert.strictEqual(outputChannel.getLine(0), `unco,-keep,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
-      outputChannel.getLastLine(),
+      outputChannel.getLine(1),
       `Checkout cancelled for "${path.join(testDir, "simple01.txt")}".\n`
     );
   });
@@ -116,7 +138,7 @@ suite("Extension Test Suite", () => {
     await provider.clearCase?.undoCheckoutFile([file]);
     assert.strictEqual(outputChannel.getLine(0), `unco,-rm,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
-      outputChannel.getLastLine(),
+      outputChannel.getLine(1),
       `Checkout cancelled for "${path.join(testDir, "simple01.txt")}".\n`
     );
   });
@@ -129,9 +151,9 @@ suite("Extension Test Suite", () => {
 
     const fileUri = vscode.Uri.parse(file);
     await provider.clearCase?.checkoutFile([fileUri]);
-    assert.strictEqual(outputChannel.getLine(0), `co,-usehijack,-nc,${file}\n`);
+    assert.strictEqual(outputChannel.getLine(0), `co,-nc,${file}\n`);
     assert.strictEqual(
-      outputChannel.getLastLine(),
+      outputChannel.getLine(1),
       `cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
     );
   });

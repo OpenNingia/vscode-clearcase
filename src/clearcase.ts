@@ -213,7 +213,6 @@ export class ClearCase {
         //this.m_isCCView = await this.hasConfigspec();
       }
     }
-
     if (!isView) {
       isView = await this.hasConfigspec();
     }
@@ -336,7 +335,7 @@ export class ClearCase {
       }
     }
     // by default add the usehijack flag to also checkout hijacked files
-    if (!coArgTmpl.includes("usehijack")) {
+    if (!coArgTmpl.includes("usehijack") && this.viewType === ViewType.snapshot) {
       cmdOpts.splice(0, 0, "-usehijack");
     }
     const cmd: CCArgs = new CCArgs(["co"]);
