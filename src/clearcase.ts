@@ -269,7 +269,6 @@ export class ClearCase {
     exec('clearexplorer "' + docs[0]?.fsPath + '"');
   }
 
-
   async checkoutFileAction(docs: Uri[]): Promise<boolean> {
     const useClearDlg = this.configHandler.configuration.useClearDlg.value;
     if (useClearDlg) {
@@ -279,7 +278,10 @@ export class ClearCase {
           return true;
         } else {
           const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
-          const userAction = await window.showInformationMessage(`Do you want to checkout the current file?`, ...userActions);
+          const userAction = await window.showInformationMessage(
+            `Do you want to checkout the current file?`,
+            ...userActions
+          );
           switch (userAction?.title) {
             case userActions[0].title: {
               return await this.checkoutFile([doc]);
@@ -373,7 +375,10 @@ export class ClearCase {
       });
     } else {
       const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
-      const userAction = await window.showInformationMessage(`Do you want to checkout the current file?`, ...userActions);
+      const userAction = await window.showInformationMessage(
+        `Do you want to checkout the current file?`,
+        ...userActions
+      );
       switch (userAction?.title) {
         case userActions[0].title: {
           await this.checkoutFile([doc.uri]);
@@ -395,7 +400,10 @@ export class ClearCase {
           exec(`cleardlg /uncheckout ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
         } else {
           const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
-          const userAction = await window.showInformationMessage(`Do you want to undo checkout the current file?`, ...userActions);
+          const userAction = await window.showInformationMessage(
+            `Do you want to undo checkout the current file?`,
+            ...userActions
+          );
           switch (userAction?.title) {
             case userActions[0].title: {
               await this.undoCheckoutFile([doc]);
@@ -432,7 +440,9 @@ export class ClearCase {
       return this.wslPath(d.fsPath, false);
     });
 
-    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () =>
+      this.mUpdateEvent.fire(docs)
+    );
   }
 
   async checkinFileAction(docs: Uri[]): Promise<void> {
@@ -443,10 +453,22 @@ export class ClearCase {
           exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
         } else {
           const userActions: MessageItem[] = [{ title: "Yes" }, { title: "No" }];
-          const userAction = await window.showInformationMessage(`Do you want to checkin the current file?`, ...userActions);
+          const userAction = await window.showInformationMessage(
+            `Do you want to checkin the current file?`,
+            ...userActions
+          );
           switch (userAction?.title) {
             case userActions[0].title: {
+              const newLabel = await window.showInputBox({ ignoreFocusOut: true, title: "Set a label after checkin" });
               await this.checkinFile([doc]);
+              if (
+                newLabel !== undefined &&
+                newLabel !== "" &&
+                this.configHandler.configuration.useLabelAtCheckin.value
+              ) {
+                await this.createLabelType(doc, newLabel);
+                await this.applyLabel(doc, newLabel);
+              }
               break;
             }
             case userActions[1].title: {
@@ -461,72 +483,90 @@ export class ClearCase {
   }
 
   async checkinFile(docs: Uri[]): Promise<void> {
-    const ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
     const defComment = this.configHandler.configuration.defaultComment.value;
 
-    let comment = "";
-    const cmdOpts = ciArgTmpl.trim().split(/\s+/);
-    let idx = cmdOpts.indexOf("${comment}");
-    if (idx > -1) {
-      if (defComment) {
-        comment = defComment;
-      } else {
-        comment =
-          (await window.showInputBox({
-            ignoreFocusOut: true,
-            prompt: "Checkin comment",
-          })) ?? "";
-      }
-      cmdOpts[idx] = comment;
-    } else {
-      let pI = cmdOpts.indexOf("-comment");
-      if (pI > -1) {
-        cmdOpts.splice(pI, 1);
-      }
-      pI = cmdOpts.indexOf("-c");
-      if (pI > -1) {
-        cmdOpts.splice(pI, 1);
-      }
-      pI = cmdOpts.indexOf("-nc");
-      if (pI === -1) {
-        cmdOpts.push("-nc");
-      }
-    }
-
     const cmd: CCArgs = new CCArgs(["ci"]);
-    cmd.params = cmd.params.concat(cmdOpts);
-    idx = cmd.params.indexOf("${filename}");
-    if (idx > -1) {
-      if (docs.length === 1) {
-        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
-      } else {
-        cmd.params[idx] = "";
-      }
-    }
-    if (docs.length > 1 || idx === -1) {
-      cmd.files = docs.map((d: Uri) => {
-        return this.wslPath(d.fsPath, false);
-      });
-    }
-
-    await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+    await this.doCheckinFiles(await this.prepareCheckinParams(defComment, docs, false, cmd), docs);
   }
 
   async checkinFiles(docs: Uri[], comment: string): Promise<void> {
     const cmd: CCArgs = new CCArgs(["ci"]);
-    if (comment !== "") {
-      cmd.params.push("-c");
-      cmd.params.push(comment);
+    await this.doCheckinFiles(await this.prepareCheckinParams(comment, docs, true, cmd), docs);
+  }
+
+  private async prepareCheckinParams(comment: string, docs: Uri[], simple: boolean, args: CCArgs) {
+    let modifyPath = false;
+    // simple mode: checkin via scm checkin all
+    if (simple) {
+      if (comment !== "") {
+        args.params.push("-c");
+        args.params.push(comment);
+      } else {
+        args.params.push("-nc");
+      }
+      modifyPath = true;
     } else {
-      cmd.params.push("-nc");
+      const ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
+      const cmdOpts = ciArgTmpl.trim().split(/\s+/);
+      let newComment = "";
+      let idx = cmdOpts.indexOf("${comment}");
+      if (idx > -1) {
+        if (comment) {
+          newComment = comment;
+        } else {
+          newComment =
+            (await window.showInputBox({
+              ignoreFocusOut: true,
+              prompt: "Checkin comment",
+            })) ?? "";
+        }
+        cmdOpts[idx] = newComment;
+      } else {
+        let pI = cmdOpts.indexOf("-comment");
+        if (pI > -1) {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-c");
+        if (pI > -1) {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-nc");
+        if (pI === -1) {
+          cmdOpts.push("-nc");
+        }
+      }
+      args.params = args.params.concat(cmdOpts);
+      idx = args.params.indexOf("${filename}");
+      if (idx > -1) {
+        if (docs.length === 1) {
+          args.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+        } else {
+          args.params[idx] = "";
+        }
+      }
+      if (docs.length > 1 || idx === -1) {
+        modifyPath = true;
+      }
     }
-    cmd.files = docs.map((d: Uri) => {
-      return this.wslPath(d.fsPath, false);
-    });
-    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-      await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-        this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`);
+    if (modifyPath) {
+      args.files = docs.map((d: Uri) => {
+        return this.wslPath(d.fsPath, false);
       });
+    }
+    return args;
+  }
+
+  private async doCheckinFiles(args: CCArgs, docs: Uri[]) {
+    let newLabel: string | undefined = "";
+    if (this.configHandler.configuration.useLabelAtCheckin.value) {
+      newLabel = await window.showInputBox({ ignoreFocusOut: true, title: "Set a label after checkin" });
+    }
+    await this.runCleartoolCommand(args, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+    if (newLabel !== undefined && newLabel !== "" && this.configHandler.configuration.useLabelAtCheckin.value) {
+      for (const doc of docs) {
+        await this.createLabelType(doc, newLabel);
+        await this.applyLabel(doc, newLabel);
+      }
     }
   }
 
@@ -556,26 +596,21 @@ export class ClearCase {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
       const cmd: CCArgs = new CCArgs(["lsco", ...cmdOpts]);
-      await this.runCleartoolCommand(
-        cmd,
-        wsf,
-        null,
-        (_code: number, output: string, _error: string) => {
-          if (output.length > 0) {
-            const results: string[] = output.trim().split(/\r\n|\r|\n/);
-            resNew = results.map((e) => {
-              if (e.startsWith("\\") && type() === "Windows_NT") {
-                e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
-              }
-              if (runInWsl === true) {
-                // e = this.wslPath(e, true, runInWsl);
-                e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
-              }
-              return e;
-            });
-          }
+      await this.runCleartoolCommand(cmd, wsf, null, (_code: number, output: string, _error: string) => {
+        if (output.length > 0) {
+          const results: string[] = output.trim().split(/\r\n|\r|\n/);
+          resNew = results.map((e) => {
+            if (e.startsWith("\\") && type() === "Windows_NT") {
+              e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
+            }
+            if (runInWsl === true) {
+              // e = this.wslPath(e, true, runInWsl);
+              e = e.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+            }
+            return e;
+          });
         }
-      );
+      });
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error));
     }
@@ -636,15 +671,10 @@ export class ClearCase {
       try {
         for (const p of workspace.workspaceFolders) {
           const cmd: CCArgs = new CCArgs(["catcs"]);
-          await this.runCleartoolCommand(
-            cmd,
-            p.uri.fsPath,
-            null,
-            (code: number, _output: string, error: string) => {
-              //  Success only if command exit code is 0 and nothing on stderr
-              result = (code === 0 && error.length === 0);
-            }
-          );
+          await this.runCleartoolCommand(cmd, p.uri.fsPath, null, (code: number, _output: string, error: string) => {
+            //  Success only if command exit code is 0 and nothing on stderr
+            result = code === 0 && error.length === 0;
+          });
           if (result !== false) {
             break;
           }
@@ -686,8 +716,7 @@ export class ClearCase {
         cwd,
         null,
         (code: number, output: string, error: string) => {
-          fileVers = (code === 0 && error.length === 0) ?
-            this.getVersionString(output, normalize) : "?";
+          fileVers = code === 0 && error.length === 0 ? this.getVersionString(output, normalize) : "?";
         }
       );
       return fileVers;
@@ -704,7 +733,7 @@ export class ClearCase {
    */
   getVersionString(iFileInfo: string, normalize: boolean): string {
     if (iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "") {
-      const res = iFileInfo.replace(/"/g, '').split("||");
+      const res = iFileInfo.replace(/"/g, "").split("||");
       if (res.length > 1 && res[0] === "version") {
         return normalize ? res[1].replace(/\\/g, "/").trim() : res[1].trim();
       } else if (res[0].includes("private")) {
@@ -957,9 +986,10 @@ export class ClearCase {
         }
       );
     }
-    const enc = this.configHandler.configuration.diffViewEncoding.value !== "" ?
-      this.configHandler.configuration.diffViewEncoding.value :
-      "utf8";
+    const enc =
+      this.configHandler.configuration.diffViewEncoding.value !== ""
+        ? this.configHandler.configuration.diffViewEncoding.value
+        : "utf8";
     return fs.readFileSync(ret.fsPath, { encoding: enc });
   }
 
@@ -989,7 +1019,7 @@ export class ClearCase {
     let allData: Buffer = Buffer.alloc(0);
     let cmdErrMsg = "";
     return new Promise<void>((resolve, reject) => {
-      command.stdout.on("data", data => {
+      command.stdout.on("data", (data) => {
         let res = "";
         if (Buffer.isBuffer(data)) {
           allData = Buffer.concat([allData, data], allData.length + data.length);
@@ -999,7 +1029,7 @@ export class ClearCase {
           onData(res.split(/\r\n|\r|\n/).filter((s: string) => s.length > 0));
         }
       });
-      command.stderr.on("data", data => {
+      command.stderr.on("data", (data) => {
         let msg = "";
         if (Buffer.isBuffer(data)) {
           msg = data.toString();
@@ -1034,8 +1064,7 @@ export class ClearCase {
       if (l.length === 0) {
         return false;
       }
-      return (l.match(/view uuid: ([\w.:]+)/gi) ??
-        l.match(/view attributes:\s+snapshot/gi));
+      return l.match(/view uuid: ([\w.:]+)/gi) ?? l.match(/view attributes:\s+snapshot/gi);
     };
     if (workspace.workspaceFolders !== undefined) {
       await this.runCleartoolCommand(
@@ -1154,5 +1183,69 @@ export class ClearCase {
       }
     }
     return ret;
+  }
+
+  public async existsLabelType(doc: Uri, newLabel: string): Promise<boolean> {
+    let retVal = false;
+    if (newLabel !== "") {
+      retVal = true;
+      const args = new CCArgs(["lstype", `lbtype:${newLabel}`]);
+      try {
+        await this.runCleartoolCommand(
+          args,
+          dirname(doc.fsPath),
+          null,
+          (_code: number, output: string, _error: string) => {
+            if (_error.length > 0) {
+              retVal = false;
+            }
+          }
+        );
+      } catch (e) {
+        this.outputChannel.appendLine(getErrorMessage(e));
+        return false;
+      }
+    }
+    return retVal;
+  }
+
+  public async createLabelType(doc: Uri, newLabel: string): Promise<void> {
+    if (newLabel !== "") {
+      if ((await this.existsLabelType(doc, newLabel)) === false) {
+        const args = new CCArgs(["mklbtype", "-nc", newLabel]);
+        try {
+          await this.runCleartoolCommand(
+            args,
+            dirname(doc.fsPath),
+            null,
+            (_code: number, output: string, _error: string) => {
+              this.outputChannel.appendLine(output);
+            }
+          );
+        } catch (e) {
+          this.outputChannel.appendLine(getErrorMessage(e));
+        }
+      }
+    }
+  }
+
+  public async applyLabel(doc: Uri, newLabel: string): Promise<void> {
+    if (newLabel !== "") {
+      if ((await this.existsLabelType(doc, newLabel)) === true) {
+        const args = new CCArgs(["mklabel", "-replace", newLabel], [doc.fsPath]);
+        try {
+          await this.runCleartoolCommand(
+            args,
+            dirname(doc.fsPath),
+            null,
+            (_code: number, output: string, _error: string) => {
+              this.outputChannel.appendLine(output);
+            }
+          );
+        } catch (e) {
+          this.outputChannel.appendLine(getErrorMessage(e));
+        }
+      }
+    }
   }
 }

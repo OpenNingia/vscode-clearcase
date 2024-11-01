@@ -73,6 +73,7 @@ export class CCConfigHandler implements IDisposable {
       this.setChangeConfigDate<boolean>(config, "wsl.detectEnvironment", this.mConfiguration.detectWslEnvironment);
       this.setChangeConfigDate<PathMapping[]>(config, "wsl.pathMapping", this.mConfiguration.pathMapping);
       this.setChangeConfigDate<string>(config, "diffViewerEncoding", this.mConfiguration.diffViewEncoding);
+      this.setChangeConfigDate<boolean>(config, "useLabelAtCheckin", this.mConfiguration.useLabelAtCheckin);
 
       return true;
     }

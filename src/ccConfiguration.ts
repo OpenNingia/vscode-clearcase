@@ -80,6 +80,7 @@ export class CCConfiguration {
   private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
   private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
   private mDiffEncoding = new ConfigurationProperty<string>("");
+  private mUseLabelWhenCheckin = new ConfigurationProperty<boolean>(false);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -163,5 +164,9 @@ export class CCConfiguration {
 
   get diffViewEncoding(): ConfigurationProperty<string> {
     return this.mDiffEncoding;
+  }
+
+  get useLabelAtCheckin(): ConfigurationProperty<boolean> {
+    return this.mUseLabelWhenCheckin;
   }
 }
