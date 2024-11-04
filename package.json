@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.0.0-beta.3",
+  "version": "5.0.0-beta.5",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -659,26 +659,6 @@
           "default": "c:\\Temp",
           "markdownDescription": "The temp dir used for file operations",
           "order": 50
-        },
-        "vscode-clearcase.pathMapping": {
-          "type": "array",
-          "markdownDescription": "Set the path mapping, possible usefull when working with snapshot views. Pattern: Original Path -> Linked Path",
-          "default": [],
-          "items": {
-            "type": "object",
-            "title": "Path Mapping",
-            "properties": {
-              "src": {
-                "type": "string",
-                "description": "Real path"
-              },
-              "link": {
-                "type": "string",
-                "description": "Linked path"
-              }
-            }
-          },
-          "order": 51
         },
         "vscode-clearcase.remoteCleartool.enable": {
           "type": "boolean",

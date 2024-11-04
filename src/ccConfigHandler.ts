@@ -1,7 +1,7 @@
 "use strict";
 
 import { Event, EventEmitter, workspace, WorkspaceConfiguration } from "vscode";
-import { CCConfiguration, CleartoolPathMapping, ConfigurationProperty, PathMapping } from "./ccConfiguration";
+import { CCConfiguration, ConfigurationProperty, PathMapping } from "./ccConfiguration";
 import { IDisposable } from "./model";
 
 export class CCConfigHandler implements IDisposable {
@@ -63,7 +63,11 @@ export class CCConfigHandler implements IDisposable {
         this.mConfiguration.findHijackedCommand
       );
       this.setChangeConfigDate<boolean>(config, "cleartool.showHijackedFiles", this.mConfiguration.showHijackedFiles);
-      this.setChangeConfigDate<boolean>(config, "cleartool.showViewPrivateFiles", this.mConfiguration.showViewPrivateFiles);
+      this.setChangeConfigDate<boolean>(
+        config,
+        "cleartool.showViewPrivateFiles",
+        this.mConfiguration.showViewPrivateFiles
+      );
       this.setChangeConfigDate<string>(config, "cleartool.checkinCommandArguments", this.mConfiguration.checkinCommand);
       this.setChangeConfigDate<string>(config, "cleartool.defaultComment", this.mConfiguration.defaultComment);
       this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);
@@ -84,7 +88,6 @@ export class CCConfigHandler implements IDisposable {
       this.setChangeConfigDate<string>(config, "remoteCleartool.webviewAddress", this.mConfiguration.webserverAddress);
       this.setChangeConfigDate<boolean>(config, "wsl.detectEnvironment", this.mConfiguration.detectWslEnvironment);
       this.setChangeConfigDate<PathMapping[]>(config, "wsl.pathMapping", this.mConfiguration.pathMapping);
-      this.setChangeConfigDate<CleartoolPathMapping[]>(config, "pathMapping", this.mConfiguration.cleartoolPathMapping);
       this.setChangeConfigDate<string>(config, "diffViewerEncoding", this.mConfiguration.diffViewEncoding);
 
       return true;

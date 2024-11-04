@@ -3,14 +3,9 @@ export class PathMapping {
   wsl = "";
 }
 
-export class CleartoolPathMapping {
-  src = "";
-  link = "";
-}
-
 export class Variables {
   static parse<T>(value: T): T {
-    if ((value === null || value === "") || (typeof value !== "string")) {
+    if (value === null || value === "" || typeof value !== "string") {
       return value;
     }
 
@@ -34,7 +29,6 @@ export class Variables {
     }
     return value;
   }
-
 }
 
 export class ConfigurationProperty<T> {
@@ -67,15 +61,11 @@ export class ConfigurationProperty<T> {
 export class CCConfiguration {
   private mShowStatusbar = new ConfigurationProperty<boolean>(true);
   private mAnnotationColor = new ConfigurationProperty<string>("rgba(220, 220, 220, 0.8)");
-  private mAnnotationBackgroundColor = new ConfigurationProperty<string>(
-    "rgba(20, 20, 20, 0.8)"
-  );
+  private mAnnotationBackgroundColor = new ConfigurationProperty<string>("rgba(20, 20, 20, 0.8)");
   private mAnnotationFormatString = new ConfigurationProperty<string>("%d %12u");
   private mShowAnnotationCodeLens = new ConfigurationProperty<boolean>(true);
   private mUseClearDlg = new ConfigurationProperty<boolean>(true);
-  private mCheckoutCommand = new ConfigurationProperty<string>(
-    "-comment ${comment} ${filename}"
-  );
+  private mCheckoutCommand = new ConfigurationProperty<string>("-comment ${comment} ${filename}");
   private mFindCheckoutsCommand = new ConfigurationProperty<string>("-me -cview -short -avobs");
   private mFindViewPrivateCommand = new ConfigurationProperty<string>("ls -rec -view_only ${env:CLEARCASE_AVOBS}");
   private mFindHijackedCommand = new ConfigurationProperty<string>("ls -rec ${env:CLEARCASE_AVOBS}");
@@ -91,7 +81,6 @@ export class CCConfiguration {
   private mWebserverAddress = new ConfigurationProperty<string>("");
   private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
   private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
-  private mCleartoolPathMapping = new ConfigurationProperty<CleartoolPathMapping[]>([]);
   private mDiffEncoding = new ConfigurationProperty<string>("");
 
   private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
@@ -191,10 +180,6 @@ export class CCConfiguration {
 
   get pathMapping(): ConfigurationProperty<PathMapping[]> {
     return this.mPathMapping;
-  }
-
-  get cleartoolPathMapping(): ConfigurationProperty<CleartoolPathMapping[]> {
-    return this.mCleartoolPathMapping;
   }
 
   get diffViewEncoding(): ConfigurationProperty<string> {

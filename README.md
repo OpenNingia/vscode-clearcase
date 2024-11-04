@@ -6,75 +6,78 @@ This repository contains the extension for [IBM Rational ClearCase SCM](http://w
 
 Clearcase commands exposed by this extensions:
 
-  * Launch ClearCase Explorer
-  * Checkout
-  * Checkin
-  * Undo Checkout
-  * Handling of hijack files
-  * Version Tree
-  * Compare with previous version
-  * Find Checkouts
-  * Find modified files
-  * List view private files
-  * Update snapshot
-  * Item Properties
-  * Annotate
-  * Set current Activity
-  * Remote Cleartool Client
+- Launch ClearCase Explorer
+- Checkout
+- Checkin
+- Undo Checkout
+- Handling of hijack files
+- Version Tree
+- Compare with previous version
+- Find Checkouts
+- Find modified files
+- List view private files
+- Update snapshot
+- Item Properties
+- Annotate
+- Set current Activity
+- Remote Cleartool Client
 
 ### GUI
 
-   * Automatically checkout on save if file isn't checked out.
-   * Show view private and checkedout files in SCM view
-   * Show version of current file in the status bar. This can be disabled via the user setting
+- Automatically checkout on save if file isn't checked out.
+- Show view private and checkedout files in SCM view
+- Show version of current file in the status bar. This can be disabled via the user setting
 
-     ```TypeScript
-     vscode-clearcase.showVersionInStatusbar = false
-     ```
+  ```TypeScript
+  vscode-clearcase.showVersionInStatusbar = false
+  ```
 
-   * Annotate code lens is customizable via these user settings
+- Annotate code lens is customizable via these user settings
 
-     ```TypeScript
-     vscode-clearcase.annotationColor = rgba(220, 220, 220, 0.8)
-     vscode-clearcase.annotationBackgroundColor = rgba(20, 20, 20, 0.8)
-     vscode-clearcase.annotationFormatString = "%d %12u"
-     ```
+  ```TypeScript
+  vscode-clearcase.annotationColor = rgba(220, 220, 220, 0.8)
+  vscode-clearcase.annotationBackgroundColor = rgba(20, 20, 20, 0.8)
+  vscode-clearcase.annotationFormatString = "%d %12u"
+  ```
 
-     Format string is documented at https://www.ibm.com/docs/en/clearcase/11.0.0?topic=information-fmt-ccase#ref_fmtccase_refsect2_36512
+  Format string is documented at https://www.ibm.com/docs/en/clearcase/11.0.0?topic=information-fmt-ccase#ref_fmtccase_refsect2_36512
 
-   * Syntax highlighting for ClearCase config-spec files
+- Syntax highlighting for ClearCase config-spec files
 
 ## View private files
 
 To show view private files in the source control view, there are two configuration parameters
-  * clearcase.showViewPrivateFiles - to activate the feature
-  * clearcase.findViewPrivateCommandArguments - the command and its arguments to find view private files
-  * viewPrivateFileSuffixes - filter the files by regex. The default `(hh|cpp|def|c|h|txt)$` can be a good start.
+
+- clearcase.showViewPrivateFiles - to activate the feature
+- clearcase.findViewPrivateCommandArguments - the command and its arguments to find view private files
+- viewPrivateFileSuffixes - filter the files by regex. The default `(hh|cpp|def|c|h|txt)$` can be a good start.
 
 Depending on the view type, snapshot or dynamic, there are different commands.
 
-  **Snapshot** 
-  * cleartool ls -view_only -rec $CLEARCASE_AVOBS
-  
-  The $CLEARCASE_AVOBS variable can be replaced by a list of vobs separated by a space
+**Snapshot**
 
-  **Dynamic**
-  * cleartool lsprivate -short
+- cleartool ls -view_only -rec $CLEARCASE_AVOBS
 
-  As a default, this extension is preconfigured for snapshot views.
+The $CLEARCASE_AVOBS variable can be replaced by a list of vobs separated by a space
+
+**Dynamic**
+
+- cleartool lsprivate -short
+
+As a default, this extension is preconfigured for snapshot views.
 
 ## Hijacked files
 
 To show hijacked files the following configuration properties exist:
-  * clearcase.showHijackedFiles - to activate the feature
-  * clearcase.findHijackedCommandArguments - the command and its arguments to find hijacked files
+
+- clearcase.showHijackedFiles - to activate the feature
+- clearcase.findHijackedCommandArguments - the command and its arguments to find hijacked files
 
 The command can be as follows:
-  * cleartool ls /vob1 /vob2
+
+- cleartool ls /vob1 /vob2
 
 Here it is also possible to use the $CLEARTOOL_AVOBS environment variable. But for the sake of performance it is recommended to limit that search.
-
-
 
 ## Remote Cleartool Client
 
@@ -102,4 +105,5 @@ vscode-clearcase.wsl.pathMapping: [
 A valid ClearCase installation within the system's PATH or a valid executable path setup in the **extension** preferences value.
 
 ## License
+
 [MIT](LICENSE)
