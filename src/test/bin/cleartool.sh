@@ -75,12 +75,12 @@ lsview() {
 error() {
   local state=$1
   if [ $state -eq 1 ]; then # file not found
-    echo "cleartool: Error: Unable to access \"$theFile\": No such file or directory."
+    echo "cleartool: Error: Unable to access \"$theFile\": No such file or directory." >&2
   elif [ $state -eq 2 ]; then #checkin file not checked out
-    echo "cleartool: Error: No branch of element is checked out to view \"myhost:/home/user/viewstore/myview.vws\"."
-    echo "cleartool: Error: Unable to find checked out version for \"$theFile\"."
+    echo "cleartool: Error: No branch of element is checked out to view \"myhost:/home/user/viewstore/myview.vws\"."  >&2
+    echo "cleartool: Error: Unable to find checked out version for \"$theFile\"."  >&2
   elif [ $state -eq 3 ]; then #check out already checked out
-    echo "cleartool: Error: Element \"$theFile\" is already checked out to view \"myview\"."
+    echo "cleartool: Error: Element \"$theFile\" is already checked out to view \"myview\"."  >&2
   fi
 }
 

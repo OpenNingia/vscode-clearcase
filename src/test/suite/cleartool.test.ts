@@ -17,7 +17,7 @@ import CCOutputChannel, { LogLevel } from "../../ccOutputChannel";
 const TEST_HOME = process.env["HOME"] ? process.env["HOME"] : "-";
 const TEST_USER = process.env["USER"] ? process.env["USER"] : "-";
 
-suite("Extension Test Suite", () => {
+suite("Cleartool Commands Test Suite", () => {
   vscode.window.showInformationMessage("Start all tests.");
   let extensionContext: vscode.ExtensionContext;
   let outputChannelBase: SuiteOutputChannel;
@@ -158,7 +158,7 @@ suite("Extension Test Suite", () => {
     assert.strictEqual(outputChannelBase.getLine(0), `co,-nc,${file}\n`);
     assert.strictEqual(
       outputChannelBase.getLine(1),
-      `cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
+      `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
     );
   });
 

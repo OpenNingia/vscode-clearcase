@@ -360,6 +360,7 @@ export class ClearCase {
       await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
     } catch (error) {
       this.outputChannel.appendLine("Clearcase error: runCleartoolCommand: " + getErrorMessage(error), LogLevel.Error);
+      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
       return false;
     }
     return true;
@@ -449,10 +450,13 @@ export class ClearCase {
     const files = docs.map((d: Uri) => {
       return this.wslPath(d.fsPath, false);
     });
-
-    await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () =>
-      this.mUpdateEvent.fire(docs)
-    );
+    try {
+      await this.runCleartoolCommand(new CCArgs(["mkelem", "-mkp", "-nc"], files), dirname(docs[0]?.fsPath), null, () =>
+        this.mUpdateEvent.fire(docs)
+      );
+    } catch (error) {
+      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
+    }
   }
 
   async createHijackedObject(docs: Uri[]): Promise<void> {
@@ -537,8 +541,11 @@ export class ClearCase {
         return this.wslPath(d.fsPath, false);
       });
     }
-
-    await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+    try {
+      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+    } catch (error) {
+      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
+    }
   }
 
   async checkinFiles(docs: Uri[], comment: string): Promise<void> {
@@ -553,9 +560,13 @@ export class ClearCase {
       return this.wslPath(d.fsPath, false);
     });
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-      await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-        this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`, LogLevel.Information);
-      });
+      try {
+        await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
+          this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`, LogLevel.Information);
+        });
+      } catch (error) {
+        window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
+      }
     }
   }
 
@@ -602,6 +613,7 @@ export class ClearCase {
       });
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error), LogLevel.Error);
+      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
     }
     return resNew;
   }
@@ -645,6 +657,7 @@ export class ClearCase {
       });
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error), LogLevel.Error);
+      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
     }
     return resNew;
   }
@@ -690,6 +703,7 @@ export class ClearCase {
       });
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error), LogLevel.Error);
+      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
     }
     return resNew;
   }
@@ -723,6 +737,7 @@ export class ClearCase {
       });
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error), LogLevel.Error);
+      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
     }
   }
 
@@ -786,7 +801,7 @@ export class ClearCase {
    */
   async getVersionInformation(iUri: Uri, normalize = true): Promise<CCVersionType> {
     let fileVers = new CCVersionType();
-    if (iUri !== undefined && this.isView === true && iUri.scheme === "file") {
+    if (iUri !== undefined && this.isView === true) {
       const cwd = dirname(iUri.fsPath);
       await this.runCleartoolCommand(
         new CCArgs(["ls"], [iUri.fsPath]),
@@ -1079,7 +1094,7 @@ export class ClearCase {
     cwd: string,
     onData: ((data: string[]) => void) | null,
     onFinished?: (code: number, output: string, error: string) => void
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const executable: string = this.mExecCmd.executable();
     try {
       fs.accessSync(cwd, fs.constants.F_OK);
@@ -1099,7 +1114,7 @@ export class ClearCase {
 
     let allData: Buffer = Buffer.alloc(0);
     let cmdErrMsg = "";
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<string | undefined>((resolve, reject) => {
       command.stdout.on("data", (data) => {
         let res = "";
         if (Buffer.isBuffer(data)) {
@@ -1126,13 +1141,12 @@ export class ClearCase {
           outputChannel.appendLine(`${allData.toString()}`, LogLevel.Trace);
         }
         if (code !== 0 && this.isView && cmdErrMsg !== "") {
-          window.showErrorMessage(`${cmdErrMsg}`, { modal: false });
-          reject();
+          reject(cmdErrMsg);
         }
         if (typeof onFinished === "function") {
           onFinished(code, allData.toString(), cmdErrMsg);
         }
-        resolve();
+        resolve(undefined);
       });
     });
   }
