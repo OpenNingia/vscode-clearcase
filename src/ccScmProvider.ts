@@ -3,7 +3,6 @@ import {
   scm,
   SourceControlResourceGroup,
   Uri,
-  OutputChannel,
   commands,
   workspace,
   window,
@@ -36,6 +35,7 @@ import { fromCcUri } from "./uri";
 import * as path from "path";
 import { getErrorMessage } from "./errormessage";
 import { CCVersionState, CCVersionType } from "./ccVerstionType";
+import CCOutputChannel, { LogLevel } from "./ccOutputChannel";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -63,9 +63,16 @@ export class CCScmProvider implements IDisposable {
 
   constructor(
     private mContext: ExtensionContext,
-    private outputChannel: OutputChannel,
+    private outputChannel: CCOutputChannel,
     private configHandler: CCConfigHandler
-  ) { }
+  ) {
+    this.configHandler.onDidChangeConfiguration(() => {
+      if (this.configHandler.configuration.logLevel.changed) {
+        this.outputChannel.logLevel = this.configHandler.configuration.logLevel.value;
+      }
+    });
+    outputChannel.logLevel = this.configHandler.configuration.logLevel.value;
+  }
 
   async init(): Promise<boolean> {
     this.mListLock = new Lock(1);
@@ -77,7 +84,7 @@ export class CCScmProvider implements IDisposable {
           await this.clearCase.loginWebview();
           try {
             return await this.startExtension();
-          } catch (err) {
+          } catch {
             return false;
           }
         }
@@ -94,7 +101,7 @@ export class CCScmProvider implements IDisposable {
           await this.clearCase.loginWebview();
           try {
             return await this.startExtension();
-          } catch (err) {
+          } catch {
             return false;
           }
         }
@@ -102,7 +109,7 @@ export class CCScmProvider implements IDisposable {
     } else {
       try {
         return await this.startExtension();
-      } catch (err) {
+      } catch {
         return false;
       }
     }
@@ -113,21 +120,21 @@ export class CCScmProvider implements IDisposable {
     let isView = false;
     try {
       isView = (await this.mCCHandler?.checkIsView(undefined)) ?? false;
-    } catch (error) {
+    } catch {
       isView = false;
     }
     if (isView) {
       if (this.configHandler.configuration.detectWslEnvironment.value) {
         this.mCCHandler?.detectIsWsl();
       }
-      const d = this.clearCase ? this.clearCase.viewType === ViewType.dynamic : false;
+      const d = this.clearCase ? this.clearCase.viewType === ViewType.Dynamic : false;
       commands.executeCommand("setContext", "vscode-clearcase:enabled", isView);
       commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       this.mVersion = this.mContext.extension?.packageJSON?.version as string;
       // delete cache if new version is used
-      if ((this.mVersion !== this.mContext.workspaceState.get("version", "")) || process.env["VSCODE_DEBUG_MODE"]) {
+      if (this.mVersion !== this.mContext.workspaceState.get("version", "") || process.env["VSCODE_DEBUG_MODE"]) {
         this.mContext.workspaceState.update("untrackedfilecache", "");
         this.mContext.workspaceState.update("version", this.mVersion);
       }
@@ -174,15 +181,21 @@ export class CCScmProvider implements IDisposable {
         cfgTemp = this.mCCHandler.wslPath(cfgTemp);
       }
       if (!existsSync(cfgTemp)) {
-        const userActions: MessageItem[] = [{ title: "Create Directory" }, { title: "Open Settings" }, { title: "Ignore" }];
-        const userAction = await window.showInformationMessage(`The configured temp folder ${cfgTemp} does not exist. Do you want to created it or change the settings?`, ...userActions);
+        const userActions: MessageItem[] = [
+          { title: "Create Directory" },
+          { title: "Open Settings" },
+          { title: "Ignore" },
+        ];
+        const userAction = await window.showInformationMessage(
+          `The configured temp folder ${cfgTemp} does not exist. Do you want to created it or change the settings?`,
+          ...userActions
+        );
 
         switch (userAction?.title) {
           case userActions[0].title: {
             try {
               mkdirSync(cfgTemp);
-            }
-            catch (error) {
+            } catch (error) {
               window.showErrorMessage(`Could not create temp folder ${error}`);
             }
             break;
@@ -209,7 +222,7 @@ export class CCScmProvider implements IDisposable {
   }
 
   updateContextResources(): void {
-    const d = this.mCCHandler ? this.mCCHandler.viewType === ViewType.dynamic : false;
+    const d = this.mCCHandler ? this.mCCHandler.viewType === ViewType.Dynamic : false;
     const files = this.getCheckedoutObjects();
     const hijackedFiles = this.getHijackedObjects();
     commands.executeCommand("setContext", "vscode-clearcase:enabled", this.mCCHandler?.isView);
@@ -235,7 +248,7 @@ export class CCScmProvider implements IDisposable {
             }) ?? [];
           // file is checked out, add to resource state list
           if (version?.version.match(/checkedout/i) !== null) {
-            filteredCheckedout?.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.modified));
+            filteredCheckedout?.push(new CCScmResource(ResourceGroupType.Index, fileObj, CCScmStatus.Modified));
             checkoutsChanged = true;
           }
           // file is hijacked
@@ -249,7 +262,10 @@ export class CCScmProvider implements IDisposable {
           }
           this.updateContextResources();
         } catch (error) {
-          this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
+          this.outputChannel.appendLine(
+            "Clearcase error: getVersionInformation: " + getErrorMessage(error),
+            LogLevel.Error
+          );
         }
       }
     }
@@ -274,7 +290,7 @@ export class CCScmProvider implements IDisposable {
     this.clearCase?.findCheckouts().then((files) => {
       checkedout = files
         .map((val) => {
-          return new CCScmResource(ResourceGroupType.index, Uri.file(val), CCScmStatus.modified);
+          return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Modified);
         })
         .sort((val1, val2) => {
           return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
@@ -293,7 +309,7 @@ export class CCScmProvider implements IDisposable {
       this.clearCase?.findViewPrivate().then((files) => {
         viewPrivate = files
           .map((val) => {
-            return new CCScmResource(ResourceGroupType.index, Uri.file(val), CCScmStatus.modified);
+            return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Modified);
           })
           .sort((val1, val2) => {
             return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
@@ -303,7 +319,6 @@ export class CCScmProvider implements IDisposable {
         }
       });
     }
-
   }
 
   private async createHijackedList() {
@@ -313,7 +328,7 @@ export class CCScmProvider implements IDisposable {
       this.clearCase?.findHijacked().then((files) => {
         hijacked = files
           .map((val) => {
-            return new CCScmResource(ResourceGroupType.index, Uri.file(val), CCScmStatus.hijacked);
+            return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Hijacked);
           })
           .sort((val1, val2) => {
             return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
@@ -400,7 +415,7 @@ export class CCScmProvider implements IDisposable {
             if (err === undefined) {
               unlink(fileObj.resourceUri.fsPath, (error) => {
                 if (error) {
-                  this.outputChannel.appendLine(`Delete error: ${error.message}`);
+                  this.outputChannel.appendLine(`Delete error: ${error.message}`, LogLevel.Error);
                 }
                 this.handleDeleteFiles(fileObj.resourceUri);
               });
@@ -746,26 +761,25 @@ export class CCScmProvider implements IDisposable {
   bindEvents(): void {
     this.mDisposables.push(workspace.onWillSaveTextDocument((event) => this.onWillSaveDocument(event)));
 
-    this.mDisposables.push(window.onDidChangeActiveTextEditor((event) => {
-      this.outputChannel.appendLine("onDidChangeActiveTextEditor");
-      this.onDidChangeTextEditor(event);
-    }));
-    this.mDisposables.push(window.onDidChangeWindowState((event) => {
-      if (event.focused) {
-        this.outputChannel.appendLine("OnDidChangeWindowState");
-        this.onDidChangeTextEditor(window.activeTextEditor);
-      }
-    }));
+    this.mDisposables.push(
+      window.onDidChangeActiveTextEditor((event) => {
+        this.outputChannel.appendLine("onDidChangeActiveTextEditor", LogLevel.Trace);
+        this.onDidChangeTextEditor(event);
+      })
+    );
+    this.mDisposables.push(
+      window.onDidChangeWindowState((event) => {
+        if (event.focused) {
+          this.outputChannel.appendLine("OnDidChangeWindowState", LogLevel.Trace);
+          this.onDidChangeTextEditor(window.activeTextEditor);
+        }
+      })
+    );
   }
 
   private async onWillSaveDocument(event: TextDocumentWillSaveEvent) {
     try {
-      if (
-        event === null ||
-        event.document === null ||
-        event.document.isUntitled ||
-        event.reason !== TextDocumentSaveReason.Manual
-      ) {
+      if (event?.document === null || event.document.isUntitled || event.reason !== TextDocumentSaveReason.Manual) {
         return;
       }
       if (this.clearCase?.isReadOnly(event.document)) {
@@ -793,7 +807,10 @@ export class CCScmProvider implements IDisposable {
         try {
           version = (await this.clearCase?.getVersionInformation(event.document.uri)) ?? new CCVersionType();
         } catch (error) {
-          this.outputChannel.appendLine("Clearcase error: getVersionInformation: " + getErrorMessage(error));
+          this.outputChannel.appendLine(
+            "Clearcase error: getVersionInformation: " + getErrorMessage(error),
+            LogLevel.Error
+          );
         }
         if (version?.version === "") {
           this.handleChangeFiles([event.document.uri]);
@@ -830,7 +847,7 @@ export class CCScmProvider implements IDisposable {
   private async updateHijackedList(fileObj: Uri, version: CCVersionType): Promise<boolean> {
     if (this.configHandler.configuration.showHijackedFiles.value) {
       if (this.clearCase && this.mCCHijackedGrp) {
-        const isHijacked = (version.state === CCVersionState.hijacked);
+        const isHijacked = version.state === CCVersionState.Hijacked;
         let hijackedExists = false;
         const filteredHijacked =
           this.mCCHijackedGrp?.resourceStates.filter((item) => {
@@ -847,7 +864,7 @@ export class CCScmProvider implements IDisposable {
             this.mContext.workspaceState.update("hijackedfilecache", this.clearCase.hijackedList.stringify());
           }
           if (!hijackedExists) {
-            filteredHijacked.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.hijacked));
+            filteredHijacked.push(new CCScmResource(ResourceGroupType.Index, fileObj, CCScmStatus.Hijacked));
           }
         }
         if ((isHijacked && !hijackedExists) || (!isHijacked && hijackedExists)) {
@@ -862,7 +879,7 @@ export class CCScmProvider implements IDisposable {
   private async updateViewPrivateList(fileObj: Uri, version: CCVersionType): Promise<boolean> {
     if (this.configHandler.configuration.showViewPrivateFiles.value) {
       if (this.clearCase && this.mCCUntrackedGrp) {
-        const isPrivate = (version.state === CCVersionState.untracked);
+        const isPrivate = version.state === CCVersionState.Untracked;
         let privateExists = false;
         const filteredPrivate =
           this.mCCUntrackedGrp.resourceStates.filter((item) => {
@@ -879,7 +896,7 @@ export class CCScmProvider implements IDisposable {
             this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
           }
           if (!privateExists) {
-            filteredPrivate.push(new CCScmResource(ResourceGroupType.index, fileObj, CCScmStatus.untracked));
+            filteredPrivate.push(new CCScmResource(ResourceGroupType.Index, fileObj, CCScmStatus.Untracked));
           }
         }
         if ((isPrivate && !privateExists) || (!isPrivate && privateExists)) {

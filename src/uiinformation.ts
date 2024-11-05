@@ -34,7 +34,11 @@ export class UIInformation implements IDisposable {
     this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.receiveEditor(editor)));
     this.mDisposables.push(window.onDidChangeTextEditorViewColumn((event) => this.receiveEditorColumn(event)));
     if (this.mClearcase) {
-      this.mDisposables.push(this.mClearcase.onCommandExecuted(() => { this.initialQuery(); }));
+      this.mDisposables.push(
+        this.mClearcase.onCommandExecuted(() => {
+          this.initialQuery();
+        })
+      );
     }
 
     this.initialQuery();
@@ -90,16 +94,14 @@ export class UIInformation implements IDisposable {
       if (version.version !== "") {
         if (this.mStatusbar !== null) {
           switch (version.state) {
-            case CCVersionState.versioned:
-              {
-                this.mStatusbar.text = `[${version.version}]`;
-                break;
-              }
-            case CCVersionState.hijacked:
-              {
-                this.mStatusbar.text = `[HIJACKED]`;
-                break;
-              }
+            case CCVersionState.Versioned: {
+              this.mStatusbar.text = `[${version.version}]`;
+              break;
+            }
+            case CCVersionState.Hijacked: {
+              this.mStatusbar.text = `[HIJACKED]`;
+              break;
+            }
             default:
               this.mStatusbar.text = ``;
           }

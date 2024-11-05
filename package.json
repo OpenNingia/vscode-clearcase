@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.0.0-beta.5",
+  "version": "5.0.0-beta.6",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -683,6 +683,31 @@
           "default": "",
           "markdownDescription": "The network address of the clearcase server.",
           "order": 34
+        },
+        "vscode-clearcase.logLevel": {
+          "type": "number",
+          "default": 6,
+          "markdownDescription": "Set the log level for messages in the output window.",
+          "order": 2,
+          "title": "Log Level",
+          "enumItemLabels": [
+            "Trace",
+            "Debug",
+            "Information",
+            "Warning",
+            "Error",
+            "Critical",
+            "None"
+          ],
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
         }
       }
     },
@@ -745,7 +770,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src",
     "test": "node ./out/test/runTest.js",
     "deploy": "vsce publish",
     "webpack": "webpack --mode development",
@@ -753,16 +778,18 @@
     "package": "webpack --mode production --devtool hidden-source-map"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/js": "^9.14.0",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^12.20.55",
     "@types/tmp": "^0.2.3",
     "@types/vscode": "^1.70.0",
     "@types/webpack": "^5.28.0",
-    "@typescript-eslint/eslint-plugin": "^5.36.1",
-    "@typescript-eslint/parser": "^5.36.1",
+    "@typescript-eslint/eslint-plugin": "^8.13.0",
+    "@typescript-eslint/parser": "^8.13.0",
     "@vscode/test-electron": "^2.4.1",
-    "eslint": "^8.23.0",
+    "eslint": "^9.14.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
     "ts-loader": "^9.3.1",

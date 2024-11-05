@@ -77,7 +77,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       if (isCheckedOut) {
         return toCcUri(uri, currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
       }
-      if (currentVersion.state === CCVersionState.hijacked) {
+      if (currentVersion.state === CCVersionState.Hijacked) {
         return toCcUri(uri, currentVersion.version);
       }
     }

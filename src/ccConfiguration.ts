@@ -1,3 +1,5 @@
+import { LogLevel } from "./ccOutputChannel";
+
 export class PathMapping {
   host = "";
   wsl = "";
@@ -56,6 +58,10 @@ export class ConfigurationProperty<T> {
     this.mChanged = false;
     return old;
   }
+
+  set changed(state: boolean) {
+    this.mChanged = state;
+  }
 }
 
 export class CCConfiguration {
@@ -85,6 +91,7 @@ export class CCConfiguration {
 
   private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
   private mShowViewPrivateFiles = new ConfigurationProperty<boolean>(false);
+  private mLogLevel = new ConfigurationProperty<LogLevel>(LogLevel.None);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -184,5 +191,9 @@ export class CCConfiguration {
 
   get diffViewEncoding(): ConfigurationProperty<string> {
     return this.mDiffEncoding;
+  }
+
+  get logLevel(): ConfigurationProperty<LogLevel> {
+    return this.mLogLevel;
   }
 }

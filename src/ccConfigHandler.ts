@@ -3,6 +3,7 @@
 import { Event, EventEmitter, workspace, WorkspaceConfiguration } from "vscode";
 import { CCConfiguration, ConfigurationProperty, PathMapping } from "./ccConfiguration";
 import { IDisposable } from "./model";
+import { LogLevel } from "./ccOutputChannel";
 
 export class CCConfigHandler implements IDisposable {
   private mConfigChanged = new EventEmitter<string[]>();
@@ -89,6 +90,7 @@ export class CCConfigHandler implements IDisposable {
       this.setChangeConfigDate<boolean>(config, "wsl.detectEnvironment", this.mConfiguration.detectWslEnvironment);
       this.setChangeConfigDate<PathMapping[]>(config, "wsl.pathMapping", this.mConfiguration.pathMapping);
       this.setChangeConfigDate<string>(config, "diffViewerEncoding", this.mConfiguration.diffViewEncoding);
+      this.setChangeConfigDate<LogLevel>(config, "logLevel", this.mConfiguration.logLevel);
 
       return true;
     }
@@ -109,6 +111,7 @@ export class CCConfigHandler implements IDisposable {
     if (config.has(descriptor)) {
       configValue.value = config.get(descriptor) as T;
       if (configValue.changed) {
+        configValue.changed = true;
         this.mChangeIdents.push(descriptor);
         return true;
       }

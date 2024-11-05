@@ -3,11 +3,11 @@ import { CCScmStatus } from "./ccScmStatus";
 import * as path from "path";
 
 export const enum ResourceGroupType {
-  merge,
-  index,
-  workingTree,
-  untracked,
-  hijacked
+  Merge,
+  Index,
+  WorkingTree,
+  Untracked,
+  Hijacked,
 }
 
 const iconRootPath = path.join(path.dirname(__dirname), "Assets", "icons");
@@ -28,7 +28,7 @@ export class CCScmResource implements SourceControlResourceState {
     };
   }
 
-  constructor(private mResourceGrpType: ResourceGroupType, private mResourceUri: Uri, private mType: CCScmStatus) { }
+  constructor(private mResourceGrpType: ResourceGroupType, private mResourceUri: Uri, private mType: CCScmStatus) {}
 
   get type(): CCScmStatus {
     return this.mType;
@@ -36,33 +36,33 @@ export class CCScmResource implements SourceControlResourceState {
 
   get letter(): string {
     switch (this.type) {
-      case CCScmStatus.modified:
+      case CCScmStatus.Modified:
         return "M";
-      case CCScmStatus.untracked:
+      case CCScmStatus.Untracked:
         return "U";
-      case CCScmStatus.hijacked:
+      case CCScmStatus.Hijacked:
         return "H";
     }
   }
 
   get tooltip(): string {
     switch (this.type) {
-      case CCScmStatus.modified:
+      case CCScmStatus.Modified:
         return "modified";
-      case CCScmStatus.untracked:
+      case CCScmStatus.Untracked:
         return "untracked";
-      case CCScmStatus.hijacked:
+      case CCScmStatus.Hijacked:
         return "hijacked";
     }
   }
 
   get color(): ThemeColor {
     switch (this.type) {
-      case CCScmStatus.modified:
+      case CCScmStatus.Modified:
         return new ThemeColor("ccDecoration.modifiedResourceForeground");
-      case CCScmStatus.untracked:
+      case CCScmStatus.Untracked:
         return new ThemeColor("ccDecoration.untrackedResourceForeground");
-      case CCScmStatus.hijacked:
+      case CCScmStatus.Hijacked:
         return new ThemeColor("ccDecoration.hijackedResourceForeground");
     }
   }
