@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.0.0-beta.6",
+  "version": "5.0.0-beta.7",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -53,8 +53,8 @@
         "title": "Undo Hijack",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/clean.svg",
-          "dark": "./Assets/icons/dark/clean.svg"
+          "light": "./Assets/icons/clean.svg",
+          "dark": "./Assets/icons/clean.svg"
         }
       },
       {
@@ -62,8 +62,8 @@
         "title": "Checkin",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/check.svg",
-          "dark": "./Assets/icons/dark/check.svg"
+          "light": "./Assets/icons/check.svg",
+          "dark": "./Assets/icons/check.svg"
         }
       },
       {
@@ -71,8 +71,8 @@
         "title": "Checkin All",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/check.svg",
-          "dark": "./Assets/icons/dark/check.svg"
+          "light": "./Assets/icons/check-all.svg",
+          "dark": "./Assets/icons/check-all.svg"
         }
       },
       {
@@ -80,8 +80,8 @@
         "title": "Checkin Selected",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/check.svg",
-          "dark": "./Assets/icons/dark/check.svg"
+          "light": "./Assets/icons/check.svg",
+          "dark": "./Assets/icons/check.svg"
         }
       },
       {
@@ -99,8 +99,8 @@
         "title": "Undo Checkout",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/clean.svg",
-          "dark": "./Assets/icons/dark/clean.svg"
+          "light": "./Assets/icons/clean.svg",
+          "dark": "./Assets/icons/clean.svg"
         }
       },
       {
@@ -128,8 +128,8 @@
         "title": "Update View",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/refresh.svg",
-          "dark": "./Assets/icons/dark/refresh.svg"
+          "light": "./Assets/icons/cloud-download.svg",
+          "dark": "./Assets/icons/cloud-download.svg"
         }
       },
       {
@@ -147,8 +147,8 @@
         "title": "Refresh checkedout file list",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/open-change-head.svg",
-          "dark": "./Assets/icons/dark/open-change-head.svg"
+          "light": "./Assets/icons/refresh.svg",
+          "dark": "./Assets/icons/refresh.svg"
         }
       },
       {
@@ -156,8 +156,8 @@
         "title": "Edit config spec",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/icon-repo.svg",
-          "dark": "./Assets/icons/dark/icon-repo.svg"
+          "light": "./Assets/icons/icon-repo.svg",
+          "dark": "./Assets/icons/icon-repo.svg"
         }
       },
       {
@@ -165,8 +165,8 @@
         "title": "Refresh view private file list",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/open-change-base.svg",
-          "dark": "./Assets/icons/dark/open-change-base.svg"
+          "light": "./Assets/icons/search.svg",
+          "dark": "./Assets/icons/search.svg"
         }
       },
       {
@@ -174,8 +174,8 @@
         "title": "Refresh hijacked file list",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/open-change-base.svg",
-          "dark": "./Assets/icons/dark/open-change-base.svg"
+          "light": "./Assets/icons/search-fuzzy.svg",
+          "dark": "./Assets/icons/search-fuzzy.svg"
         }
       },
       {
@@ -193,8 +193,8 @@
         "title": "Open file",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/open-file.svg",
-          "dark": "./Assets/icons/dark/open-file.svg"
+          "light": "./Assets/icons/open-file.svg",
+          "dark": "./Assets/icons/open-file.svg"
         }
       },
       {
@@ -363,32 +363,27 @@
       "scm/title": [
         {
           "command": "extension.ccCheckinAll",
-          "group": "navigation",
+          "group": "navigation@1",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
         },
         {
-          "command": "extension.ccUpdateView",
-          "group": "navigation",
-          "when": "scmProvider == cc && vscode-clearcase:enabled && !vscode-clearcase:DynView"
-        },
-        {
           "command": "extension.ccRefreshFileList",
-          "group": "navigation",
+          "group": "navigation@2",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
         },
         {
           "command": "extension.ccEditConfigSpec",
-          "group": "navigation",
+          "group": "navigation@18",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
         },
         {
           "command": "extension.ccRefreshViewPrivateFileList",
-          "group": "navigation",
+          "group": "navigation@3",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
         },
         {
           "command": "extension.ccRefreshHijackedFileList",
-          "group": "navigation",
+          "group": "navigation@4",
           "when": "scmProvider == cc && vscode-clearcase:enabled && !vscode-clearcase:DynView"
         }
       ],
@@ -752,8 +747,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./Assets/icons/light/file-icon.png",
-          "dark": "./Assets/icons/dark/file-icon.png"
+          "light": "./Assets/icons/file-icon.png",
+          "dark": "./Assets/icons/file-icon.png"
         }
       }
     ],

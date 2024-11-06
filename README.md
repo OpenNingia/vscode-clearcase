@@ -2,6 +2,17 @@
 
 This repository contains the extension for [IBM Rational ClearCase SCM](http://www-03.ibm.com/software/products/en/clearcase) for the [VS Code](https://code.visualstudio.com) editor.
 
+## Table Of Contents
+
+- [Features](#features)
+- [GUI](#gui)
+- [View Private Files](#view-private-files)
+- [Hijacked Files](#hijacked-files)
+- [Remote Control Client](#remote-cleartool-client)
+- [WSL](#wsl)
+- [Loggin](#loggin)
+- [Requirements](#requirements)
+
 ## Features
 
 Clearcase commands exposed by this extensions:
@@ -22,7 +33,7 @@ Clearcase commands exposed by this extensions:
 - Set current Activity
 - Remote Cleartool Client
 
-### GUI
+## GUI
 
 - Automatically checkout on save if file isn't checked out.
 - Show view private and checkedout files in SCM view
@@ -44,19 +55,19 @@ Clearcase commands exposed by this extensions:
 
 - Syntax highlighting for ClearCase config-spec files
 
-## View private files
+## View Private Files
 
 To show view private files in the source control view, there are two configuration parameters
 
-- clearcase.showViewPrivateFiles - to activate the feature
-- clearcase.findViewPrivateCommandArguments - the command and its arguments to find view private files
-- viewPrivateFileSuffixes - filter the files by regex. The default `(hh|cpp|def|c|h|txt)$` can be a good start.
+- `clearcase.showViewPrivateFiles` - to activate the feature
+- `clearcase.findViewPrivateCommandArguments` - the command and its arguments to find view private files
+- `viewPrivateFileSuffixes` - filter the files by regex. The default `(hh|cpp|def|c|h|txt)$` can be a good start.
 
 Depending on the view type, snapshot or dynamic, there are different commands.
 
 **Snapshot**
 
-- cleartool ls -view_only -rec $CLEARCASE_AVOBS
+- `cleartool ls -view_only -rec $CLEARCASE_AVOBS`
 
 The $CLEARCASE_AVOBS variable can be replaced by a list of vobs separated by a space
 
@@ -66,16 +77,16 @@ The $CLEARCASE_AVOBS variable can be replaced by a list of vobs separated by a s
 
 As a default, this extension is preconfigured for snapshot views.
 
-## Hijacked files
+## Hijacked Files
 
 To show hijacked files the following configuration properties exist:
 
-- clearcase.showHijackedFiles - to activate the feature
-- clearcase.findHijackedCommandArguments - the command and its arguments to find hijacked files
+- `clearcase.showHijackedFiles` - to activate the feature
+- `clearcase.findHijackedCommandArguments` - the command and its arguments to find hijacked files
 
 The command can be as follows:
 
-- cleartool ls /vob1 /vob2
+- `cleartool ls /vob1 /vob2`
 
 Here it is also possible to use the $CLEARTOOL_AVOBS environment variable. But for the sake of performance it is recommended to limit that search.
 
@@ -99,6 +110,12 @@ vscode-clearcase.wsl.pathMapping: [
   }
 ]
 ```
+
+## Loggin
+
+It is possible to print the output of the internal clearcase commands into the output console. To control the amount of information that is printed there is a configuration date.
+
+`vscode-clearcase.logLevel` with the Parameter (`Trace`, `Debug`, `Information`, `Warning`,`Error`, `Critical`, `None`)
 
 ## Requirements
 
