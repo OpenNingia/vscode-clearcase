@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "4.6.2",
+  "version": "5.0.0-beta.8",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -44,12 +44,26 @@
         "category": "Clearcase"
       },
       {
+        "command": "extension.ccHijack",
+        "title": "Hijack",
+        "category": "Clearcase"
+      },
+      {
+        "command": "extension.ccUndoHijack",
+        "title": "Undo Hijack",
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/clean.svg",
+          "dark": "./Assets/icons/clean.svg"
+        }
+      },
+      {
         "command": "extension.ccCheckin",
         "title": "Checkin",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/check.svg",
-          "dark": "./Assets/icons/dark/check.svg"
+          "light": "./Assets/icons/check.svg",
+          "dark": "./Assets/icons/check.svg"
         }
       },
       {
@@ -57,8 +71,8 @@
         "title": "Checkin All",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/check.svg",
-          "dark": "./Assets/icons/dark/check.svg"
+          "light": "./Assets/icons/check-all.svg",
+          "dark": "./Assets/icons/check-all.svg"
         }
       },
       {
@@ -66,8 +80,8 @@
         "title": "Checkin Selected",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/check.svg",
-          "dark": "./Assets/icons/dark/check.svg"
+          "light": "./Assets/icons/check.svg",
+          "dark": "./Assets/icons/check.svg"
         }
       },
       {
@@ -85,13 +99,18 @@
         "title": "Undo Checkout",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/clean.svg",
-          "dark": "./Assets/icons/dark/clean.svg"
+          "light": "./Assets/icons/clean.svg",
+          "dark": "./Assets/icons/clean.svg"
         }
       },
       {
         "command": "extension.ccFindCheckouts",
         "title": "Find Checkouts",
+        "category": "Clearcase"
+      },
+      {
+        "command": "extension.ccFindViewPrivate",
+        "title": "Find View Private Files",
         "category": "Clearcase"
       },
       {
@@ -109,8 +128,8 @@
         "title": "Update View",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/refresh.svg",
-          "dark": "./Assets/icons/dark/refresh.svg"
+          "light": "./Assets/icons/cloud-download.svg",
+          "dark": "./Assets/icons/cloud-download.svg"
         }
       },
       {
@@ -128,8 +147,8 @@
         "title": "Refresh checkedout file list",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/open-change-head.svg",
-          "dark": "./Assets/icons/dark/open-change-head.svg"
+          "light": "./Assets/icons/refresh.svg",
+          "dark": "./Assets/icons/refresh.svg"
         }
       },
       {
@@ -137,8 +156,8 @@
         "title": "Edit config spec",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/icon-repo.svg",
-          "dark": "./Assets/icons/dark/icon-repo.svg"
+          "light": "./Assets/icons/icon-repo.svg",
+          "dark": "./Assets/icons/icon-repo.svg"
         }
       },
       {
@@ -146,8 +165,17 @@
         "title": "Refresh view private file list",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/open-change-base.svg",
-          "dark": "./Assets/icons/dark/open-change-base.svg"
+          "light": "./Assets/icons/search.svg",
+          "dark": "./Assets/icons/search.svg"
+        }
+      },
+      {
+        "command": "extension.ccRefreshHijackedFileList",
+        "title": "Refresh hijacked file list",
+        "category": "Clearcase",
+        "icon": {
+          "light": "./Assets/icons/search-fuzzy.svg",
+          "dark": "./Assets/icons/search-fuzzy.svg"
         }
       },
       {
@@ -165,8 +193,8 @@
         "title": "Open file",
         "category": "Clearcase",
         "icon": {
-          "light": "./Assets/icons/light/open-file.svg",
-          "dark": "./Assets/icons/dark/open-file.svg"
+          "light": "./Assets/icons/open-file.svg",
+          "dark": "./Assets/icons/open-file.svg"
         }
       },
       {
@@ -278,6 +306,16 @@
           "command": "extension.ccUndoCheckout",
           "group": "cc@4",
           "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
         }
       ],
       "editor/context": [
@@ -295,6 +333,16 @@
           "command": "extension.ccCheckout",
           "group": "cc@2",
           "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
         },
         {
           "command": "extension.ccComparePrevious",
@@ -315,28 +363,28 @@
       "scm/title": [
         {
           "command": "extension.ccCheckinAll",
-          "group": "navigation",
+          "group": "navigation@1",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
         },
         {
-          "command": "extension.ccUpdateView",
-          "group": "navigation",
-          "when": "scmProvider == cc && vscode-clearcase:enabled && !vscode-clearcase:DynView"
-        },
-        {
           "command": "extension.ccRefreshFileList",
-          "group": "navigation",
+          "group": "navigation@2",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
         },
         {
           "command": "extension.ccEditConfigSpec",
-          "group": "navigation",
+          "group": "navigation@18",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
         },
         {
           "command": "extension.ccRefreshViewPrivateFileList",
-          "group": "navigation",
+          "group": "navigation@3",
           "when": "scmProvider == cc && vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccRefreshHijackedFileList",
+          "group": "navigation@4",
+          "when": "scmProvider == cc && vscode-clearcase:enabled && !vscode-clearcase:DynView"
         }
       ],
       "scm/resourceState/context": [
@@ -377,7 +425,7 @@
         },
         {
           "command": "extension.ccComparePrevious",
-          "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
+          "when": "scmProvider == cc && scmResourceGroup != cc_untracked && vscode-clearcase:enabled",
           "group": "cc_file"
         },
         {
@@ -393,6 +441,16 @@
         {
           "command": "extension.ccCheckinSelected",
           "when": "scmProvider == cc && scmResourceGroup == cc_checkedout && vscode-clearcase:enabled",
+          "group": "cc_file"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "when": "scmProvider == cc && scmResourceGroup == cc_hijacked && vscode-clearcase:enabled",
+          "group": "inline@1"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "when": "scmProvider == cc && scmResourceGroup == cc_hijacked && vscode-clearcase:enabled",
           "group": "cc_file"
         }
       ]
@@ -471,7 +529,7 @@
         },
         "vscode-clearcase.cleartool.useDialog": {
           "type": "boolean",
-          "default": "true",
+          "default": true,
           "markdownDescription": "Use clearDlg command for checkout and checking operations.",
           "order": 1
         },
@@ -511,6 +569,30 @@
           "markdownDescription": "Clearcase lsco arguments.",
           "order": 15
         },
+        "vscode-clearcase.cleartool.showViewPrivateFiles": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Search for view-private files in current view. The configuration is in #vscode-clearcase.cleartool.findViewPrivateCommandArguments.",
+          "order": 16
+        },
+        "vscode-clearcase.cleartool.findViewPrivateCommandArguments": {
+          "type": "string",
+          "default": "ls -rec -view_only ${env:CLEARCASE_AVOBS}",
+          "markdownDescription": "Clearcase command and arguments for searching view private files.",
+          "order": 17
+        },
+        "vscode-clearcase.cleartool.showHijackedFiles": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Search for hijacked files in current view. The configuration is in #vscode-clearcase.cleartool.findHijackedCommandArguments.",
+          "order": 18
+        },
+        "vscode-clearcase.cleartool.findHijackedCommandArguments": {
+          "type": "string",
+          "default": "ls -rec ${env:CLEARCASE_AVOBS}",
+          "markdownDescription": "Clearcase command and arguments for searching hijacked files.",
+          "order": 19
+        },
         "vscode-clearcase.cleartool.checkinCommandArguments": {
           "type": "string",
           "default": "-comment ${comment} ${filename}",
@@ -519,7 +601,7 @@
         },
         "vscode-clearcase.cleartool.undoCheckoutKeepFile": {
           "type": "boolean",
-          "default": "true",
+          "default": true,
           "markdownDescription": "Keep unchecked out files in current directory",
           "order": 14
         },
@@ -533,7 +615,7 @@
           "type": "string",
           "default": "(hh|cpp|def|c|h|txt)$",
           "markdownDescription": "Regular expression style string for file suffixes be shown as view private.",
-          "order": 16
+          "order": 20
         },
         "vscode-clearcase.cleartool.executable": {
           "type": "string",
@@ -596,6 +678,31 @@
           "default": "",
           "markdownDescription": "The network address of the clearcase server.",
           "order": 34
+        },
+        "vscode-clearcase.logLevel": {
+          "type": "number",
+          "default": 6,
+          "markdownDescription": "Set the log level for messages in the output window.",
+          "order": 2,
+          "title": "Log Level",
+          "enumItemLabels": [
+            "Trace",
+            "Debug",
+            "Information",
+            "Warning",
+            "Error",
+            "Critical",
+            "None"
+          ],
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
         }
       }
     },
@@ -617,6 +724,15 @@
           "dark": "#73C991",
           "highContrast": "#73C991"
         }
+      },
+      {
+        "id": "ccDecoration.hijackedResourceForeground",
+        "description": "%colors.hijacked%",
+        "defaults": {
+          "light": "#054457",
+          "dark": "#70a1eb",
+          "highContrast": "#a1d3f0"
+        }
       }
     ],
     "languages": [
@@ -631,8 +747,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./Assets/icons/light/file-icon.png",
-          "dark": "./Assets/icons/dark/file-icon.png"
+          "light": "./Assets/icons/file-icon.png",
+          "dark": "./Assets/icons/file-icon.png"
         }
       }
     ],
@@ -649,7 +765,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src",
     "test": "node ./out/test/runTest.js",
     "deploy": "vsce publish",
     "webpack": "webpack --mode development",
@@ -657,16 +773,18 @@
     "package": "webpack --mode production --devtool hidden-source-map"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/js": "^9.14.0",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^12.20.55",
     "@types/tmp": "^0.2.3",
     "@types/vscode": "^1.70.0",
     "@types/webpack": "^5.28.0",
-    "@typescript-eslint/eslint-plugin": "^5.36.1",
-    "@typescript-eslint/parser": "^5.36.1",
+    "@typescript-eslint/eslint-plugin": "^8.13.0",
+    "@typescript-eslint/parser": "^8.13.0",
     "@vscode/test-electron": "^2.4.1",
-    "eslint": "^8.23.0",
+    "eslint": "^9.14.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
     "ts-loader": "^9.3.1",

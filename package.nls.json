@@ -4,5 +4,8 @@
   "command.checkout": "Checkout",
   "command.undocheckout": "Undo checkout",
   "command.addToSourceControl": "Add to Source Control",
-  "config.enabled": "Whether ClearCase SCM is enabled"
+  "config.enabled": "Whether ClearCase SCM is enabled",
+  "colors.modified": "Modified File in SCM View",
+  "colors.hijacked": "Hijacked File in SCM View",
+  "colors.untracked": "View private File in SCM View"
 }

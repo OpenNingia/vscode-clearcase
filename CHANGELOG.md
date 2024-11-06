@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 4.7.0
+_Feature_
+- it is now possible to use the ${env:VARIBALE} syntax in all configuration properties of the extension
+
 ### 4.6.2
 _Bugfix_
 - fixed endless loop of cleartool command in case of an error
