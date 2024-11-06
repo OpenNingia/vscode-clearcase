@@ -12,6 +12,7 @@ import {
   workspace,
 } from "vscode";
 import { IDisposable } from "./model";
+import { CCVersionState, CCVersionType } from "./ccVerstionType";
 
 export class UIInformation implements IDisposable {
   private mStatusbar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
@@ -33,7 +34,11 @@ export class UIInformation implements IDisposable {
     this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.receiveEditor(editor)));
     this.mDisposables.push(window.onDidChangeTextEditorViewColumn((event) => this.receiveEditorColumn(event)));
     if (this.mClearcase) {
-      this.mDisposables.push(this.mClearcase.onCommandExecuted(() => { this.initialQuery(); }));
+      this.mDisposables.push(
+        this.mClearcase.onCommandExecuted(() => {
+          this.initialQuery();
+        })
+      );
     }
 
     this.initialQuery();
@@ -80,17 +85,26 @@ export class UIInformation implements IDisposable {
       this.mClearcase
         ?.getVersionInformation(iUri)
         .then((value) => this.updateStatusbar(value))
-        .catch(() => this.updateStatusbar(""));
+        .catch(() => this.updateStatusbar(new CCVersionType()));
     }
   }
 
-  private async updateStatusbar(iFileInfo: string) {
-    if (iFileInfo !== undefined) {
-      let version = "view private";
-      if ( iFileInfo !== "" ) {
-        version = iFileInfo;
+  private async updateStatusbar(version: CCVersionType) {
+    if (version !== undefined) {
+      if (version.version !== "") {
         if (this.mStatusbar !== null) {
-          this.mStatusbar.text = `[${version}]`;
+          switch (version.state) {
+            case CCVersionState.Versioned: {
+              this.mStatusbar.text = `[${version.version}]`;
+              break;
+            }
+            case CCVersionState.Hijacked: {
+              this.mStatusbar.text = `[HIJACKED]`;
+              break;
+            }
+            default:
+              this.mStatusbar.text = ``;
+          }
         }
         this.mStatusbar?.show();
       } else {
