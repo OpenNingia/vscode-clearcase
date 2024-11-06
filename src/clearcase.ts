@@ -596,7 +596,7 @@ export class ClearCase {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
       const cmd: CCArgs = new CCArgs(["lsco", ...cmdOpts]);
-      await this.runCleartoolCommand(cmd, wsf, null, (_code: number, output: string, _error: string) => {
+      await this.runCleartoolCommand(cmd, wsf, null, (_code: number, output: string) => {
         if (output.length > 0) {
           const results: string[] = output.trim().split(/\r\n|\r|\n/);
           resNew = results.map((e) => {
@@ -632,7 +632,7 @@ export class ClearCase {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
       const cmd: CCArgs = new CCArgs([...cmdOpts]);
-      await this.runCleartoolCommand(cmd, wsf, null, (_code: number, output: string, _error: string) => {
+      await this.runCleartoolCommand(cmd, wsf, null, (_code: number, output: string) => {
         if (output.length > 0) {
           const suff = this.configHandler.configuration.viewPrivateFileSuffixes.value;
           const suffRe = new RegExp(suff, "i");
@@ -676,7 +676,7 @@ export class ClearCase {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
       const cmd: CCArgs = new CCArgs([...cmdOpts]);
-      await this.runCleartoolCommand(cmd, wsf, null, (_code: number, output: string, _error: string) => {
+      await this.runCleartoolCommand(cmd, wsf, null, (_code: number, output: string) => {
         if (output.length > 0) {
           const results: string[] = output.trim().split(/\r\n|\r|\n/);
           resNew = results
@@ -1076,7 +1076,7 @@ export class ClearCase {
         new CCArgs(["get", "-to", tempFile], [fsPath], version),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (_code: number, output: string, _error: string) => {
+        (_code: number, output: string) => {
           //  Only log stdout contents here; stderr is logged by runCleartoolCommand if non-empty
           console.log(output);
         }
@@ -1166,7 +1166,7 @@ export class ClearCase {
         new CCArgs(this.lsView),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
-        (_code: number, output: string, _error: string) => {
+        (_code: number, output: string) => {
           lines = output.split(/\r\n|\r|\n/).filter((s) => s.length > 0);
           const resLines: string[] = lines.filter(filterGlobalPathLines);
           if (resLines.length === 0) {

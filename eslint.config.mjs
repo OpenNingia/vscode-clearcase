@@ -71,10 +71,7 @@ export default [{
         "@typescript-eslint/restrict-plus-operands": "error",
         "@typescript-eslint/unbound-method": "error",
 
-        "@typescript-eslint/no-unused-vars": ["error", {
-            argsIgnorePattern: "^_",
-        }],
-
+        "@typescript-eslint/no-unused-vars": "error",
         "no-unused-vars": ["error", {
             argsIgnorePattern: "^_",
         }],
