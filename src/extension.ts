@@ -1,10 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { commands, Disposable, ExtensionContext, OutputChannel, window, workspace } from "vscode";
+import { Disposable, ExtensionContext, window, workspace } from "vscode";
 import { CCConfigHandler } from "./ccConfigHandler";
 import { CCScmProvider } from "./ccScmProvider";
-import { ViewType } from "./clearcase";
 import { UIInformation } from "./uiinformation";
+import CCOutputChannel from "./ccOutputChannel";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -15,8 +15,7 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with  registerCommand
   // The commandId parameter must match the command field in package.json
-  const outputChannel: OutputChannel = window.createOutputChannel("Clearcase SCM");
-
+  const outputChannel = new CCOutputChannel(window.createOutputChannel("Clearcase SCM"));
   const configHandler = new CCConfigHandler();
   disposables.push(configHandler);
 
@@ -28,21 +27,13 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
       provider.bindEvents();
       provider.bindCommands();
 
-      provider.updateIsView().then((isView: boolean) => {
-        const viewType = provider.clearCase ? provider.clearCase.viewType === ViewType.dynamic : false;
-        const files = provider.getCheckedoutObjects();
-        commands.executeCommand("setContext", "vscode-clearcase:enabled", isView);
-        commands.executeCommand("setContext", "vscode-clearcase:DynView", viewType);
-        commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
-      });
-
       provider.onWindowChanged(() => {
-        const d = provider.clearCase ? provider.clearCase.viewType === ViewType.dynamic : false;
-        const files = provider.getCheckedoutObjects();
-        commands.executeCommand("setContext", "vscode-clearcase:enabled", provider.clearCase?.isView);
-        commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
-        commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
+        provider.updateContextResources();
       }, provider);
+
+      provider.updateIsView().then(() => {
+        provider.updateContextResources();
+      });
 
       const uiInfo = new UIInformation(configHandler, window.activeTextEditor, provider.clearCase);
       disposables.push(uiInfo);
@@ -54,9 +45,9 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
-    // Set context as a global as some tests depend on it
+  // Set context as a global as some tests depend on it
   /* eslint-disable */
-	(global as any).testExtensionContext = context;
+  (global as any).testExtensionContext = context;
   /* eslint-enable */
 
   const disposables: Disposable[] = [];

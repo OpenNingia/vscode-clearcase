@@ -3,6 +3,7 @@
 import { Event, EventEmitter, workspace, WorkspaceConfiguration } from "vscode";
 import { CCConfiguration, ConfigurationProperty, PathMapping } from "./ccConfiguration";
 import { IDisposable } from "./model";
+import { LogLevel } from "./ccOutputChannel";
 
 export class CCConfigHandler implements IDisposable {
   private mConfigChanged = new EventEmitter<string[]>();
@@ -52,6 +53,22 @@ export class CCConfigHandler implements IDisposable {
         "cleartool.findCheckoutsCommandArguments",
         this.mConfiguration.findCheckoutsCommand
       );
+      this.setChangeConfigDate<string>(
+        config,
+        "cleartool.findViewPrivateCommandArguments",
+        this.mConfiguration.findViewPrivateCommand
+      );
+      this.setChangeConfigDate<string>(
+        config,
+        "cleartool.findHijackedCommandArguments",
+        this.mConfiguration.findHijackedCommand
+      );
+      this.setChangeConfigDate<boolean>(config, "cleartool.showHijackedFiles", this.mConfiguration.showHijackedFiles);
+      this.setChangeConfigDate<boolean>(
+        config,
+        "cleartool.showViewPrivateFiles",
+        this.mConfiguration.showViewPrivateFiles
+      );
       this.setChangeConfigDate<string>(config, "cleartool.checkinCommandArguments", this.mConfiguration.checkinCommand);
       this.setChangeConfigDate<string>(config, "cleartool.defaultComment", this.mConfiguration.defaultComment);
       this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);
@@ -74,6 +91,7 @@ export class CCConfigHandler implements IDisposable {
       this.setChangeConfigDate<PathMapping[]>(config, "wsl.pathMapping", this.mConfiguration.pathMapping);
       this.setChangeConfigDate<string>(config, "diffViewerEncoding", this.mConfiguration.diffViewEncoding);
       this.setChangeConfigDate<boolean>(config, "useLabelAtCheckin", this.mConfiguration.useLabelAtCheckin);
+      this.setChangeConfigDate<LogLevel>(config, "logLevel", this.mConfiguration.logLevel);
 
       return true;
     }
@@ -94,6 +112,7 @@ export class CCConfigHandler implements IDisposable {
     if (config.has(descriptor)) {
       configValue.value = config.get(descriptor) as T;
       if (configValue.changed) {
+        configValue.changed = true;
         this.mChangeIdents.push(descriptor);
         return true;
       }

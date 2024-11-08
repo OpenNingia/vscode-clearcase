@@ -9,6 +9,7 @@ doTree=0
 doTreeGrafical=0
 doConfigspec=0
 doDescribe=0
+doListView=0
 
 theComment=""
 theFormat=""
@@ -46,15 +47,40 @@ uncheckout() {
   echo "Checkout cancelled for \"$theFile\"."
 }
 
+catcs() {
+  echo "element * CHECKEDOUT"
+  echo ""
+  echo "element * /main/0"
+}
+
+lsview() {
+  echo "Tag: myview"
+  echo "Global path: /home/user/viewstore/snapshots/myview.vws"
+  echo "Server host: myserver"
+  echo "Region: _linux"
+  echo "Active: NO"
+  echo "View tag uuid:fffffef.eeea1ref.8f3e.00:00:22:11:00:aa"
+  echo "View on host: dechezccrh012"
+  echo "View server access path: /home/user/viewstore/snapshots/myview.vws"
+  echo "View uuid: ffffffe2.123a45ef.eeee.00:90:23:34:3e:cc"
+  if [ "$CLEARCASE_TEST_VIEWTYPE" = "DYNAMIC" ]; then
+    echo "View attributes: dynamic"
+  fi
+  if [ "$CLEARCASE_TEST_VIEWTYPE" = "SNAPSHOT" ]; then
+    echo "View attributes: snapshot"
+  fi
+  echo "View owner: server.local/user"
+}
+
 error() {
   local state=$1
   if [ $state -eq 1 ]; then # file not found
-    echo "cleartool: Error: Unable to access \"$theFile\": No such file or directory."
+    echo "cleartool: Error: Unable to access \"$theFile\": No such file or directory." >&2
   elif [ $state -eq 2 ]; then #checkin file not checked out
-    echo "cleartool: Error: No branch of element is checked out to view \"myhost:/home/user/viewstore/myview.vws\"."
-    echo "cleartool: Error: Unable to find checked out version for \"$theFile\"."
+    echo "cleartool: Error: No branch of element is checked out to view \"myhost:/home/user/viewstore/myview.vws\"."  >&2
+    echo "cleartool: Error: Unable to find checked out version for \"$theFile\"."  >&2
   elif [ $state -eq 3 ]; then #check out already checked out
-    echo "cleartool: Error: Element \"$theFile\" is already checked out to view \"myview\"."
+    echo "cleartool: Error: Element \"$theFile\" is already checked out to view \"myview\"."  >&2
   fi
 }
 
@@ -87,6 +113,12 @@ while true; do
     ;;
   unco | uncheckout)
     doCheckout=1
+    ;;
+  catcs)
+    doConfigspec=1
+    ;;
+  lsview)
+    doListView=1
     ;;
   -nc)
     doNoComment=1
@@ -123,4 +155,8 @@ elif [ $doCheckout -eq 1 ]; then
   checkout
 elif [ $doUncheckout -eq 1 ]; then
   uncheckout
+elif [ $doConfigspec -eq 1 ]; then
+  catcs
+elif [ $doListView -eq 1 ]; then
+  lsview
 fi

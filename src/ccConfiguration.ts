@@ -1,3 +1,5 @@
+import { LogLevel } from "./ccOutputChannel";
+
 export class PathMapping {
   host = "";
   wsl = "";
@@ -9,31 +11,35 @@ export class Variables {
       return value;
     }
 
-    // get env variable
-    const idx = value.indexOf("env:");
-    let retVal = value as string;
-    if (idx > 0) {
-      const matches = value.matchAll(/\$\{env:(\w+)\}/gi);
-      for (const subgrp of matches) {
-        if (subgrp.length > 0) {
-          if (subgrp[1] in process.env) {
-            const v = process.env[subgrp[1]];
-            if (v !== undefined) {
-              retVal = retVal.replace(subgrp[0], v);
+    if (typeof value === "string") {
+      const idx = value.indexOf("env:");
+      let retVal = value as string;
+      if (idx > 0) {
+        const matches = value.matchAll(/\$\{env:(\w+)\}/gi);
+        for (const subgrp of matches) {
+          if (subgrp.length > 0) {
+            if (subgrp[1] in process.env) {
+              const v = process.env[subgrp[1]];
+              if (v !== undefined) {
+                retVal = retVal.replace(subgrp[0], v);
+              }
             }
           }
         }
       }
+      return retVal as T;
     }
-    return retVal as T;
+    return value;
   }
 }
 
 export class ConfigurationProperty<T> {
   private mChanged: boolean;
+  private mProp: T;
 
-  constructor(private mProp: T) {
+  constructor(prop: T) {
     this.mChanged = true;
+    this.mProp = Variables.parse<T>(prop);
   }
 
   get value(): T {
@@ -52,21 +58,23 @@ export class ConfigurationProperty<T> {
     this.mChanged = false;
     return old;
   }
+
+  set changed(state: boolean) {
+    this.mChanged = state;
+  }
 }
 
 export class CCConfiguration {
   private mShowStatusbar = new ConfigurationProperty<boolean>(true);
   private mAnnotationColor = new ConfigurationProperty<string>("rgba(220, 220, 220, 0.8)");
-  private mAnnotationBackgroundColor = new ConfigurationProperty<string>(
-    "rgba(20, 20, 20, 0.8)"
-  );
+  private mAnnotationBackgroundColor = new ConfigurationProperty<string>("rgba(20, 20, 20, 0.8)");
   private mAnnotationFormatString = new ConfigurationProperty<string>("%d %12u");
   private mShowAnnotationCodeLens = new ConfigurationProperty<boolean>(true);
   private mUseClearDlg = new ConfigurationProperty<boolean>(true);
-  private mCheckoutCommand = new ConfigurationProperty<string>(
-    "-comment ${comment} ${filename}"
-  );
+  private mCheckoutCommand = new ConfigurationProperty<string>("-comment ${comment} ${filename}");
   private mFindCheckoutsCommand = new ConfigurationProperty<string>("-me -cview -short -avobs");
+  private mFindViewPrivateCommand = new ConfigurationProperty<string>("ls -rec -view_only ${env:CLEARCASE_AVOBS}");
+  private mFindHijackedCommand = new ConfigurationProperty<string>("ls -rec ${env:CLEARCASE_AVOBS}");
   private mUncoKeepFile = new ConfigurationProperty<boolean>(true);
   private mCheckinCommand = new ConfigurationProperty<string>("-comment ${comment} ${filename}");
   private mDefaultComment = new ConfigurationProperty<string>("");
@@ -81,6 +89,10 @@ export class CCConfiguration {
   private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
   private mDiffEncoding = new ConfigurationProperty<string>("");
   private mUseLabelWhenCheckin = new ConfigurationProperty<boolean>(false);
+
+  private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
+  private mShowViewPrivateFiles = new ConfigurationProperty<boolean>(false);
+  private mLogLevel = new ConfigurationProperty<LogLevel>(LogLevel.None);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -116,6 +128,22 @@ export class CCConfiguration {
 
   get findCheckoutsCommand(): ConfigurationProperty<string> {
     return this.mFindCheckoutsCommand;
+  }
+
+  get findViewPrivateCommand(): ConfigurationProperty<string> {
+    return this.mFindViewPrivateCommand;
+  }
+
+  get findHijackedCommand(): ConfigurationProperty<string> {
+    return this.mFindHijackedCommand;
+  }
+
+  get showHijackedFiles(): ConfigurationProperty<boolean> {
+    return this.mShowHijackedFiles;
+  }
+
+  get showViewPrivateFiles(): ConfigurationProperty<boolean> {
+    return this.mShowViewPrivateFiles;
   }
 
   get uncoKeepFile(): ConfigurationProperty<boolean> {
@@ -168,5 +196,9 @@ export class CCConfiguration {
 
   get useLabelAtCheckin(): ConfigurationProperty<boolean> {
     return this.mUseLabelWhenCheckin;
+  }
+  
+  get logLevel(): ConfigurationProperty<LogLevel> {
+    return this.mLogLevel;
   }
 }
