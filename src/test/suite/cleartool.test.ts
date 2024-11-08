@@ -64,6 +64,7 @@ suite("Cleartool Commands Test Suite", () => {
     configHandler = new CCConfigHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Trace;
+    configHandler.configuration.useLabelAtCheckin.value = false;
     provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();

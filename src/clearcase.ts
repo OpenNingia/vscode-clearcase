@@ -500,51 +500,8 @@ export class ClearCase {
   async checkinFile(docs: Uri[]): Promise<void> {
     const defComment = this.configHandler.configuration.defaultComment.value;
 
-    let comment = "";
-    const cmdOpts = ciArgTmpl.trim().split(/\s+/);
-    let idx = cmdOpts.indexOf("${comment}");
-    if (idx > -1) {
-      if (defComment) {
-        comment = defComment;
-      } else {
-        comment = await CCUIControl.showCommentInput();
-      }
-      cmdOpts[idx] = comment;
-    } else {
-      let pI = cmdOpts.indexOf("-comment");
-      if (pI > -1) {
-        cmdOpts.splice(pI, 1);
-      }
-      pI = cmdOpts.indexOf("-c");
-      if (pI > -1) {
-        cmdOpts.splice(pI, 1);
-      }
-      pI = cmdOpts.indexOf("-nc");
-      if (pI === -1) {
-        cmdOpts.push("-nc");
-      }
-    }
-
     const cmd: CCArgs = new CCArgs(["ci"]);
-    cmd.params = cmd.params.concat(cmdOpts);
-    idx = cmd.params.indexOf("${filename}");
-    if (idx > -1) {
-      if (docs.length === 1) {
-        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
-      } else {
-        cmd.params[idx] = "";
-      }
-    }
-    if (docs.length > 1 || idx === -1) {
-      cmd.files = docs.map((d: Uri) => {
-        return this.wslPath(d.fsPath, false);
-      });
-    }
-    try {
-      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
-    } catch (error) {
-      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
-    }
+    await this.doCheckinFiles(await this.prepareCheckinParams(defComment, docs, false, cmd), docs);
   }
 
   async checkinFiles(docs: Uri[], comment: string): Promise<void> {
@@ -606,31 +563,23 @@ export class ClearCase {
         modifyPath = true;
       }
     }
-    cmd.files = docs.map((d: Uri) => {
-      return this.wslPath(d.fsPath, false);
-    });
-    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-      try {
-        await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-          this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`, LogLevel.Information);
-        });
-      } catch (error) {
-        window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
-      }
+    if (modifyPath) {
+      args.files = docs.map((d: Uri) => {
+        return this.wslPath(d.fsPath, false);
+      });
     }
     return args;
   }
 
   private async doCheckinFiles(args: CCArgs, docs: Uri[]) {
-    let newLabel: string | undefined = "";
-    if (this.configHandler.configuration.useLabelAtCheckin.value) {
-      newLabel = await window.showInputBox({ ignoreFocusOut: true, title: "Set a label after checkin" });
-    }
     await this.runCleartoolCommand(args, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
-    if (newLabel !== undefined && newLabel !== "" && this.configHandler.configuration.useLabelAtCheckin.value) {
-      for (const doc of docs) {
-        await this.createLabelType(doc, newLabel);
-        await this.applyLabel(doc, newLabel);
+    if (this.configHandler.configuration.useLabelAtCheckin.value) {
+      const newLabel = await CCUIControl.showCreateLabelInput();
+      if (newLabel !== "") {
+        for (const doc of docs) {
+          await this.createLabelType(doc, newLabel);
+          await this.applyLabel(doc, newLabel);
+        }
       }
     }
   }
@@ -1362,7 +1311,7 @@ export class ClearCase {
           }
         );
       } catch (e) {
-        this.outputChannel.appendLine(getErrorMessage(e));
+        this.outputChannel.appendLine(getErrorMessage(e), LogLevel.Information);
         return false;
       }
     }
@@ -1374,16 +1323,11 @@ export class ClearCase {
       if ((await this.existsLabelType(doc, newLabel)) === false) {
         const args = new CCArgs(["mklbtype", "-nc", newLabel]);
         try {
-          await this.runCleartoolCommand(
-            args,
-            dirname(doc.fsPath),
-            null,
-            (_code: number, output: string, _error: string) => {
-              this.outputChannel.appendLine(output);
-            }
-          );
+          await this.runCleartoolCommand(args, dirname(doc.fsPath), null, (_code: number, output: string) => {
+            this.outputChannel.appendLine(output);
+          });
         } catch (e) {
-          this.outputChannel.appendLine(getErrorMessage(e));
+          this.outputChannel.appendLine(getErrorMessage(e), LogLevel.Error);
         }
       }
     }
@@ -1394,16 +1338,11 @@ export class ClearCase {
       if ((await this.existsLabelType(doc, newLabel)) === true) {
         const args = new CCArgs(["mklabel", "-replace", newLabel], [doc.fsPath]);
         try {
-          await this.runCleartoolCommand(
-            args,
-            dirname(doc.fsPath),
-            null,
-            (_code: number, output: string, _error: string) => {
-              this.outputChannel.appendLine(output);
-            }
-          );
+          await this.runCleartoolCommand(args, dirname(doc.fsPath), null, (_code: number, output: string) => {
+            this.outputChannel.appendLine(output);
+          });
         } catch (e) {
-          this.outputChannel.appendLine(getErrorMessage(e));
+          this.outputChannel.appendLine(getErrorMessage(e), LogLevel.Error);
         }
       }
     }
