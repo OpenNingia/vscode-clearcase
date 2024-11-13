@@ -71,9 +71,29 @@ export class CCScmResource implements SourceControlResourceState {
     const faded = false;
     const strikeThrough = false;
     const tooltip = this.tooltip;
-    const dark = { iconPath: getIconUri("status-modified", "dark") };
-    const light = { iconPath: getIconUri("status-modified", "light") };
+    const dark = { iconPath: this.getIcon("dark") };
+    const light = { iconPath: this.getIcon("light") };
     return { strikeThrough, faded, tooltip, light, dark };
+  }
+
+  private getIcon(theme: string) {
+    switch (theme) {
+      case "dark":
+      case "light":
+        switch (this.mType) {
+          case CCScmStatus.Untracked:
+            return getIconUri("status-untracked", theme);
+          case CCScmStatus.Modified:
+            return getIconUri("status-modified", theme);
+          case CCScmStatus.Hijacked:
+            return getIconUri("status-hijacked", theme);
+        }
+        break;
+
+      default:
+        break;
+    }
+    return Uri.file("");
   }
 
   static sort(a: SourceControlResourceState, b: SourceControlResourceState): 1 | -1 | 0 {

@@ -2,7 +2,7 @@ import { MessageItem, window } from "vscode";
 
 export default class CCUIControl {
   public static async showCreateLabelInput(): Promise<string> {
-    return "";
+    return (await window.showInputBox({ ignoreFocusOut: true, title: "Set a label after checkin" })) ?? "";
   }
 
   public static async showCommentInput(): Promise<string> {

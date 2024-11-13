@@ -75,7 +75,10 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       const isCheckedOut = currentVersion.version.match(/(checkedout)$/i);
 
       if (isCheckedOut) {
-        return toCcUri(uri, currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
+        const version =
+          (await this.mCcHandler?.getFilePredecessorVersion(uri.fsPath)) ??
+          new CCVersionType(currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
+        return toCcUri(uri, version.version);
       }
       if (currentVersion.state === CCVersionState.Hijacked) {
         return toCcUri(uri, currentVersion.version);
