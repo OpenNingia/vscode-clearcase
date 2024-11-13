@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.0.0-beta.9",
+  "version": "5.0.0-beta.12",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -52,37 +52,25 @@
         "command": "extension.ccUndoHijack",
         "title": "Undo Hijack",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/clean.svg",
-          "dark": "./Assets/icons/clean.svg"
-        }
+        "icon": "$(clean)"
       },
       {
         "command": "extension.ccCheckin",
         "title": "Checkin",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/check.svg",
-          "dark": "./Assets/icons/check.svg"
-        }
+        "icon": "$(check)"
       },
       {
         "command": "extension.ccCheckinAll",
         "title": "Checkin All",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/check-all.svg",
-          "dark": "./Assets/icons/check-all.svg"
-        }
+        "icon": "$(check-all)"
       },
       {
         "command": "extension.ccCheckinSelected",
         "title": "Checkin Selected",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/check.svg",
-          "dark": "./Assets/icons/check.svg"
-        }
+        "icon": "$(check)"
       },
       {
         "command": "extension.ccVersionTree",
@@ -98,10 +86,7 @@
         "command": "extension.ccUndoCheckout",
         "title": "Undo Checkout",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/clean.svg",
-          "dark": "./Assets/icons/clean.svg"
-        }
+        "icon": "$(clean)"
       },
       {
         "command": "extension.ccFindCheckouts",
@@ -127,10 +112,7 @@
         "command": "extension.ccUpdateView",
         "title": "Update View",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/cloud-download.svg",
-          "dark": "./Assets/icons/cloud-download.svg"
-        }
+        "icon": "$(cloud-download)"
       },
       {
         "command": "extension.ccUpdateDir",
@@ -146,37 +128,25 @@
         "command": "extension.ccRefreshFileList",
         "title": "Refresh checkedout file list",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/refresh.svg",
-          "dark": "./Assets/icons/refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "extension.ccEditConfigSpec",
         "title": "Edit config spec",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/icon-repo.svg",
-          "dark": "./Assets/icons/icon-repo.svg"
-        }
+        "icon": "$(code-oss)"
       },
       {
         "command": "extension.ccRefreshViewPrivateFileList",
         "title": "Refresh view private file list",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/search.svg",
-          "dark": "./Assets/icons/search.svg"
-        }
+        "icon": "$(search)"
       },
       {
         "command": "extension.ccRefreshHijackedFileList",
         "title": "Refresh hijacked file list",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/search-fuzzy.svg",
-          "dark": "./Assets/icons/search-fuzzy.svg"
-        }
+        "icon": "$(search-fuzzy)"
       },
       {
         "command": "extension.ccAnnotate",
@@ -192,10 +162,7 @@
         "command": "extension.ccOpenResource",
         "title": "Open file",
         "category": "Clearcase",
-        "icon": {
-          "light": "./Assets/icons/open-file.svg",
-          "dark": "./Assets/icons/open-file.svg"
-        }
+        "icon": "$(open-file)"
       },
       {
         "command": "extension.ccDeleteViewPrivate",

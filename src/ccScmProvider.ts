@@ -309,7 +309,7 @@ export class CCScmProvider implements IDisposable {
       this.clearCase?.findViewPrivate().then((files) => {
         viewPrivate = files
           .map((val) => {
-            return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Modified);
+            return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Untracked);
           })
           .sort((val1, val2) => {
             return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);

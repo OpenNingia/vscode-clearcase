@@ -16,3 +16,5 @@ out/
 src/
 tsconfig.json
 webpack.config.js
+*.zip
+*.vsix

@@ -1071,6 +1071,22 @@ export class ClearCase {
     return resultOut;
   }
 
+  async getFilePredecessorVersion(fsPath: string): Promise<CCVersionType> {
+    const version = new CCVersionType();
+    if (fsPath !== "") {
+      await this.runCleartoolCommand(
+        new CCArgs(["describe", "-fmt", "%[version_predecessor]p", fsPath]),
+        dirname(fsPath),
+        null,
+        (_code: number, output: string) => {
+          //  Only log stdout contents here; stderr is logged by runCleartoolCommand if non-empty
+          version.version = output;
+        }
+      );
+    }
+    return version;
+  }
+
   async readFileAtVersion(fsPath: string, version: string): Promise<string> {
     // cannot call getFileAtVersion because the temp file is automatically removed
     let tempDir = this.configHandler.configuration.tempDir.value;
