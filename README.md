@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/openningia/vscode-clearcase/badge)](https://www.codefactor.io/repository/github/openningia/vscode-clearcase)
+
 # VS Code ClearCase
 
 This repository contains the extension for [IBM Rational ClearCase SCM](http://www-03.ibm.com/software/products/en/clearcase) for the [VS Code](https://code.visualstudio.com) editor.
