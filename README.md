@@ -1,4 +1,5 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/openningia/vscode-clearcase/badge)](https://www.codefactor.io/repository/github/openningia/vscode-clearcase)
+[![.github/workflows/publish.yml](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/publish.yml/badge.svg)](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/publish.yml)
 
 # VS Code ClearCase
 
