@@ -159,7 +159,8 @@
       {
         "command": "extension.ccAnnotate",
         "title": "Annotate",
-        "category": "Clearcase"
+        "category": "Clearcase",
+        "icon": "$(comment)"
       },
       {
         "command": "extension.ccSelectActv",
@@ -182,6 +183,18 @@
         "title": "Create versioned object",
         "category": "Clearcase",
         "icon": "$(add)"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "vscode-clearcase.explorer_context_submenu",
+        "icon": "$(source-control)",
+        "label": "Clearcase"
+      },
+      {
+        "id": "vscode-clearcase.editor_context_submenu",
+        "icon": "$(source-control)",
+        "label": "Clearcase"
       }
     ],
     "menus": {
@@ -253,6 +266,12 @@
       ],
       "explorer/context": [
         {
+          "submenu": "vscode-clearcase.explorer_context_submenu",
+          "group": "clearcase"
+        }
+      ],
+      "vscode-clearcase.explorer_context_submenu": [
+        {
           "command": "extension.ccUpdateFile",
           "group": "cc@10",
           "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView"
@@ -298,7 +317,50 @@
           "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
         }
       ],
+      "editor/title": [
+        {
+          "command": "extension.ccAnnotate",
+          "group": "cc@1",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccCompareWithVersion",
+          "group": "cc@2",
+          "when": "vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccCheckout",
+          "group": "cc@3",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccCheckin",
+          "group": "cc@3",
+          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccUndoCheckout",
+          "group": "cc@4",
+          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects"
+        },
+        {
+          "command": "extension.ccHijack",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects"
+        },
+        {
+          "command": "extension.ccUndoHijack",
+          "group": "cc@6",
+          "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
+        }
+      ],
       "editor/context": [
+        {
+          "submenu": "vscode-clearcase.editor_context_submenu",
+          "group": "clearcase"
+        }
+      ],
+      "vscode-clearcase.editor_context_submenu": [
         {
           "command": "extension.ccUndoCheckout",
           "group": "cc@4",
