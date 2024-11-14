@@ -13,7 +13,7 @@ This repository contains the extension for [IBM Rational ClearCase SCM](http://w
 - [Hijacked Files](#hijacked-files)
 - [Remote Control Client](#remote-cleartool-client)
 - [WSL](#wsl)
-- [Loggin](#loggin)
+- [Logging](#logging)
 - [Requirements](#requirements)
 
 ## Features
@@ -119,7 +119,7 @@ vscode-clearcase.wsl.pathMapping: [
 ]
 ```
 
-## Loggin
+## Logging
 
 It is possible to print the output of the internal clearcase commands into the output console. To control the amount of information that is printed there is a configuration date.
 
