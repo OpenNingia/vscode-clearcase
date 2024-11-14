@@ -8,6 +8,7 @@ This repository contains the extension for [IBM Rational ClearCase SCM](http://w
 
 - [Features](#features)
 - [GUI](#gui)
+- [Compare Versions](#compare-versions)
 - [View Private Files](#view-private-files)
 - [Hijacked Files](#hijacked-files)
 - [Remote Control Client](#remote-cleartool-client)
@@ -56,6 +57,11 @@ Clearcase commands exposed by this extensions:
   Format string is documented at https://www.ibm.com/docs/en/clearcase/11.0.0?topic=information-fmt-ccase#ref_fmtccase_refsect2_36512
 
 - Syntax highlighting for ClearCase config-spec files
+
+## Compare Versions
+
+Compare an arbitrary version to the current open version. Use the command **Clearcase: Compare with version** and choose the version.
+It uses the integrate vscode diff viewer.
 
 ## View Private Files
 

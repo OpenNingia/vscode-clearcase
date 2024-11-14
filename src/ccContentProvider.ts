@@ -65,6 +65,10 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
     if (uri.scheme !== "file") {
       return;
     }
+    // explicit selected version to compare to
+    if (uri.fragment !== "") {
+      return toCcUri(uri, uri.fragment);
+    }
     let currentVersion = this.mOriginalVersion;
     if (this.mOriginalPath !== uri.fsPath) {
       currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? new CCVersionType();
