@@ -2,7 +2,7 @@ import { MessageItem, window } from "vscode";
 
 export default class CCUIControl {
   public static async showCreateLabelInput(): Promise<string> {
-    return "";
+    return (await window.showInputBox({ ignoreFocusOut: true, title: "Set a label after checkin" })) ?? "";
   }
 
   public static async showCommentInput(): Promise<string> {
@@ -26,5 +26,15 @@ export default class CCUIControl {
 
   public static showErrorMessage(text: string): void {
     window.showErrorMessage(text);
+  }
+
+  public static async showVersionSelectQuickpick(items: string[] | Thenable<string[]>): Promise<string> {
+    return (
+      (await window.showQuickPick(items, {
+        ignoreFocusOut: true,
+        canPickMany: false,
+        title: "Select a version",
+      })) ?? ""
+    );
   }
 }

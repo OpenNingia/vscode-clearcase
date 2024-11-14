@@ -88,6 +88,7 @@ export class CCConfiguration {
   private mDetectWslEnvironment = new ConfigurationProperty<boolean>(false);
   private mPathMapping = new ConfigurationProperty<PathMapping[]>([]);
   private mDiffEncoding = new ConfigurationProperty<string>("");
+  private mUseLabelWhenCheckin = new ConfigurationProperty<boolean>(false);
 
   private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
   private mShowViewPrivateFiles = new ConfigurationProperty<boolean>(false);
@@ -193,6 +194,10 @@ export class CCConfiguration {
     return this.mDiffEncoding;
   }
 
+  get useLabelAtCheckin(): ConfigurationProperty<boolean> {
+    return this.mUseLabelWhenCheckin;
+  }
+  
   get logLevel(): ConfigurationProperty<LogLevel> {
     return this.mLogLevel;
   }

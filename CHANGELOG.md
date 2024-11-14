@@ -1,25 +1,48 @@
 ## Release Notes
 
-### 4.7.0
+### 5.0.0
+
 _Feature_
+
+- create and handle hijacked files
+- better view private handling
+- internal diff viewer for version compare
+- logging levels in output console
+
+_Bugfix_
+
+- compare to predecessor instead of latest when file is checkedout
+- fixed icons
+
+### 4.7.0
+
+_Feature_
+
 - it is now possible to use the ${env:VARIBALE} syntax in all configuration properties of the extension
 
 ### 4.6.2
+
 _Bugfix_
+
 - fixed endless loop of cleartool command in case of an error
 
 ### 4.6.1
+
 _Bugfix_
+
 - fixed synchrous command execution. Clearcase commands did block each other.
 
 ### 4.6.0
+
 _Feature_
+
 - activate automatic detection of wsl environment `vscode-clearcase.wsl.detectEnvironment`
 - added a path mapping setting. This is used to map a windows drive letter to a wsl mount point
   `vscode-clearcase.wsl.pathMapping`
 - set the encoding of the internal diff viewer `vscode-clearcase.diffViewerEncoding`
 
 _Bugfixes_
+
 - correct usage of temp directory in wsl environment
 
 ### 4.5.0

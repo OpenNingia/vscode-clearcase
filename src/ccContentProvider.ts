@@ -65,6 +65,10 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
     if (uri.scheme !== "file") {
       return;
     }
+    // explicit selected version to compare to
+    if (uri.fragment !== "") {
+      return toCcUri(uri, uri.fragment);
+    }
     let currentVersion = this.mOriginalVersion;
     if (this.mOriginalPath !== uri.fsPath) {
       currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? new CCVersionType();
@@ -75,7 +79,10 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       const isCheckedOut = currentVersion.version.match(/(checkedout)$/i);
 
       if (isCheckedOut) {
-        return toCcUri(uri, currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
+        const version =
+          (await this.mCcHandler?.getFilePredecessorVersion(uri.fsPath)) ??
+          new CCVersionType(currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
+        return toCcUri(uri, version.version);
       }
       if (currentVersion.state === CCVersionState.Hijacked) {
         return toCcUri(uri, currentVersion.version);

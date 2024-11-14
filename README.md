@@ -1,3 +1,6 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/openningia/vscode-clearcase/badge)](https://www.codefactor.io/repository/github/openningia/vscode-clearcase)
+[![.github/workflows/publish.yml](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/publish.yml/badge.svg)](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/publish.yml)
+
 # VS Code ClearCase
 
 This repository contains the extension for [IBM Rational ClearCase SCM](http://www-03.ibm.com/software/products/en/clearcase) for the [VS Code](https://code.visualstudio.com) editor.
@@ -6,11 +9,12 @@ This repository contains the extension for [IBM Rational ClearCase SCM](http://w
 
 - [Features](#features)
 - [GUI](#gui)
+- [Compare Versions](#compare-versions)
 - [View Private Files](#view-private-files)
 - [Hijacked Files](#hijacked-files)
 - [Remote Control Client](#remote-cleartool-client)
 - [WSL](#wsl)
-- [Loggin](#loggin)
+- [Logging](#logging)
 - [Requirements](#requirements)
 
 ## Features
@@ -54,6 +58,11 @@ Clearcase commands exposed by this extensions:
   Format string is documented at https://www.ibm.com/docs/en/clearcase/11.0.0?topic=information-fmt-ccase#ref_fmtccase_refsect2_36512
 
 - Syntax highlighting for ClearCase config-spec files
+
+## Compare Versions
+
+Compare an arbitrary version to the current open version. Use the command **Clearcase: Compare with version** and choose the version.
+It uses the integrate vscode diff viewer.
 
 ## View Private Files
 
@@ -111,7 +120,7 @@ vscode-clearcase.wsl.pathMapping: [
 ]
 ```
 
-## Loggin
+## Logging
 
 It is possible to print the output of the internal clearcase commands into the output console. To control the amount of information that is printed there is a configuration date.
 

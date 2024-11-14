@@ -36,6 +36,7 @@ import * as path from "path";
 import { getErrorMessage } from "./errormessage";
 import { CCVersionState, CCVersionType } from "./ccVerstionType";
 import CCOutputChannel, { LogLevel } from "./ccOutputChannel";
+import CCUIControl from "./ccUIControl";
 
 const localize: LocalizeFunc = loadMessageBundle();
 
@@ -309,7 +310,7 @@ export class CCScmProvider implements IDisposable {
       this.clearCase?.findViewPrivate().then((files) => {
         viewPrivate = files
           .map((val) => {
-            return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Modified);
+            return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Untracked);
           })
           .sort((val1, val2) => {
             return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
@@ -493,7 +494,22 @@ export class CCScmProvider implements IDisposable {
         commands.registerCommand(
           "extension.ccEmbedDiff",
           (fileObj: Uri) => {
-            this.embedDiff(fileObj);
+            this.embeddedDiff(fileObj);
+          },
+          this
+        )
+      );
+
+      this.mDisposables.push(
+        commands.registerCommand(
+          "extension.ccCompareWithVersion",
+          (fileObj: Uri) => {
+            if (fileObj === undefined || fileObj === null) {
+              if (window?.activeTextEditor) {
+                fileObj = window.activeTextEditor.document.uri;
+              }
+            }
+            this.selectVersionAndCompare(fileObj);
           },
           this
         )
@@ -828,18 +844,22 @@ export class CCScmProvider implements IDisposable {
     }
   }
 
-  private async embedDiff(fileObj: Uri) {
+  private async embeddedDiff(fileObj: Uri, version?: string) {
     if (window) {
       const opts: TextDocumentShowOptions = {
         preview: true,
       };
+
+      if (version) {
+        fileObj = fileObj.with({ fragment: version });
+      }
 
       const prevUri = await this.mCCContentProvider?.getOriginalResource(fileObj);
       if (prevUri !== undefined) {
         const fn = path.basename(fileObj.fsPath);
         const { version } = fromCcUri(prevUri);
 
-        commands.executeCommand("vscode.diff", prevUri, fileObj, `${fn} ${version} - (WorkingDir)`, opts);
+        commands.executeCommand("vscode.diff", prevUri, fileObj, `${fn}@${version} <=> Current Version`, opts);
       }
     }
   }
@@ -922,6 +942,15 @@ export class CCScmProvider implements IDisposable {
     //  }
     //  this.mWindowChangedEvent.fire();
     //}
+  }
+
+  private async selectVersionAndCompare(file: Uri) {
+    if (this.clearCase) {
+      const selVersion = await CCUIControl.showVersionSelectQuickpick(this.clearCase.getVersionsOfFile(file));
+      if (selVersion !== undefined && selVersion !== "") {
+        this.embeddedDiff(file, selVersion);
+      }
+    }
   }
 
   get version(): string {

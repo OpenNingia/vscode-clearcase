@@ -498,74 +498,88 @@ export class ClearCase {
   }
 
   async checkinFile(docs: Uri[]): Promise<void> {
-    const ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
     const defComment = this.configHandler.configuration.defaultComment.value;
 
-    let comment = "";
-    const cmdOpts = ciArgTmpl.trim().split(/\s+/);
-    let idx = cmdOpts.indexOf("${comment}");
-    if (idx > -1) {
-      if (defComment) {
-        comment = defComment;
-      } else {
-        comment = await CCUIControl.showCommentInput();
-      }
-      cmdOpts[idx] = comment;
-    } else {
-      let pI = cmdOpts.indexOf("-comment");
-      if (pI > -1) {
-        cmdOpts.splice(pI, 1);
-      }
-      pI = cmdOpts.indexOf("-c");
-      if (pI > -1) {
-        cmdOpts.splice(pI, 1);
-      }
-      pI = cmdOpts.indexOf("-nc");
-      if (pI === -1) {
-        cmdOpts.push("-nc");
-      }
-    }
-
     const cmd: CCArgs = new CCArgs(["ci"]);
-    cmd.params = cmd.params.concat(cmdOpts);
-    idx = cmd.params.indexOf("${filename}");
-    if (idx > -1) {
-      if (docs.length === 1) {
-        cmd.params[idx] = this.wslPath(docs[0]?.fsPath, false);
-      } else {
-        cmd.params[idx] = "";
-      }
-    }
-    if (docs.length > 1 || idx === -1) {
-      cmd.files = docs.map((d: Uri) => {
-        return this.wslPath(d.fsPath, false);
-      });
-    }
-    try {
-      await this.runCleartoolCommand(cmd, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
-    } catch (error) {
-      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
-    }
+    await this.doCheckinFiles(await this.prepareCheckinParams(defComment, docs, false, cmd), docs);
   }
 
   async checkinFiles(docs: Uri[], comment: string): Promise<void> {
     const cmd: CCArgs = new CCArgs(["ci"]);
-    if (comment !== "") {
-      cmd.params.push("-c");
-      cmd.params.push(comment);
+    await this.doCheckinFiles(await this.prepareCheckinParams(comment, docs, true, cmd), docs);
+  }
+
+  private async prepareCheckinParams(comment: string, docs: Uri[], simple: boolean, args: CCArgs) {
+    let modifyPath = false;
+    // simple mode: checkin via scm checkin all
+    if (simple) {
+      if (comment !== "") {
+        args.params.push("-c");
+        args.params.push(comment);
+      } else {
+        args.params.push("-nc");
+      }
+      modifyPath = true;
     } else {
-      cmd.params.push("-nc");
+      const ciArgTmpl = this.configHandler.configuration.checkinCommand.value;
+      const cmdOpts = ciArgTmpl.trim().split(/\s+/);
+      let newComment = "";
+      let idx = cmdOpts.indexOf("${comment}");
+      if (idx > -1) {
+        if (comment) {
+          newComment = comment;
+        } else {
+          newComment =
+            (await window.showInputBox({
+              ignoreFocusOut: true,
+              prompt: "Checkin comment",
+            })) ?? "";
+        }
+        cmdOpts[idx] = newComment;
+      } else {
+        let pI = cmdOpts.indexOf("-comment");
+        if (pI > -1) {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-c");
+        if (pI > -1) {
+          cmdOpts.splice(pI, 1);
+        }
+        pI = cmdOpts.indexOf("-nc");
+        if (pI === -1) {
+          cmdOpts.push("-nc");
+        }
+      }
+      args.params = args.params.concat(cmdOpts);
+      idx = args.params.indexOf("${filename}");
+      if (idx > -1) {
+        if (docs.length === 1) {
+          args.params[idx] = this.wslPath(docs[0]?.fsPath, false);
+        } else {
+          args.params[idx] = "";
+        }
+      }
+      if (docs.length > 1 || idx === -1) {
+        modifyPath = true;
+      }
     }
-    cmd.files = docs.map((d: Uri) => {
-      return this.wslPath(d.fsPath, false);
-    });
-    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-      try {
-        await this.runCleartoolCommand(cmd, workspace.workspaceFolders[0].uri.fsPath, (data: string[]) => {
-          this.outputChannel.appendLine(`ClearCase checkin: ${data[0]}`, LogLevel.Information);
-        });
-      } catch (error) {
-        window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
+    if (modifyPath) {
+      args.files = docs.map((d: Uri) => {
+        return this.wslPath(d.fsPath, false);
+      });
+    }
+    return args;
+  }
+
+  private async doCheckinFiles(args: CCArgs, docs: Uri[]) {
+    await this.runCleartoolCommand(args, dirname(docs[0]?.fsPath), null, () => this.mUpdateEvent.fire(docs));
+    if (this.configHandler.configuration.useLabelAtCheckin.value) {
+      const newLabel = await CCUIControl.showCreateLabelInput();
+      if (newLabel !== "") {
+        for (const doc of docs) {
+          await this.createLabelType(doc, newLabel);
+          await this.applyLabel(doc, newLabel);
+        }
       }
     }
   }
@@ -1057,6 +1071,22 @@ export class ClearCase {
     return resultOut;
   }
 
+  async getFilePredecessorVersion(fsPath: string): Promise<CCVersionType> {
+    const version = new CCVersionType();
+    if (fsPath !== "") {
+      await this.runCleartoolCommand(
+        new CCArgs(["describe", "-fmt", "%[version_predecessor]p", fsPath]),
+        dirname(fsPath),
+        null,
+        (_code: number, output: string) => {
+          //  Only log stdout contents here; stderr is logged by runCleartoolCommand if non-empty
+          version.version = output;
+        }
+      );
+    }
+    return version;
+  }
+
   async readFileAtVersion(fsPath: string, version: string): Promise<string> {
     // cannot call getFileAtVersion because the temp file is automatically removed
     let tempDir = this.configHandler.configuration.tempDir.value;
@@ -1278,5 +1308,94 @@ export class ClearCase {
       }
     }
     return ret;
+  }
+
+  public async existsLabelType(doc: Uri, newLabel: string): Promise<boolean> {
+    let retVal = false;
+    if (newLabel !== "") {
+      retVal = true;
+      const args = new CCArgs(["lstype", `lbtype:${newLabel}`]);
+      try {
+        await this.runCleartoolCommand(
+          args,
+          dirname(doc.fsPath),
+          null,
+          (_code: number, output: string, _error: string) => {
+            if (_error.length > 0) {
+              retVal = false;
+            }
+          }
+        );
+      } catch (e) {
+        this.outputChannel.appendLine(getErrorMessage(e), LogLevel.Information);
+        return false;
+      }
+    }
+    return retVal;
+  }
+
+  public async createLabelType(doc: Uri, newLabel: string): Promise<void> {
+    if (newLabel !== "") {
+      if ((await this.existsLabelType(doc, newLabel)) === false) {
+        const args = new CCArgs(["mklbtype", "-nc", newLabel]);
+        try {
+          await this.runCleartoolCommand(args, dirname(doc.fsPath), null, (_code: number, output: string) => {
+            this.outputChannel.appendLine(output);
+          });
+        } catch (e) {
+          this.outputChannel.appendLine(getErrorMessage(e), LogLevel.Error);
+        }
+      }
+    }
+  }
+
+  public async applyLabel(doc: Uri, newLabel: string): Promise<void> {
+    if (newLabel !== "") {
+      if ((await this.existsLabelType(doc, newLabel)) === true) {
+        const args = new CCArgs(["mklabel", "-replace", newLabel], [doc.fsPath]);
+        try {
+          await this.runCleartoolCommand(args, dirname(doc.fsPath), null, (_code: number, output: string) => {
+            this.outputChannel.appendLine(output);
+          });
+        } catch (e) {
+          this.outputChannel.appendLine(getErrorMessage(e), LogLevel.Error);
+        }
+      }
+    }
+  }
+
+  public async getVersionsOfFile(file: Uri): Promise<string[]> {
+    let retVal: string[] = [];
+    if (file && file.fsPath !== "") {
+      await this.runCleartoolCommand(
+        new CCArgs(["lsvtree", "-short", file.fsPath]),
+        dirname(file.fsPath),
+        null,
+        (_code: number, output: string) => {
+          if (_code === 0 && output !== "") {
+            retVal = output
+              .split("\n")
+              .filter((item: string) => {
+                const idx = item.indexOf("@@");
+                if (idx > -1) {
+                  return item.trim().match(/[\d]$/gi);
+                }
+                return false;
+              })
+              .map((item: string) => {
+                const idx = item.indexOf("@@");
+                if (idx > -1) {
+                  return item.substring(idx + "@@".length).trim();
+                }
+                return item;
+              })
+              .sort((a, b) => {
+                return b.localeCompare(a);
+              });
+          }
+        }
+      );
+    }
+    return retVal;
   }
 }
