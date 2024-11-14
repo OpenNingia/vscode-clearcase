@@ -60,14 +60,8 @@
         "no-sparse-arrays": "off",
         "no-useless-escape": "off",
         "no-empty": ["error", { "allowEmptyCatch": true }],
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          {
-            "vars": "local",
-            "args": "after-used",
-            "ignoreRestSiblings": false
-          }
-        ],
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
         "@typescript-eslint/prefer-as-const": "off",
         "@typescript-eslint/no-empty-function": "off",
         "@typescript-eslint/no-empty-interface": "off",
