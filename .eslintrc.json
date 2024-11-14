@@ -1,94 +1,86 @@
 {
-  "env": {
-    "es6": true,
-    "node": true,
-    "browser": true,
-    "jquery": true,
-    "jasmine": true,
-    "mocha": true,
-    "qunit": true
+  "root": true,
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": [
+      "./tsconfig.json"
+    ]
   },
-  "overrides": [
-    {
-      "files": ["**/*.js", "**/*.jsx", "**/*.es6", "**/*.mjs"],
-      "extends": "eslint:recommended",
-      "parserOptions": {
-        "ecmaFeatures": {
-          "jsx": true,
-          "globalReturn": true
-        },
-        "sourceType": "script"
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "@typescript-eslint/naming-convention": [
+      "warn",
+      {
+        "selector": "default",
+        "format": [
+          "camelCase"
+        ],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
       },
-      "rules": {
-        "no-undef": "off",
-        "no-fallthrough": "off",
-        "no-mixed-spaces-and-tabs": "off",
-        "no-redeclare": "off",
-        "no-with": "off",
-        "no-prototype-builtins": "off",
-        "no-misleading-character-class": "off",
-        "no-async-promise-executor": "off",
-        "no-import-assign": "off",
-        "no-sparse-arrays": "off",
-        "no-useless-escape": "off",
-        "no-empty": ["error", { "allowEmptyCatch": true }],
-        "no-unused-vars": [
-          "warn",
-          {
-            "vars": "local",
-            "args": "after-used",
-            "ignoreRestSiblings": false
-          }
+      {
+        "selector": "variable",
+        "format": [
+          "camelCase",
+          "UPPER_CASE"
+        ],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
+      },
+      {
+        "selector": "typeLike",
+        "format": [
+          "PascalCase"
+        ]
+      },
+      {
+        "selector": "enumMember",
+        "format": [
+          "PascalCase"
         ]
       }
-    },
-    {
-      "files": ["**/*.ts", "**/*.tsx"],
-      "parser": "@typescript-eslint/parser",
-      "plugins": ["@typescript-eslint"],
-      "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
-      "rules": {
-        "no-undef": "off",
-        "no-fallthrough": "off",
-        "no-mixed-spaces-and-tabs": "off",
-        "no-redeclare": "off",
-        "no-with": "off",
-        "no-prototype-builtins": "off",
-        "no-misleading-character-class": "off",
-        "no-async-promise-executor": "off",
-        "no-import-assign": "off",
-        "no-sparse-arrays": "off",
-        "no-useless-escape": "off",
-        "no-empty": ["error", { "allowEmptyCatch": true }],
-        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-        "@typescript-eslint/prefer-as-const": "off",
-        "@typescript-eslint/no-empty-function": "off",
-        "@typescript-eslint/no-empty-interface": "off",
-        "@typescript-eslint/no-inferrable-types": "off",
-        "@typescript-eslint/no-namespace": "off",
-        "@typescript-eslint/no-non-null-assertion": "off",
-        "@typescript-eslint/no-this-alias": "off",
-        "@typescript-eslint/no-unnecessary-type-constraint": "off",
-        "@typescript-eslint/no-var-requires": "off",
-        "@typescript-eslint/triple-slash-reference": "off",
-        "@typescript-eslint/prefer-namespace-keyword": "off"
+    ],
+    "@typescript-eslint/semi": "warn",
+    "@typescript-eslint/ban-tslint-comment": "error",
+    "@typescript-eslint/consistent-generic-constructors": "error",
+    "@typescript-eslint/explicit-module-boundary-types": "error",
+    "@typescript-eslint/no-unsafe-argument": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    "@typescript-eslint/prefer-includes": "error",
+    "@typescript-eslint/prefer-for-of": "error",
+    "@typescript-eslint/prefer-nullish-coalescing": "error",
+    "@typescript-eslint/prefer-optional-chain": "error",
+    "@typescript-eslint/prefer-string-starts-ends-with": "error",
+    "@typescript-eslint/restrict-plus-operands": "error",
+    "@typescript-eslint/unbound-method": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_"
       }
-    },
-    {
-      "files": ["**/*.mdx"],
-      "extends": ["plugin:mdx/recommended"],
-      "rules": {
-        "prettier/prettier": "off"
+    ],
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_"
       }
-    }
-  ],
-  "globals": {
-    "ActiveXObject": true,
-    "XDomainRequest": true,
-    "ScriptEngine": true,
-    "WSH": true,
-    "WScript": true,
-    "DocumentTouch": true
-  }
+    ],
+    "curly": "error",
+    "eqeqeq": "warn",
+    "no-throw-literal": "warn",
+    "semi": "off"
+  },
+  "ignorePatterns": [
+    "out",
+    "dist",
+    "**/*.d.ts"
+  ]
 }
