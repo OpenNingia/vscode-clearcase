@@ -1363,4 +1363,39 @@ export class ClearCase {
       }
     }
   }
+
+  public async getVersionsOfFile(file: Uri): Promise<string[]> {
+    let retVal: string[] = [];
+    if (file && file.fsPath !== "") {
+      await this.runCleartoolCommand(
+        new CCArgs(["lsvtree", "-short", file.fsPath]),
+        dirname(file.fsPath),
+        null,
+        (_code: number, output: string) => {
+          if (_code === 0 && output !== "") {
+            retVal = output
+              .split("\n")
+              .filter((item: string) => {
+                const idx = item.indexOf("@@");
+                if (idx > -1) {
+                  return item.trim().match(/[\d]$/gi);
+                }
+                return false;
+              })
+              .map((item: string) => {
+                const idx = item.indexOf("@@");
+                if (idx > -1) {
+                  return item.substring(idx + "@@".length).trim();
+                }
+                return item;
+              })
+              .sort((a, b) => {
+                return b.localeCompare(a);
+              });
+          }
+        }
+      );
+    }
+    return retVal;
+  }
 }

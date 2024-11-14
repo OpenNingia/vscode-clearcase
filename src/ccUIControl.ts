@@ -27,4 +27,14 @@ export default class CCUIControl {
   public static showErrorMessage(text: string): void {
     window.showErrorMessage(text);
   }
+
+  public static async showVersionSelectQuickpick(items: string[] | Thenable<string[]>): Promise<string> {
+    return (
+      (await window.showQuickPick(items, {
+        ignoreFocusOut: true,
+        canPickMany: false,
+        title: "Select a version",
+      })) ?? ""
+    );
+  }
 }
