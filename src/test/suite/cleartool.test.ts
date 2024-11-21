@@ -95,7 +95,7 @@ suite("Cleartool Commands Test Suite", () => {
     await provider.clearCase?.checkinFile([file]);
     assert.strictEqual(outputChannelBase.getLine(0), `ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
-      outputChannelBase.getLine(1),
+      outputChannelBase.getLastLine(),
       `Checked in "${path.join(testDir, "simple01.txt")}" version "/main/dev_01/2".\n`
     );
   });
