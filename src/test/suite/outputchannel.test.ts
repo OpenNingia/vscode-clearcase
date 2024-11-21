@@ -83,7 +83,7 @@ suite("Outputchannel Test Suite", () => {
     await provider.clearCase?.checkinFile([file]);
     assert.strictEqual(outputChannelBase.getLine(0), `ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
-      outputChannelBase.getLine(1),
+      outputChannelBase.getLastLine(),
       `Checked in "${path.join(testDir, "simple01.txt")}" version "/main/dev_01/2".\n`
     );
   });
@@ -125,7 +125,7 @@ suite("Outputchannel Test Suite", () => {
     const fileUri = vscode.Uri.parse(file);
     await provider.clearCase?.checkoutFile([fileUri]);
     assert.strictEqual(
-      outputChannelBase.getLine(1),
+      outputChannelBase.getLastLine(),
       `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
     );
   });

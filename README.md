@@ -1,6 +1,8 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/openningia/vscode-clearcase/badge)](https://www.codefactor.io/repository/github/openningia/vscode-clearcase)
 [![.github/workflows/publish.yml](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/publish.yml/badge.svg)](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/publish.yml)
 [![Test on master](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/integrate_test.yml/badge.svg)](https://github.com/OpenNingia/vscode-clearcase/actions/workflows/integrate_test.yml)
+![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/OpenNingia.vscode-clearcase)
+![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/OpenNingia.vscode-clearcase)
 
 # VS Code ClearCase
 

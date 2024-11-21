@@ -27,12 +27,12 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
       provider.bindEvents();
       provider.bindCommands();
 
-      provider.onWindowChanged(() => {
-        provider.updateContextResources();
+      provider.onWindowChanged((valid: boolean) => {
+        provider.updateContextResources(valid);
       }, provider);
 
-      provider.updateIsView().then(() => {
-        provider.updateContextResources();
+      provider.updateIsView().then((valid: boolean) => {
+        provider.updateContextResources(valid);
       });
 
       const uiInfo = new UIInformation(configHandler, window.activeTextEditor, provider.clearCase);

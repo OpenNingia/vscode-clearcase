@@ -47,6 +47,11 @@ suite("Cleartool Commands Test Suite", () => {
     writeFileSync(path.join(testDir, "simple04.txt"), "");
     writeFileSync(path.join(testDir, "simple04_ro.txt"), "");
     chmodSync(path.join(testDir, "simple04_ro.txt"), 0o555);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 800);
+    });
   });
 
   after(() => {
@@ -63,11 +68,16 @@ suite("Cleartool Commands Test Suite", () => {
 
     configHandler = new CCConfigHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
-    configHandler.configuration.logLevel.value = LogLevel.Trace;
+    configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
     provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 100);
+    });
   });
 
   test("Cleartool change executable", () => {
