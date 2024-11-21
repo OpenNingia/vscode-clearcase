@@ -47,13 +47,15 @@ export class CCScmProvider implements IDisposable {
   private mCCCheckedoutGrp: SourceControlResourceGroup | null = null;
   private mCCUntrackedGrp: SourceControlResourceGroup | null = null;
   private mCCHijackedGrp: SourceControlResourceGroup | null = null;
+  private mCCUntrackedResource: SourceControlResourceState[] = [];
+  private mCCHijackedResource: SourceControlResourceState[] = [];
   private mIsUpdatingUntracked = false;
   private mIsUpdatingHijacked = false;
   private mListLock: Lock | null = null;
   private mDisposables: IDisposable[] = [];
   private mVersion = "0.0.0";
 
-  private mWindowChangedEvent: EventEmitter<void> = new EventEmitter<void>();
+  private mWindowChangedEvent: EventEmitter<boolean> = new EventEmitter<boolean>();
 
   get root(): Uri | undefined {
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
@@ -67,10 +69,19 @@ export class CCScmProvider implements IDisposable {
     private outputChannel: CCOutputChannel,
     private configHandler: CCConfigHandler
   ) {
-    this.configHandler.onDidChangeConfiguration(() => {
+    this.configHandler.onDidChangeConfiguration(async () => {
       if (this.configHandler.configuration.logLevel.changed) {
         this.outputChannel.logLevel = this.configHandler.configuration.logLevel.value;
       }
+      if (this.configHandler.configuration.showHijackedFiles.changed) {
+        this.updateHijackedResourceGroup();
+        await this.createHijackedList();
+      }
+      if (this.configHandler.configuration.showViewPrivateFiles.changed) {
+        this.updateUntrackedResourceGroup();
+        await this.createViewPrivateList();
+      }
+      this.updateContextResources(window.activeTextEditor !== undefined);
     });
     outputChannel.logLevel = this.configHandler.configuration.logLevel.value;
   }
@@ -222,14 +233,17 @@ export class CCScmProvider implements IDisposable {
     return this.clearCase?.checkIsView(window.activeTextEditor) ?? false;
   }
 
-  updateContextResources(): void {
+  updateContextResources(valid: boolean): void {
     const d = this.mCCHandler ? this.mCCHandler.viewType === ViewType.Dynamic : false;
     const files = this.getCheckedoutObjects();
     const hijackedFiles = this.getHijackedObjects();
+    const viewPrivateFiles = this.getUntrackedObjects();
     commands.executeCommand("setContext", "vscode-clearcase:enabled", this.mCCHandler?.isView);
     commands.executeCommand("setContext", "vscode-clearcase:DynView", d);
     commands.executeCommand("setContext", "vscode-clearcase:CheckedoutObjects", files);
     commands.executeCommand("setContext", "vscode-clearcase:HijackedObjects", hijackedFiles);
+    commands.executeCommand("setContext", "vscode-clearcase:ViewPrivateObjects", viewPrivateFiles);
+    commands.executeCommand("setContext", "vscode-clearcase:editor", valid);
   }
 
   private async handleChangeFiles(fileObjs: Uri[]) {
@@ -261,7 +275,7 @@ export class CCScmProvider implements IDisposable {
               this.mCCCheckedoutGrp.resourceStates = filteredCheckedout?.sort((a, b) => CCScmResource.sort(a, b)) || [];
             }
           }
-          this.updateContextResources();
+          this.updateContextResources(window.activeTextEditor !== undefined);
         } catch (error) {
           this.outputChannel.appendLine(
             "Clearcase error: getVersionInformation: " + getErrorMessage(error),
@@ -307,6 +321,7 @@ export class CCScmProvider implements IDisposable {
     let viewPrivate: CCScmResource[] = [];
 
     if (this.configHandler.configuration.showViewPrivateFiles.value) {
+      this.clearCase?.killUpdateFindViewPrivate();
       this.clearCase?.findViewPrivate().then((files) => {
         viewPrivate = files
           .map((val) => {
@@ -316,7 +331,8 @@ export class CCScmProvider implements IDisposable {
             return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
           });
         if (this.mCCUntrackedGrp) {
-          this.mCCUntrackedGrp.resourceStates = viewPrivate.sort((a, b) => CCScmResource.sort(a, b));
+          this.mCCUntrackedResource = viewPrivate.sort((a, b) => CCScmResource.sort(a, b));
+          this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedResource;
         }
       });
     }
@@ -326,6 +342,7 @@ export class CCScmProvider implements IDisposable {
     let hijacked: CCScmResource[] = [];
 
     if (this.configHandler.configuration.showHijackedFiles.value) {
+      this.clearCase?.killUpdateFindHijacked();
       this.clearCase?.findHijacked().then((files) => {
         hijacked = files
           .map((val) => {
@@ -335,7 +352,8 @@ export class CCScmProvider implements IDisposable {
             return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
           });
         if (this.mCCHijackedGrp) {
-          this.mCCHijackedGrp.resourceStates = hijacked.sort((a, b) => CCScmResource.sort(a, b));
+          this.mCCHijackedResource = hijacked.sort((a, b) => CCScmResource.sort(a, b));
+          this.mCCHijackedGrp.resourceStates = this.mCCHijackedResource;
         }
       });
     }
@@ -348,13 +366,13 @@ export class CCScmProvider implements IDisposable {
   }
 
   getUntrackedObjects(): string[] | undefined {
-    return this.mCCUntrackedGrp?.resourceStates.map((value: SourceControlResourceState) => {
+    return this.mCCUntrackedResource.map((value: SourceControlResourceState) => {
       return value.resourceUri.fsPath;
     });
   }
 
   getHijackedObjects(): string[] | undefined {
-    return this.mCCHijackedGrp?.resourceStates.map((value: SourceControlResourceState) => {
+    return this.mCCHijackedResource.map((value: SourceControlResourceState) => {
       return value.resourceUri.fsPath;
     });
   }
@@ -446,7 +464,7 @@ export class CCScmProvider implements IDisposable {
     });
   }
 
-  get onWindowChanged(): Event<void> {
+  get onWindowChanged(): Event<boolean> {
     return this.mWindowChangedEvent.event;
   }
 
@@ -462,6 +480,7 @@ export class CCScmProvider implements IDisposable {
       this.registerCommand("extension.ccMkElement", (fileObj) => this.clearCase?.createVersionedObject(fileObj));
       this.registerCommand("extension.ccHijack", (fileObj) => this.clearCase?.createHijackedObject(fileObj));
       this.registerCommand("extension.ccUndoHijack", (fileObj) => this.clearCase?.cancelHijackedObject(fileObj));
+      this.registerCommand("extension.ccCompareWithVersion", (fileObj) => this.selectVersionAndCompare(fileObj));
 
       this.mDisposables.push(
         commands.registerCommand(
@@ -495,21 +514,6 @@ export class CCScmProvider implements IDisposable {
           "extension.ccEmbedDiff",
           (fileObj: Uri) => {
             this.embeddedDiff(fileObj);
-          },
-          this
-        )
-      );
-
-      this.mDisposables.push(
-        commands.registerCommand(
-          "extension.ccCompareWithVersion",
-          (fileObj: Uri) => {
-            if (fileObj === undefined || fileObj === null) {
-              if (window?.activeTextEditor) {
-                fileObj = window.activeTextEditor.document.uri;
-              }
-            }
-            this.selectVersionAndCompare(fileObj);
           },
           this
         )
@@ -865,90 +869,104 @@ export class CCScmProvider implements IDisposable {
   }
 
   private async updateHijackedList(fileObj: Uri, version: CCVersionType): Promise<boolean> {
-    if (this.configHandler.configuration.showHijackedFiles.value) {
-      if (this.clearCase && this.mCCHijackedGrp) {
-        const isHijacked = version.state === CCVersionState.Hijacked;
-        let hijackedExists = false;
-        const filteredHijacked =
-          this.mCCHijackedGrp?.resourceStates.filter((item) => {
-            if (item.resourceUri.fsPath === fileObj.fsPath) {
-              hijackedExists = true;
-              return isHijacked;
-            }
-            return true;
-          }) ?? [];
+    if (this.clearCase && this.mCCHijackedGrp) {
+      const isHijacked = version.state === CCVersionState.Hijacked;
+      let hijackedExists = false;
+      const filteredHijacked =
+        this.mCCHijackedResource.filter((item) => {
+          if (item.resourceUri.fsPath === fileObj.fsPath) {
+            hijackedExists = true;
+            return isHijacked;
+          }
+          return true;
+        }) ?? [];
 
-        if (isHijacked) {
-          if (this.clearCase.hijackedList.exists(fileObj.fsPath) === false) {
-            this.clearCase.hijackedList.addString(fileObj.fsPath);
-            this.mContext.workspaceState.update("hijackedfilecache", this.clearCase.hijackedList.stringify());
-          }
-          if (!hijackedExists) {
-            filteredHijacked.push(new CCScmResource(ResourceGroupType.Index, fileObj, CCScmStatus.Hijacked));
-          }
+      if (isHijacked) {
+        if (this.clearCase.hijackedList.exists(fileObj.fsPath) === false) {
+          this.clearCase.hijackedList.addString(fileObj.fsPath);
+          this.mContext.workspaceState.update("hijackedfilecache", this.clearCase.hijackedList.stringify());
         }
-        if ((isHijacked && !hijackedExists) || (!isHijacked && hijackedExists)) {
-          this.mCCHijackedGrp.resourceStates = filteredHijacked?.sort((a, b) => CCScmResource.sort(a, b)) || [];
+        if (!hijackedExists) {
+          filteredHijacked.push(new CCScmResource(ResourceGroupType.Index, fileObj, CCScmStatus.Hijacked));
         }
-        return true;
       }
+      this.mCCHijackedResource = [...filteredHijacked];
+      this.updateHijackedResourceGroup();
+      return true;
     }
     return false;
   }
 
   private async updateViewPrivateList(fileObj: Uri, version: CCVersionType): Promise<boolean> {
-    if (this.configHandler.configuration.showViewPrivateFiles.value) {
-      if (this.clearCase && this.mCCUntrackedGrp) {
-        const isPrivate = version.state === CCVersionState.Untracked;
-        let privateExists = false;
-        const filteredPrivate =
-          this.mCCUntrackedGrp.resourceStates.filter((item) => {
-            if (item.resourceUri.fsPath === fileObj.fsPath) {
-              privateExists = true;
-              return isPrivate;
-            }
-            return true;
-          }) ?? [];
+    if (this.clearCase && this.mCCUntrackedGrp) {
+      const isPrivate = version.state === CCVersionState.Untracked;
+      let privateExists = false;
+      const filteredPrivate =
+        this.mCCUntrackedResource.filter((item) => {
+          if (item.resourceUri.fsPath === fileObj.fsPath) {
+            privateExists = true;
+            return isPrivate;
+          }
+          return true;
+        }) ?? [];
 
-        if (isPrivate) {
-          if (this.clearCase.untrackedList.exists(fileObj.fsPath) === false) {
-            this.clearCase.untrackedList.addString(fileObj.fsPath);
-            this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
-          }
-          if (!privateExists) {
-            filteredPrivate.push(new CCScmResource(ResourceGroupType.Index, fileObj, CCScmStatus.Untracked));
-          }
+      if (isPrivate) {
+        if (this.clearCase.untrackedList.exists(fileObj.fsPath) === false) {
+          this.clearCase.untrackedList.addString(fileObj.fsPath);
+          this.mContext.workspaceState.update("untrackedfilecache", this.clearCase.untrackedList.stringify());
         }
-        if ((isPrivate && !privateExists) || (!isPrivate && privateExists)) {
-          this.mCCUntrackedGrp.resourceStates = filteredPrivate?.sort((a, b) => CCScmResource.sort(a, b)) || [];
+        if (!privateExists) {
+          filteredPrivate.push(new CCScmResource(ResourceGroupType.Index, fileObj, CCScmStatus.Untracked));
         }
-        return true;
       }
+      this.mCCUntrackedResource = [...filteredPrivate];
+      this.updateUntrackedResourceGroup();
+      return true;
     }
     return false;
+  }
+
+  private updateUntrackedResourceGroup() {
+    if (this.mCCUntrackedGrp) {
+      if (this.configHandler.configuration.showViewPrivateFiles.value) {
+        this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedResource.sort((a, b) => CCScmResource.sort(a, b)) || [];
+      } else {
+        this.mCCUntrackedGrp.resourceStates = [];
+        this.clearCase?.killUpdateFindViewPrivate();
+      }
+    }
+  }
+
+  private updateHijackedResourceGroup() {
+    if (this.mCCHijackedGrp) {
+      if (this.configHandler.configuration.showHijackedFiles.value) {
+        this.mCCHijackedGrp.resourceStates = this.mCCHijackedResource.sort((a, b) => CCScmResource.sort(a, b)) || [];
+      } else {
+        this.mCCHijackedGrp.resourceStates = [];
+        this.clearCase?.killUpdateFindHijacked();
+      }
+    }
   }
 
   private async onDidChangeTextEditor(editor: TextEditor | undefined): Promise<void> {
     this.mCCContentProvider?.resetCache();
     this.updateCheckedOutList();
+
     if (editor && this.clearCase && editor?.document.uri.scheme !== "output") {
       const version = await this.clearCase?.getVersionInformation(editor?.document.uri, true);
       this.updateHijackedList(editor?.document.uri, version);
       this.updateViewPrivateList(editor.document.uri, version);
     }
-    //if (editor?.document.uri.scheme !== "output") {
-    //  if (editor?.document.uri) {
-    //    this.updateUntrackedListWFile(editor.document.uri);
-    //  }
-    //  this.mWindowChangedEvent.fire();
-    //}
+    if (editor?.document.uri.scheme !== "output") {
+      this.mWindowChangedEvent.fire(editor !== undefined);
+    }
   }
 
-  private async selectVersionAndCompare(file: Uri) {
-    if (this.clearCase) {
-      const selVersion = await CCUIControl.showVersionSelectQuickpick(this.clearCase.getVersionsOfFile(file));
+  private async selectVersionAndCompare(file: Uri[]) {
+    if (this.clearCase && file.length > 0) {
+      const selVersion = await CCUIControl.showVersionSelectQuickpick(this.clearCase.getVersionsOfFile(file[0]));
       if (selVersion !== undefined && selVersion !== "") {
-        this.embeddedDiff(file, selVersion);
+        this.embeddedDiff(file[0], selVersion);
       }
     }
   }
