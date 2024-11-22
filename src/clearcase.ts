@@ -1148,15 +1148,13 @@ export class ClearCase {
     // convert backslash to slash
     cmd.files = cmd.files.map((f) => this.wslPath(f, false));
 
-    const outputChannel = this.outputChannel;
-
-    outputChannel.appendLine(cmd.getCmd().toString(), LogLevel.Debug);
+    this.outputChannel.appendLine(cmd.getCmd().toString(), LogLevel.Debug);
     const command = spawn(executable, cmd.getCmd(), { cwd: cwd, env: process.env, detached: true });
 
     // remove old running command
     this.killRunningCommand(cmdId, command.pid);
     this.mRunningCommands.set(cmdId, command);
-    outputChannel.appendLine(`Command ${cmdId} (${command.pid}) started`, LogLevel.Trace);
+    this.outputChannel.appendLine(`Command ${cmdId} (${command.pid}) started`, LogLevel.Trace);
 
     let allData: Buffer = Buffer.alloc(0);
     let cmdErrMsg = "";
@@ -1180,19 +1178,22 @@ export class ClearCase {
       });
 
       command.on("close", (code, signal) => {
-        outputChannel.appendLine(`Command ${cmdId} (${command.pid}), with Signal (${signal}) deleted`, LogLevel.Trace);
+        this.outputChannel.appendLine(
+          `Command ${cmdId} (${command.pid}), with Signal (${signal}) deleted`,
+          LogLevel.Trace
+        );
         if (this.mRunningCommands.has(cmdId)) {
           if (this.mRunningCommands.get(cmdId)?.pid === command.pid) {
             this.mRunningCommands.delete(cmdId);
-            outputChannel.appendLine(`Command ${cmdId} (${command.pid}) deleted`, LogLevel.Trace);
+            this.outputChannel.appendLine(`Command ${cmdId} (${command.pid}) deleted`, LogLevel.Trace);
           }
-          outputChannel.appendLine(`Command ${cmdId} (${command.pid}) finished`, LogLevel.Trace);
+          this.outputChannel.appendLine(`Command ${cmdId} (${command.pid}) finished`, LogLevel.Trace);
         }
         if (cmdErrMsg !== "") {
           //  If something was printed on stderr, log it, regardless of the exit code
-          outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`, LogLevel.Error);
+          this.outputChannel.appendLine(`exit code ${code}, stderr: ${cmdErrMsg}`, LogLevel.Error);
         } else {
-          outputChannel.appendLine(`${allData.toString()}`, LogLevel.Debug);
+          this.outputChannel.appendLine(`${allData.toString()}`, LogLevel.Debug);
         }
         if (code !== null && code !== 0 && this.isView && cmdErrMsg !== "") {
           reject(cmdErrMsg);
