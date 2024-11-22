@@ -1,5 +1,13 @@
 ## Release Notes
 
+### 5.1.0
+
+_Feature_
+
+- Cleartool context menu as submenu
+- Editor title commands
+- Handling of internal commands
+
 ### 5.0.0
 
 _Feature_
