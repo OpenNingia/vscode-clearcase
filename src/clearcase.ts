@@ -1,7 +1,7 @@
 import { exec, ChildProcess, spawn, ChildProcessWithoutNullStreams } from "child_process";
 import * as fs from "fs";
 import { type } from "os";
-import { dirname } from "path";
+import { dirname, isAbsolute, join } from "path";
 
 import * as tmp from "tmp";
 import {
@@ -22,6 +22,7 @@ import { MappedList } from "./mappedlist";
 import { CCVersionState, CCVersionType } from "./ccVerstionType";
 import CCUIControl from "./ccUIControl";
 import CCOutputChannel, { LogLevel } from "./ccOutputChannel";
+import walk = require("ignore-walk");
 
 export enum EventActions {
   Add = 0,
@@ -127,6 +128,8 @@ export class ClearCase {
   private mIsWslEnv = false;
   private mViewType: ViewType = ViewType.Unknown;
   private mUpdateEvent = new EventEmitter<Uri[]>();
+  private mUpdateViewPrivateListEvent = new EventEmitter<string[]>();
+  private mUpdateHijackedListEvent = new EventEmitter<string[]>();
 
   private mUntrackedList = new MappedList();
   private mHijackedList = new MappedList();
@@ -176,6 +179,14 @@ export class ClearCase {
 
   get onCommandExecuted(): Event<Uri[]> {
     return this.mUpdateEvent.event;
+  }
+
+  get onViewPrivateFileListChange(): Event<string[]> {
+    return this.mUpdateViewPrivateListEvent.event;
+  }
+
+  get onViewHijackedFileListChange(): Event<string[]> {
+    return this.mUpdateHijackedListEvent.event;
   }
 
   get untrackedList(): MappedList {
@@ -666,41 +677,83 @@ export class ClearCase {
    */
   async findViewPrivate(): Promise<string[]> {
     const lscoArgTmpl = this.configHandler.configuration.findViewPrivateCommand.value;
+    const cmdOpts = lscoArgTmpl.split(" ");
     let resNew: string[] = [];
-    let wsf = "";
-    if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
-      wsf = workspace.workspaceFolders[0].uri.fsPath;
+    const CHUNKSIZE = this.configHandler.configuration.chunkSize.value;
+
+    if (workspace.workspaceFolders !== undefined) {
+      for (const f of workspace.workspaceFolders) {
+        let files: string[] = [];
+        if (this.configHandler.configuration.useCCIgnoreFile.value) {
+          files = await this.walkIgnoredFiles(f.uri.fsPath);
+          this.outputChannel.appendLine(`Get view private information. Found ${files.length} files`, LogLevel.Debug);
+          if (files.length > 0) {
+            let start = 0;
+            let end = files.length < CHUNKSIZE ? files.length : CHUNKSIZE;
+            do {
+              const subList = files.slice(start, end);
+              this.outputChannel.appendLine(`Get view private information (${start} - ${end})`, LogLevel.Debug);
+              const args = new CCArgs([...cmdOpts], [...subList]);
+              const nf = await this.executeCleartoolFindViewPrivate(args, f.uri.fsPath);
+              if (nf.length > 0) {
+                resNew = [...resNew, ...nf];
+                this.mUpdateViewPrivateListEvent.fire(nf);
+              }
+              start = end;
+              end = files.length < start + CHUNKSIZE ? files.length : start + CHUNKSIZE;
+            } while (end < files.length);
+          }
+        } else {
+          const args: CCArgs = new CCArgs([...cmdOpts]);
+          const nf = await this.executeCleartoolFindViewPrivate(args, f.uri.fsPath);
+          resNew = [...nf];
+          this.mUpdateViewPrivateListEvent.fire(nf);
+        }
+      }
     }
+    return resNew;
+  }
+
+  async executeCleartoolFindViewPrivate(args: CCArgs, cwd: string): Promise<string[]> {
+    const runInWsl = this.isRunningInWsl();
+    let resNew: string[] = [];
     try {
-      const runInWsl = this.isRunningInWsl();
-      const cmdOpts = lscoArgTmpl.split(" ");
-      const cmd: CCArgs = new CCArgs([...cmdOpts]);
-      await this.runCleartoolCommand("findViewPrivate", cmd, wsf, null, (_code: number, output: string) => {
+      await this.runCleartoolCommand("findViewPrivate", args, cwd, null, (_code: number, output: string) => {
         if (output.length > 0) {
           const suff = this.configHandler.configuration.viewPrivateFileSuffixes.value;
           const suffRe = new RegExp(suff, "i");
           const results: string[] = output.trim().split(/\r\n|\r|\n/);
-          resNew = results
-            .filter((v) => {
-              return v.match(suffRe) !== null;
-            })
-            .map((e) => {
-              if (e.startsWith("\\") && type() === "Windows_NT") {
-                e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
-              }
-              if (runInWsl === true) {
-                // e = this.wslPath(e, true, runInWsl);
-                e = e
-                  .replace(/\\/g, "/")
-                  .replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
-              }
-              return e;
-            });
+          resNew = results.map((f) => {
+            let filename = f;
+            if (f.startsWith(".") || !isAbsolute(f)) {
+              filename = join(cwd, f);
+            }
+            return filename;
+          });
+
+          if (this.configHandler.configuration.useCCIgnoreFile.value === false) {
+            resNew = resNew
+              .filter((v) => {
+                return v.match(suffRe) !== null;
+              })
+              .map((e) => {
+                if (e.startsWith("\\") && type() === "Windows_NT") {
+                  e = e.replace("\\", cwd.toUpperCase()[0] + ":\\");
+                }
+                if (runInWsl === true) {
+                  // e = this.wslPath(e, true, runInWsl);
+                  e = e
+                    .replace(/\\/g, "/")
+                    .replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+                }
+                return e;
+              });
+          }
         }
       });
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error), LogLevel.Error);
-      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
+      //window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
     }
     return resNew;
   }
@@ -719,12 +772,56 @@ export class ClearCase {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
       const cmd: CCArgs = new CCArgs([...cmdOpts]);
-      await this.runCleartoolCommand("findHijacked", cmd, wsf, null, (_code: number, output: string) => {
+      await this.runCleartoolCommand(
+        "findHijacked",
+        cmd,
+        wsf,
+        (files: string[]) => {
+          if (files.length > 0) {
+            resNew = files
+              .filter((v) => {
+                return v.match(/hijacked/i) !== null;
+              })
+              .map((f) => {
+                let filename = f;
+                if (f.startsWith(".") || !isAbsolute(f)) {
+                  filename = join(wsf, f);
+                }
+                return filename;
+              })
+              .map((e) => {
+                if (e.startsWith("\\") && type() === "Windows_NT") {
+                  e = e.replace("\\", wsf.toUpperCase()[0] + ":\\");
+                }
+                if (runInWsl === true) {
+                  // e = this.wslPath(e, true, runInWsl);
+                  e = e
+                    .replace(/\\/g, "/")
+                    .replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+                }
+                const idx = e.indexOf("@@");
+                if (idx > -1) {
+                  e = e.substring(0, idx);
+                }
+                return e;
+              });
+            if (resNew.length > 0) {
+              this.mUpdateHijackedListEvent.fire(resNew);
+            }
+          }
+        } /*, (_code: number, output: string) => {
         if (output.length > 0) {
           const results: string[] = output.trim().split(/\r\n|\r|\n/);
           resNew = results
             .filter((v) => {
               return v.match(/hijacked/i) !== null;
+            })
+            .map((f) => {
+              let filename = f;
+              if (f.startsWith(".") || !isAbsolute(f)) {
+                filename = join(wsf, f);
+              }
+              return filename;
             })
             .map((e) => {
               if (e.startsWith("\\") && type() === "Windows_NT") {
@@ -742,13 +839,27 @@ export class ClearCase {
               }
               return e;
             });
+          if (resNew.length > 0) {
+            this.mUpdateHijackedListEvent.fire(resNew);
+          }
         }
-      });
+      }*/
+      );
     } catch (error) {
       this.outputChannel.appendLine(getErrorMessage(error), LogLevel.Error);
-      window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
+      // window.showErrorMessage(`${getErrorMessage(error)}`, { modal: false });
     }
     return resNew;
+  }
+
+  async walkIgnoredFiles(startPath: string): Promise<string[]> {
+    let files: string[] = [];
+    try {
+      files = await walk({ path: startPath, ignoreFiles: [".ccignore"] });
+    } catch (error) {
+      this.outputChannel.appendLine(getErrorMessage(error), LogLevel.Debug);
+    }
+    return files;
   }
 
   findCheckoutsGui(path: string): void {
@@ -1122,10 +1233,11 @@ export class ClearCase {
         }
       );
     }
-    const enc =
+    const enc = (
       this.configHandler.configuration.diffViewEncoding.value !== ""
         ? this.configHandler.configuration.diffViewEncoding.value
-        : "utf8";
+        : "utf8"
+    ) as BufferEncoding;
     return fs.readFileSync(ret.fsPath, { encoding: enc });
   }
 
@@ -1152,7 +1264,9 @@ export class ClearCase {
     const command = spawn(executable, cmd.getCmd(), { cwd: cwd, env: process.env, detached: true });
 
     // remove old running command
-    this.killRunningCommand(cmdId, command.pid);
+    if (command?.pid) {
+      this.killRunningCommand(cmdId, command.pid);
+    }
     this.mRunningCommands.set(cmdId, command);
     this.outputChannel.appendLine(`Command ${cmdId} (${command.pid}) started`, LogLevel.Trace);
 
@@ -1199,6 +1313,9 @@ export class ClearCase {
           reject(cmdErrMsg);
         }
         if (signal !== "SIGKILL" && typeof onFinished === "function") {
+          if (code === null) {
+            code = 0;
+          }
           onFinished(code, allData.toString(), cmdErrMsg);
         }
         resolve(undefined);
@@ -1209,7 +1326,7 @@ export class ClearCase {
   private async killRunningCommand(cmdId: string, pid: number): Promise<void> {
     if (this.mRunningCommands.has(cmdId)) {
       const cmd = this.mRunningCommands.get(cmdId);
-      if (cmd && (cmd.pid === pid || pid === 0)) {
+      if (cmd?.pid && (cmd.pid === pid || pid === 0)) {
         const pidId = cmd.pid;
         this.outputChannel.appendLine(`Going to kill ${cmdId} (${pidId})`, LogLevel.Trace);
         if (process.platform === "win32") {

@@ -54,6 +54,8 @@ export class CCScmProvider implements IDisposable {
   private mListLock: Lock | null = null;
   private mDisposables: IDisposable[] = [];
   private mVersion = "0.0.0";
+  private mFirstViewPrivateUpdate = true;
+  private mFirstHijackedUpdate = true;
 
   private mWindowChangedEvent: EventEmitter<boolean> = new EventEmitter<boolean>();
 
@@ -74,12 +76,18 @@ export class CCScmProvider implements IDisposable {
         this.outputChannel.logLevel = this.configHandler.configuration.logLevel.value;
       }
       if (this.configHandler.configuration.showHijackedFiles.changed) {
-        this.updateHijackedResourceGroup();
-        await this.createHijackedList();
+        if (this.mFirstHijackedUpdate === false) {
+          this.updateHijackedResourceGroup();
+          //await this.createHijackedList();
+          this.commandUpdateHijackedFilesList();
+        }
       }
       if (this.configHandler.configuration.showViewPrivateFiles.changed) {
-        this.updateUntrackedResourceGroup();
-        await this.createViewPrivateList();
+        if (this.mFirstViewPrivateUpdate === false) {
+          this.updateUntrackedResourceGroup();
+          // await this.createViewPrivateList();
+          this.commandUpdateUntrackedList();
+        }
       }
       this.updateContextResources(window.activeTextEditor !== undefined);
     });
@@ -178,13 +186,23 @@ export class CCScmProvider implements IDisposable {
         this.handleChangeFiles(evArgs);
       });
 
+      this.clearCase?.onViewPrivateFileListChange((files: string[]) => {
+        this.updateViewPrivateListHandler(files);
+      });
+
+      this.clearCase?.onViewHijackedFileListChange((files: string[]) => {
+        this.updateHijackedListHandler(files);
+      });
+
       this.bindScmCommand();
 
       this.mIsUpdatingUntracked = false;
 
       this.updateCheckedOutList();
-      this.createHijackedList();
-      this.createViewPrivateList();
+      //this.createHijackedList();
+      // this.createViewPrivateList();
+      this.commandUpdateUntrackedList();
+      this.commandUpdateHijackedFilesList();
 
       this.onDidChangeTextEditor(window.activeTextEditor);
 
@@ -318,11 +336,14 @@ export class CCScmProvider implements IDisposable {
   }
 
   private async createViewPrivateList() {
-    let viewPrivate: CCScmResource[] = [];
+    //let viewPrivate: CCScmResource[] = [];
 
     if (this.configHandler.configuration.showViewPrivateFiles.value) {
       this.clearCase?.killUpdateFindViewPrivate();
-      this.clearCase?.findViewPrivate().then((files) => {
+      this.mCCUntrackedResource = [];
+      await this.clearCase?.findViewPrivate();
+      this.mFirstViewPrivateUpdate = false;
+      /*.then((files) => {
         viewPrivate = files
           .map((val) => {
             return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Untracked);
@@ -334,16 +355,36 @@ export class CCScmProvider implements IDisposable {
           this.mCCUntrackedResource = viewPrivate.sort((a, b) => CCScmResource.sort(a, b));
           this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedResource;
         }
+      });*/
+    }
+  }
+
+  private updateViewPrivateListHandler(files: string[]) {
+    const viewPrivate = files
+      .map((val) => {
+        return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Untracked);
+      })
+      .sort((val1, val2) => {
+        return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
       });
+    if (this.mCCUntrackedGrp) {
+      // only add files that are new to this list
+      this.mCCUntrackedResource = [
+        ...this.mCCUntrackedResource,
+        ...viewPrivate.sort((a, b) => CCScmResource.sort(a, b)),
+      ];
+      this.mCCUntrackedGrp.resourceStates = this.mCCUntrackedResource;
     }
   }
 
   private async createHijackedList() {
-    let hijacked: CCScmResource[] = [];
+    //let hijacked: CCScmResource[] = [];
 
     if (this.configHandler.configuration.showHijackedFiles.value) {
       this.clearCase?.killUpdateFindHijacked();
-      this.clearCase?.findHijacked().then((files) => {
+      this.mCCHijackedResource = [];
+      await this.clearCase?.findHijacked();
+      this.mFirstHijackedUpdate = false; /*.then((files) => {
         hijacked = files
           .map((val) => {
             return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Hijacked);
@@ -355,7 +396,21 @@ export class CCScmProvider implements IDisposable {
           this.mCCHijackedResource = hijacked.sort((a, b) => CCScmResource.sort(a, b));
           this.mCCHijackedGrp.resourceStates = this.mCCHijackedResource;
         }
+      });*/
+    }
+  }
+
+  private updateHijackedListHandler(files: string[]) {
+    const hijacked = files
+      .map((val) => {
+        return new CCScmResource(ResourceGroupType.Index, Uri.file(val), CCScmStatus.Hijacked);
+      })
+      .sort((val1, val2) => {
+        return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
       });
+    if (this.mCCHijackedGrp) {
+      this.mCCHijackedResource = [...this.mCCHijackedResource, ...hijacked.sort((a, b) => CCScmResource.sort(a, b))];
+      this.mCCHijackedGrp.resourceStates = this.mCCHijackedResource;
     }
   }
 
@@ -390,11 +445,13 @@ export class CCScmProvider implements IDisposable {
           const lStep = 100;
           await this.createViewPrivateList();
 
-          process.report({
-            message: `Searching view private files completed`,
-            increment: lStep,
-          });
           this.mIsUpdatingUntracked = false;
+          if (this.mIsUpdatingHijacked === false) {
+            process.report({
+              message: `Searching view private files completed`,
+              increment: lStep,
+            });
+          }
         }
       );
     }
@@ -413,11 +470,13 @@ export class CCScmProvider implements IDisposable {
           const lStep = 100;
           await this.createHijackedList();
 
-          process.report({
-            message: `Searching hijacked files completed`,
-            increment: lStep,
-          });
           this.mIsUpdatingHijacked = false;
+          if (this.mIsUpdatingUntracked === false) {
+            process.report({
+              message: `Searching hijacked files completed`,
+              increment: lStep,
+            });
+          }
         }
       );
     }

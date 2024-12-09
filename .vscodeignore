@@ -1,20 +1,30 @@
-.vscode/**
-.vscode-test/**
-out/test/**
+**/*
 
-src/**
-.gitignore
-.yarnrc
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/.eslintrc.json
-**/*.map
-**/*.ts
-.vscode
-node_modules
-out/
-src/
-tsconfig.json
-webpack.config.js
-*.zip
-*.vsix
+!dist/extension.js
+!README.md
+!CHANGELOG.md
+!LICENSE
+!Assets
+!syntaxes
+
+# .vscode/**
+# .vscode-test/**
+# out/test/**
+# 
+# src/**
+# .gitignore
+# .yarnrc
+# vsc-extension-quickstart.md
+# **/tsconfig.json
+# **/.eslintrc.json
+# **/*.map
+# **/*.ts
+# .vscode
+# node_modules
+# out/
+# src/
+# tsconfig.json
+# webpack.config.js
+# *.zip
+# *.vsix
+# findmerge.*

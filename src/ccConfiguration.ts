@@ -71,6 +71,7 @@ export class CCConfiguration {
   private mAnnotationFormatString = new ConfigurationProperty<string>("%d %12u");
   private mShowAnnotationCodeLens = new ConfigurationProperty<boolean>(true);
   private mUseClearDlg = new ConfigurationProperty<boolean>(true);
+  private mUseCCIgnoreFile = new ConfigurationProperty<boolean>(false);
   private mCheckoutCommand = new ConfigurationProperty<string>("-comment ${comment} ${filename}");
   private mFindCheckoutsCommand = new ConfigurationProperty<string>("-me -cview -short -avobs");
   private mFindViewPrivateCommand = new ConfigurationProperty<string>("ls -rec -view_only ${env:CLEARCASE_AVOBS}");
@@ -93,6 +94,8 @@ export class CCConfiguration {
   private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
   private mShowViewPrivateFiles = new ConfigurationProperty<boolean>(false);
   private mLogLevel = new ConfigurationProperty<LogLevel>(LogLevel.None);
+
+  private mChunkSize = new ConfigurationProperty<number>(100);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -146,6 +149,10 @@ export class CCConfiguration {
     return this.mShowViewPrivateFiles;
   }
 
+  get useCCIgnoreFile(): ConfigurationProperty<boolean> {
+    return this.mUseCCIgnoreFile;
+  }
+
   get uncoKeepFile(): ConfigurationProperty<boolean> {
     return this.mUncoKeepFile;
   }
@@ -197,8 +204,12 @@ export class CCConfiguration {
   get useLabelAtCheckin(): ConfigurationProperty<boolean> {
     return this.mUseLabelWhenCheckin;
   }
-  
+
   get logLevel(): ConfigurationProperty<LogLevel> {
     return this.mLogLevel;
+  }
+
+  get chunkSize(): ConfigurationProperty<number> {
+    return this.mChunkSize;
   }
 }
