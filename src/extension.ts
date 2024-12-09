@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import { Disposable, ExtensionContext, window, workspace } from "vscode";
 import { ClearcaseScmProvider } from "./provider/clearcase-scm-provider";
-import { UIInformation } from "./ui/uiinformation";
+import { UiInformation } from "./ui/ui-information";
 import CcOutputChannel from "./ui/output-channel";
 import { ConfigurationHandler } from "./configuration/configuration-handler";
 
@@ -35,7 +35,7 @@ async function _activate(context: ExtensionContext, disposables: Disposable[]) {
         provider.updateContextResources(valid);
       });
 
-      const uiInfo = new UIInformation(configHandler, window.activeTextEditor, provider.clearcase);
+      const uiInfo = new UiInformation(configHandler, window.activeTextEditor, provider.clearcase);
       disposables.push(uiInfo);
       console.log("[vscode-clearcase] started!");
     }

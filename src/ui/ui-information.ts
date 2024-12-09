@@ -14,7 +14,7 @@ import { CCVersionState, VersionType } from "../clearcase/verstion-type";
 import { ConfigurationHandler } from "../configuration/configuration-handler";
 import { Clearcase } from "../clearcase/clearcase";
 
-export class UIInformation implements IDisposable {
+export class UiInformation implements IDisposable {
   private mStatusbar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
   private mIsActive = true;
   private mDisposables: IDisposable[] = [];
