@@ -1,5 +1,5 @@
 import { SourceControlResourceState, Uri, ThemeColor, SourceControlResourceDecorations, Command } from "vscode";
-import { CCScmStatus } from "./ccScmStatus";
+import { ScmStatus } from "./scm-status";
 import * as path from "path";
 
 export const enum ResourceGroupType {
@@ -15,54 +15,58 @@ function getIconUri(iconName: string, theme: string) {
   return Uri.file(path.join(iconRootPath, theme, `${iconName}.svg`));
 }
 
-export class CCScmResource implements SourceControlResourceState {
+export class ScmResource implements SourceControlResourceState {
   get resourceUri(): Uri {
     return this.mResourceUri;
   }
 
   get command(): Command {
-    return {
-      command: "extension.ccEmbedDiff",
-      title: "compare to previous",
-      arguments: [this.resourceUri],
-    };
+    if (this.type === ScmStatus.Untracked) {
+      return { command: "extension.ccOpenResource", title: "Open view private file", arguments: [this.resourceUri] };
+    } else {
+      return {
+        command: "extension.ccEmbedDiff",
+        title: "compare to previous",
+        arguments: [this.resourceUri],
+      };
+    }
   }
 
-  constructor(private mResourceGrpType: ResourceGroupType, private mResourceUri: Uri, private mType: CCScmStatus) {}
+  constructor(private mResourceGrpType: ResourceGroupType, private mResourceUri: Uri, private mType: ScmStatus) {}
 
-  get type(): CCScmStatus {
+  get type(): ScmStatus {
     return this.mType;
   }
 
   get letter(): string {
     switch (this.type) {
-      case CCScmStatus.Modified:
+      case ScmStatus.Modified:
         return "M";
-      case CCScmStatus.Untracked:
+      case ScmStatus.Untracked:
         return "U";
-      case CCScmStatus.Hijacked:
+      case ScmStatus.Hijacked:
         return "H";
     }
   }
 
   get tooltip(): string {
     switch (this.type) {
-      case CCScmStatus.Modified:
+      case ScmStatus.Modified:
         return "modified";
-      case CCScmStatus.Untracked:
+      case ScmStatus.Untracked:
         return "untracked";
-      case CCScmStatus.Hijacked:
+      case ScmStatus.Hijacked:
         return "hijacked";
     }
   }
 
   get color(): ThemeColor {
     switch (this.type) {
-      case CCScmStatus.Modified:
+      case ScmStatus.Modified:
         return new ThemeColor("ccDecoration.modifiedResourceForeground");
-      case CCScmStatus.Untracked:
+      case ScmStatus.Untracked:
         return new ThemeColor("ccDecoration.untrackedResourceForeground");
-      case CCScmStatus.Hijacked:
+      case ScmStatus.Hijacked:
         return new ThemeColor("ccDecoration.hijackedResourceForeground");
     }
   }
@@ -81,11 +85,11 @@ export class CCScmResource implements SourceControlResourceState {
       case "dark":
       case "light":
         switch (this.mType) {
-          case CCScmStatus.Untracked:
+          case ScmStatus.Untracked:
             return getIconUri("status-untracked", theme);
-          case CCScmStatus.Modified:
+          case ScmStatus.Modified:
             return getIconUri("status-modified", theme);
-          case CCScmStatus.Hijacked:
+          case ScmStatus.Hijacked:
             return getIconUri("status-hijacked", theme);
         }
         break;

@@ -1,13 +1,15 @@
 "use strict";
 
 import { Event, EventEmitter, workspace, WorkspaceConfiguration } from "vscode";
-import { CCConfiguration, ConfigurationProperty, PathMapping } from "./ccConfiguration";
-import { IDisposable } from "./model";
-import { LogLevel } from "./ccOutputChannel";
+import { Configuration, PathMapping } from "./configuration";
 
-export class CCConfigHandler implements IDisposable {
+import { IDisposable } from "../model";
+import { LogLevel } from "../ui/output-channel";
+import { ConfigurationProperty } from "./configuration-property";
+
+export class ConfigurationHandler implements IDisposable {
   private mConfigChanged = new EventEmitter<string[]>();
-  private mConfiguration = new CCConfiguration();
+  private mConfiguration = new Configuration();
   private mChangeIdents: string[] = [];
   private mDisposables: IDisposable[] = [];
 
@@ -25,7 +27,7 @@ export class CCConfigHandler implements IDisposable {
     return this.mConfigChanged.event;
   }
 
-  get configuration(): CCConfiguration {
+  get configuration(): Configuration {
     return this.mConfiguration;
   }
 
