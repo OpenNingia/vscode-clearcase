@@ -4,7 +4,7 @@ export const enum CCVersionState {
   Untracked,
 }
 
-export class CCVersionType {
+export class VersionType {
   private mVersion = "";
   private mState = CCVersionState.Untracked;
 

@@ -1,5 +1,3 @@
-import { CCConfigHandler } from "./ccConfigHandler";
-import { ClearCase } from "./clearcase";
 import { existsSync } from "fs";
 import {
   StatusBarAlignment,
@@ -11,18 +9,20 @@ import {
   window,
   workspace,
 } from "vscode";
-import { IDisposable } from "./model";
-import { CCVersionState, CCVersionType } from "./ccVerstionType";
+import { IDisposable } from "../model";
+import { CCVersionState, VersionType } from "../clearcase/verstion-type";
+import { ConfigurationHandler } from "../configuration/configuration-handler";
+import { Clearcase } from "../clearcase/clearcase";
 
-export class UIInformation implements IDisposable {
+export class UiInformation implements IDisposable {
   private mStatusbar: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
   private mIsActive = true;
   private mDisposables: IDisposable[] = [];
 
   constructor(
-    private mConfigHandler: CCConfigHandler,
+    private mConfigHandler: ConfigurationHandler,
     private mEditor: TextEditor | undefined,
-    private mClearcase: ClearCase | null
+    private mClearcase: Clearcase | null
   ) {
     this.handleConfigState();
 
@@ -85,11 +85,11 @@ export class UIInformation implements IDisposable {
       this.mClearcase
         ?.getVersionInformation(iUri)
         .then((value) => this.updateStatusbar(value))
-        .catch(() => this.updateStatusbar(new CCVersionType()));
+        .catch(() => this.updateStatusbar(new VersionType()));
     }
   }
 
-  private async updateStatusbar(version: CCVersionType) {
+  private async updateStatusbar(version: VersionType) {
     if (version !== undefined) {
       if (version.version !== "") {
         if (this.mStatusbar !== null) {

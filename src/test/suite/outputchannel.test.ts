@@ -4,21 +4,21 @@ import * as path from "path";
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from "vscode";
-import { CCConfigHandler } from "../../ccConfigHandler";
-import { CCScmProvider } from "../../ccScmProvider";
+import { ClearcaseScmProvider } from "../../provider/clearcase-scm-provider";
 import { chmodSync, mkdirSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
 import { after, before, beforeEach } from "mocha";
 import SuiteOutputChannel from "../mock/SuiteOutputChannel";
-import CCOutputChannel, { LogLevel } from "../../ccOutputChannel";
+import CcOutputChannel, { LogLevel } from "../../ui/output-channel";
+import { ConfigurationHandler } from "../../configuration/configuration-handler";
 // import * as myExtension from '../../extension';
 
 suite("Outputchannel Test Suite", () => {
   vscode.window.showInformationMessage("Start all tests.");
   let extensionContext: vscode.ExtensionContext;
   let outputChannelBase: SuiteOutputChannel;
-  let outputChannel: CCOutputChannel;
-  let configHandler: CCConfigHandler;
-  let provider: CCScmProvider;
+  let outputChannel: CcOutputChannel;
+  let configHandler: ConfigurationHandler;
+  let provider: ClearcaseScmProvider;
   let testDir: string;
 
   before(async () => {
@@ -27,7 +27,7 @@ suite("Outputchannel Test Suite", () => {
     extensionContext = (global as any).testExtensionContext;
     /* eslint-enable */
     outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    outputChannel = new CCOutputChannel(outputChannelBase);
+    outputChannel = new CcOutputChannel(outputChannelBase);
 
     testDir = path.join(__dirname, "testfiles");
     try {
@@ -56,10 +56,10 @@ suite("Outputchannel Test Suite", () => {
   beforeEach(async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
 
-    configHandler = new CCConfigHandler();
+    configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Trace;
-    provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
   });
@@ -70,7 +70,7 @@ suite("Outputchannel Test Suite", () => {
     configHandler.configuration.checkinCommand.value = "-nc ${filename}";
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
-    await provider.clearCase?.checkinFile([file]);
+    await provider.clearcase?.checkinFile([file]);
     assert.strictEqual(outputChannelBase.getLine(0), undefined);
   });
 
@@ -80,7 +80,7 @@ suite("Outputchannel Test Suite", () => {
     configHandler.configuration.checkinCommand.value = "-nc ${filename}";
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
-    await provider.clearCase?.checkinFile([file]);
+    await provider.clearcase?.checkinFile([file]);
     assert.strictEqual(outputChannelBase.getLine(0), `ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
       outputChannelBase.getLastLine(),
@@ -96,7 +96,7 @@ suite("Outputchannel Test Suite", () => {
     const file = path.join(testDir, "simple04.txt");
 
     const fileUri = vscode.Uri.parse(file);
-    await provider.clearCase?.checkoutFile([fileUri]);
+    await provider.clearcase?.checkoutFile([fileUri]);
     assert.strictEqual(outputChannelBase.getLine(0), undefined);
   });
 
@@ -108,7 +108,7 @@ suite("Outputchannel Test Suite", () => {
     const file = path.join(testDir, "simple04.txt");
 
     const fileUri = vscode.Uri.parse(file);
-    await provider.clearCase?.checkoutFile([fileUri]);
+    await provider.clearcase?.checkoutFile([fileUri]);
     assert.strictEqual(
       outputChannelBase.getLine(0),
       `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
@@ -123,7 +123,7 @@ suite("Outputchannel Test Suite", () => {
     const file = path.join(testDir, "simple04.txt");
 
     const fileUri = vscode.Uri.parse(file);
-    await provider.clearCase?.checkoutFile([fileUri]);
+    await provider.clearcase?.checkoutFile([fileUri]);
     assert.strictEqual(
       outputChannelBase.getLastLine(),
       `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`

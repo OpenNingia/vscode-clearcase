@@ -15,13 +15,16 @@ import {
   window,
   workspace,
 } from "vscode";
-import { CCAnnotationController } from "./ccAnnotateController";
-import { CCConfigHandler } from "./ccConfigHandler";
-import { getErrorMessage } from "./errormessage";
-import { MappedList } from "./mappedlist";
-import { CCVersionState, CCVersionType } from "./ccVerstionType";
-import CCUIControl from "./ccUIControl";
-import CCOutputChannel, { LogLevel } from "./ccOutputChannel";
+import { getErrorMessage } from "../ui/errormessage";
+import { CCVersionState, VersionType } from "./verstion-type";
+import UiControl from "../ui/ui-control";
+import CcOutputChannel, { LogLevel } from "../ui/output-channel";
+import CmdArgs from "./cmd-args";
+import { ViewType } from "./view-type";
+import { ClearcaseCleartoolIf } from "./clearcase-cleartool-if";
+import { ClearcaseCleartool } from "./clearcase-cleartool";
+import { AnnotationController } from "../annotation/annotation-controller";
+import { ConfigurationHandler } from "../configuration/configuration-handler";
 import walk = require("ignore-walk");
 
 export enum EventActions {
@@ -34,91 +37,7 @@ export class EventArgs {
   action: EventActions | undefined;
 }
 
-export enum ViewType {
-  Unknown,
-  Dynamic,
-  Snapshot,
-  Webview,
-}
-
-export class CCArgs {
-  public params: string[] = [];
-  private mFiles: string[] = [];
-  private mVersion: string | undefined;
-
-  constructor(params: string[], file?: string[], version?: string) {
-    this.params = [...params];
-    if (file && file.length > 0) {
-      this.mFiles = [...file];
-    }
-    this.mVersion = version;
-  }
-
-  private toString(): string {
-    return this.params.reduce((a: string, s: string) => `${a} ${s}`) + ` ${this.mFiles}`;
-  }
-
-  getCmd(): string[] {
-    if (this.mFiles !== undefined && this.mVersion === undefined) {
-      return [...this.params, ...this.mFiles];
-    } else if (this.mFiles !== undefined && this.mVersion !== undefined && this.mVersion !== "") {
-      return [...this.params, `${this.mFiles[0]}@@${this.mVersion}`];
-    }
-    return this.params;
-  }
-
-  get files(): string[] {
-    return this.mFiles;
-  }
-
-  set files(v: string[]) {
-    this.mFiles = [...v];
-  }
-
-  set file(v: string) {
-    this.mFiles.push(v);
-  }
-}
-
-export interface CleartoolIf {
-  executable(val?: string | undefined): string;
-  credentials(): string[];
-}
-
-export class Cleartool implements CleartoolIf {
-  private mUsername: string;
-  private mPassword: string;
-  private mAddress: string;
-  private mExecutable: string;
-
-  constructor(u = "", p = "", a = "", e = "") {
-    this.mAddress = a;
-    this.mPassword = p;
-    this.mUsername = u;
-    this.mExecutable = "";
-    if (e !== "") {
-      this.executable(e);
-    } else {
-      this.executable("cleartool");
-    }
-  }
-
-  executable(val?: string | undefined): string {
-    if (val !== undefined) {
-      this.mExecutable = val;
-    }
-    return this.mExecutable;
-  }
-
-  credentials(): string[] {
-    if (this.mAddress !== "") {
-      return ["-lname", this.mUsername, "-password", this.mPassword, "-server", this.mAddress];
-    }
-    return [];
-  }
-}
-
-export class ClearCase {
+export class Clearcase {
   private readonly lsView: string[] = ["lsview", "-cview", "-long"];
 
   private readonly rxViewType = new RegExp("\\.(vws|stg)$", "i");
@@ -131,24 +50,22 @@ export class ClearCase {
   private mUpdateViewPrivateListEvent = new EventEmitter<string[]>();
   private mUpdateHijackedListEvent = new EventEmitter<string[]>();
 
-  private mUntrackedList = new MappedList();
-  private mHijackedList = new MappedList();
-  private mExecCmd: CleartoolIf;
+  private mExecCmd: ClearcaseCleartoolIf;
 
   private mWebviewPassword = "";
 
   private mRunningCommands = new Map<string, ChildProcessWithoutNullStreams>();
 
-  constructor(private configHandler: CCConfigHandler, private outputChannel: CCOutputChannel) {
+  constructor(protected configHandler: ConfigurationHandler, protected outputChannel: CcOutputChannel) {
     if (this.configHandler.configuration.useRemoteClient.value === true) {
-      this.mExecCmd = new Cleartool(
+      this.mExecCmd = new ClearcaseCleartool(
         this.configHandler.configuration.webserverUsername.value,
         this.mWebviewPassword,
         this.configHandler.configuration.webserverAddress.value,
         this.configHandler.configuration.executable.value
       );
     } else {
-      this.mExecCmd = new Cleartool("", "", "", this.configHandler.configuration.executable.value);
+      this.mExecCmd = new ClearcaseCleartool("", "", "", this.configHandler.configuration.executable.value);
     }
     this.configHandler.onDidChangeConfiguration((datas: string[]) => {
       const hasChangedUseRemote = datas.find((val) => {
@@ -181,26 +98,10 @@ export class ClearCase {
     return this.mUpdateEvent.event;
   }
 
-  get onViewPrivateFileListChange(): Event<string[]> {
-    return this.mUpdateViewPrivateListEvent.event;
-  }
-
-  get onViewHijackedFileListChange(): Event<string[]> {
-    return this.mUpdateHijackedListEvent.event;
-  }
-
-  get untrackedList(): MappedList {
-    return this.mUntrackedList;
-  }
-
-  get hijackedList(): MappedList {
-    return this.mHijackedList;
-  }
-
   set password(val: string) {
     this.mWebviewPassword = val;
     if (this.configHandler.configuration.useRemoteClient.value === true) {
-      this.mExecCmd = new Cleartool(
+      this.mExecCmd = new ClearcaseCleartool(
         this.configHandler.configuration.webserverUsername.value,
         this.mWebviewPassword,
         this.configHandler.configuration.webserverAddress.value,
@@ -256,7 +157,7 @@ export class ClearCase {
 
   async loginWebview(): Promise<boolean> {
     try {
-      const args: CCArgs = new CCArgs(["login"].concat(this.mExecCmd.credentials()));
+      const args: CmdArgs = new CmdArgs(["login"].concat(this.mExecCmd.credentials()));
       const path: string = workspace.workspaceFolders !== undefined ? workspace.workspaceFolders[0].uri.fsPath : "";
 
       await this.runCleartoolCommand("loginWebview", args, path, (datas) => {
@@ -272,7 +173,7 @@ export class ClearCase {
   async execOnSCMFile(docs: Uri[], func: (arg: Uri[]) => void): Promise<void> {
     await this.runCleartoolCommand(
       "execOnScmFile",
-      new CCArgs(["ls"], [docs[0]?.fsPath]),
+      new CmdArgs(["ls"], [docs[0]?.fsPath]),
       dirname(docs[0]?.fsPath),
       null,
       (code: number, _output: string, error: string) => {
@@ -354,7 +255,7 @@ export class ClearCase {
     if (!coArgTmpl.includes("usehijack") && this.viewType === ViewType.Snapshot) {
       cmdOpts.splice(0, 0, "-usehijack");
     }
-    const cmd: CCArgs = new CCArgs(["co"]);
+    const cmd: CmdArgs = new CmdArgs(["co"]);
     cmd.params = cmd.params.concat(cmdOpts);
     idx = cmd.params.indexOf("${filename}");
     if (idx > -1) {
@@ -459,7 +360,7 @@ export class ClearCase {
 
     await this.runCleartoolCommand(
       "undoCheckoutFile",
-      new CCArgs(["unco", rm], files),
+      new CmdArgs(["unco", rm], files),
       dirname(docs[0]?.fsPath),
       null,
       () => this.mUpdateEvent.fire(docs)
@@ -473,7 +374,7 @@ export class ClearCase {
     try {
       await this.runCleartoolCommand(
         "createVersionedObject",
-        new CCArgs(["mkelem", "-mkp", "-nc"], files),
+        new CmdArgs(["mkelem", "-mkp", "-nc"], files),
         dirname(docs[0]?.fsPath),
         null,
         () => this.mUpdateEvent.fire(docs)
@@ -499,7 +400,7 @@ export class ClearCase {
       for (const d of docs) {
         await this.runCleartoolCommand(
           "cancelHijacked",
-          new CCArgs(["update", "-overwrite"], [d.fsPath]),
+          new CmdArgs(["update", "-overwrite"], [d.fsPath]),
           dirname(d.fsPath),
           null,
           () => this.mUpdateEvent.fire([d])
@@ -515,7 +416,7 @@ export class ClearCase {
         if (type() === "Windows_NT") {
           exec(`cleardlg /checkin ${doc.fsPath}`, () => this.mUpdateEvent.fire([doc]));
         } else {
-          if ((await CCUIControl.showCleartoolMsgBox()) === true) {
+          if ((await UiControl.showCleartoolMsgBox()) === true) {
             this.checkinFile([doc]);
           }
         }
@@ -528,16 +429,16 @@ export class ClearCase {
   async checkinFile(docs: Uri[]): Promise<void> {
     const defComment = this.configHandler.configuration.defaultComment.value;
 
-    const cmd: CCArgs = new CCArgs(["ci"]);
+    const cmd: CmdArgs = new CmdArgs(["ci"]);
     await this.doCheckinFiles(await this.prepareCheckinParams(defComment, docs, false, cmd), docs);
   }
 
   async checkinFiles(docs: Uri[], comment: string): Promise<void> {
-    const cmd: CCArgs = new CCArgs(["ci"]);
+    const cmd: CmdArgs = new CmdArgs(["ci"]);
     await this.doCheckinFiles(await this.prepareCheckinParams(comment, docs, true, cmd), docs);
   }
 
-  private async prepareCheckinParams(comment: string, docs: Uri[], simple: boolean, args: CCArgs) {
+  private async prepareCheckinParams(comment: string, docs: Uri[], simple: boolean, args: CmdArgs) {
     let modifyPath = false;
     // simple mode: checkin via scm checkin all
     if (simple) {
@@ -599,12 +500,12 @@ export class ClearCase {
     return args;
   }
 
-  private async doCheckinFiles(args: CCArgs, docs: Uri[]) {
+  private async doCheckinFiles(args: CmdArgs, docs: Uri[]) {
     await this.runCleartoolCommand("checkinFiles", args, dirname(docs[0]?.fsPath), null, () =>
       this.mUpdateEvent.fire(docs)
     );
     if (this.configHandler.configuration.useLabelAtCheckin.value) {
-      const newLabel = await CCUIControl.showCreateLabelInput();
+      const newLabel = await UiControl.showCreateLabelInput();
       if (newLabel !== "") {
         for (const doc of docs) {
           await this.createLabelType(doc, newLabel);
@@ -618,7 +519,7 @@ export class ClearCase {
     for (const doc of docs) {
       this.runCleartoolCommand(
         "versionTree",
-        new CCArgs(["lsvtree", "-graphical"], [doc.fsPath]),
+        new CmdArgs(["lsvtree", "-graphical"], [doc.fsPath]),
         dirname(doc.fsPath),
         null
       );
@@ -629,7 +530,7 @@ export class ClearCase {
     for (const doc of docs) {
       this.runCleartoolCommand(
         "diffWithPrevious",
-        new CCArgs(["diff", "-graph", "-pred"], [doc.fsPath]),
+        new CmdArgs(["diff", "-graph", "-pred"], [doc.fsPath]),
         dirname(doc.fsPath),
         null
       );
@@ -649,7 +550,7 @@ export class ClearCase {
     try {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
-      const cmd: CCArgs = new CCArgs(["lsco", ...cmdOpts]);
+      const cmd: CmdArgs = new CmdArgs(["lsco", ...cmdOpts]);
       await this.runCleartoolCommand("findCheckouts", cmd, wsf, null, (_code: number, output: string) => {
         if (output.length > 0) {
           const results: string[] = output.trim().split(/\r\n|\r|\n/);
@@ -693,7 +594,7 @@ export class ClearCase {
             do {
               const subList = files.slice(start, end);
               this.outputChannel.appendLine(`Get view private information (${start} - ${end})`, LogLevel.Debug);
-              const args = new CCArgs([...cmdOpts], [...subList]);
+              const args = new CmdArgs([...cmdOpts], [...subList]);
               const nf = await this.executeCleartoolFindViewPrivate(args, f.uri.fsPath);
               if (nf.length > 0) {
                 resNew = [...resNew, ...nf];
@@ -704,7 +605,7 @@ export class ClearCase {
             } while (end < files.length);
           }
         } else {
-          const args: CCArgs = new CCArgs([...cmdOpts]);
+          const args: CmdArgs = new CmdArgs([...cmdOpts]);
           const nf = await this.executeCleartoolFindViewPrivate(args, f.uri.fsPath);
           resNew = [...nf];
           this.mUpdateViewPrivateListEvent.fire(nf);
@@ -714,7 +615,7 @@ export class ClearCase {
     return resNew;
   }
 
-  async executeCleartoolFindViewPrivate(args: CCArgs, cwd: string): Promise<string[]> {
+  async executeCleartoolFindViewPrivate(args: CmdArgs, cwd: string): Promise<string[]> {
     const runInWsl = this.isRunningInWsl();
     let resNew: string[] = [];
     try {
@@ -771,7 +672,7 @@ export class ClearCase {
     try {
       const runInWsl = this.isRunningInWsl();
       const cmdOpts = lscoArgTmpl.split(" ");
-      const cmd: CCArgs = new CCArgs([...cmdOpts]);
+      const cmd: CmdArgs = new CmdArgs([...cmdOpts]);
       await this.runCleartoolCommand(
         "findHijacked",
         cmd,
@@ -883,7 +784,7 @@ export class ClearCase {
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
       try {
         for (const p of workspace.workspaceFolders) {
-          const cmd: CCArgs = new CCArgs(["catcs"]);
+          const cmd: CmdArgs = new CmdArgs(["catcs"]);
           await this.runCleartoolCommand(
             "hasConfigspec",
             cmd,
@@ -926,13 +827,13 @@ export class ClearCase {
    * @param iUri the uri of the file object to be checked
    * @returns Promise<string>
    */
-  async getVersionInformation(iUri: Uri, normalize = true): Promise<CCVersionType> {
-    let fileVers = new CCVersionType();
+  async getVersionInformation(iUri: Uri, normalize = true): Promise<VersionType> {
+    let fileVers = new VersionType();
     if (iUri !== undefined && this.isView === true) {
       const cwd = dirname(iUri.fsPath);
       await this.runCleartoolCommand(
         "getVersionInformation",
-        new CCArgs(["ls"], [iUri.fsPath]),
+        new CmdArgs(["ls"], [iUri.fsPath]),
         cwd,
         null,
         (code: number, output: string, error: string) => {
@@ -952,8 +853,8 @@ export class ClearCase {
    * @param iFileInfo a string with filename and version information
    * @returns string
    */
-  getVersionString(iFileInfo: string, normalize: boolean): CCVersionType {
-    const ver = new CCVersionType("not in a VOB");
+  getVersionString(iFileInfo: string, normalize: boolean): VersionType {
+    const ver = new VersionType("not in a VOB");
     if (iFileInfo !== undefined && iFileInfo !== null && iFileInfo !== "") {
       const res = iFileInfo.match(/(((\S+)@@(\S+)(\s+\[hijacked\]){0,1}(.*){0,1})|(\S+))/i);
       if (res) {
@@ -975,18 +876,18 @@ export class ClearCase {
   async updateDir(uri: Uri): Promise<void> {
     try {
       const msg: string | undefined = await this.updateObject(uri, 0);
-      CCUIControl.showInformationMessage(`Update of ${msg} finished!`);
+      UiControl.showInformationMessage(`Update of ${msg} finished!`);
     } catch (error) {
-      CCUIControl.showErrorMessage(getErrorMessage(error));
+      UiControl.showErrorMessage(getErrorMessage(error));
     }
   }
 
   async updateFile(uri: Uri): Promise<void> {
     try {
       const msg: string | undefined = await this.updateObject(uri, 1);
-      CCUIControl.showInformationMessage(`Update of ${msg} finished!`);
+      UiControl.showInformationMessage(`Update of ${msg} finished!`);
     } catch (error) {
-      CCUIControl.showErrorMessage(getErrorMessage(error));
+      UiControl.showErrorMessage(getErrorMessage(error));
     }
   }
 
@@ -1017,7 +918,7 @@ export class ClearCase {
       let errorRes = "";
       await this.runCleartoolCommand(
         "updateObject",
-        new CCArgs(["update"], [updateFsObj]),
+        new CmdArgs(["update"], [updateFsObj]),
         cwd,
         () => this.mUpdateEvent.fire([filePath]),
         (_code: number, output: string, error: string) => {
@@ -1039,13 +940,13 @@ export class ClearCase {
     }
   }
 
-  async annotate(fileUri: Uri, ctrl: CCAnnotationController): Promise<void> {
+  async annotate(fileUri: Uri, ctrl: AnnotationController): Promise<void> {
     try {
       const content = await this.getAnnotatedFileContent(fileUri.fsPath);
       ctrl.setAnnotationInText(content);
     } catch (error) {
       const message = getErrorMessage(error).replace(/[\r\n]+/g, " ");
-      CCUIControl.showErrorMessage(message);
+      UiControl.showErrorMessage(message);
     }
   }
 
@@ -1059,7 +960,7 @@ export class ClearCase {
 
       await this.runCleartoolCommand(
         "getAnnotationFileContent",
-        new CCArgs(["annotate", "-out", "-", "-nhe", "-fmt", `"${fmt}${sep}"`, `${fileP}`]),
+        new CmdArgs(["annotate", "-out", "-", "-nhe", "-fmt", `"${fmt}${sep}"`, `${fileP}`]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
         (_code: number, output: string, error: string) => {
@@ -1091,7 +992,7 @@ export class ClearCase {
       let errorRes = "";
       await this.runCleartoolCommand(
         "getCurrentActivity",
-        new CCArgs(["lsactivity", "-cac", "-fmt", `"%n"`]),
+        new CmdArgs(["lsactivity", "-cac", "-fmt", `"%n"`]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
         (_code: number, output: string, error: string) => {
@@ -1113,7 +1014,7 @@ export class ClearCase {
       let errorRes = "";
       await this.runCleartoolCommand(
         "getQuickPickActivities",
-        new CCArgs(["lsactivity"]),
+        new CmdArgs(["lsactivity"]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
         (_code: number, output: string, error: string) => {
@@ -1175,7 +1076,7 @@ export class ClearCase {
       }
       await this.runCleartoolCommand(
         "setViewActivities",
-        new CCArgs(["setactivity", `${id}`]),
+        new CmdArgs(["setactivity", `${id}`]),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
         (_code: number, output: string, error: string) => {
@@ -1190,12 +1091,12 @@ export class ClearCase {
     return resultOut;
   }
 
-  async getFilePredecessorVersion(fsPath: string): Promise<CCVersionType> {
-    const version = new CCVersionType();
+  async getFilePredecessorVersion(fsPath: string): Promise<VersionType> {
+    const version = new VersionType();
     if (fsPath !== "") {
       await this.runCleartoolCommand(
         "getFilePredecessorVersion",
-        new CCArgs(["describe", "-fmt", "%[version_predecessor]p", fsPath]),
+        new CmdArgs(["describe", "-fmt", "%[version_predecessor]p", fsPath]),
         dirname(fsPath),
         null,
         (_code: number, output: string) => {
@@ -1224,7 +1125,7 @@ export class ClearCase {
     if (workspace.workspaceFolders !== undefined) {
       await this.runCleartoolCommand(
         "readFileAtVersion",
-        new CCArgs(["get", "-to", tempFile], [fsPath], version),
+        new CmdArgs(["get", "-to", tempFile], [fsPath], version),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
         (_code: number, output: string) => {
@@ -1243,7 +1144,7 @@ export class ClearCase {
 
   private async runCleartoolCommand(
     cmdId: string,
-    cmd: CCArgs,
+    cmd: CmdArgs,
     cwd: string,
     onData: ((data: string[]) => void) | null,
     onFinished?: (code: number, output: string, error: string) => void
@@ -1362,7 +1263,7 @@ export class ClearCase {
     if (workspace.workspaceFolders !== undefined) {
       await this.runCleartoolCommand(
         "detectViewType",
-        new CCArgs(this.lsView),
+        new CmdArgs(this.lsView),
         workspace.workspaceFolders[0].uri.fsPath,
         null,
         (_code: number, output: string) => {
@@ -1483,7 +1384,7 @@ export class ClearCase {
     let retVal = false;
     if (newLabel !== "") {
       retVal = true;
-      const args = new CCArgs(["lstype", `lbtype:${newLabel}`]);
+      const args = new CmdArgs(["lstype", `lbtype:${newLabel}`]);
       try {
         await this.runCleartoolCommand(
           "existsLabelType",
@@ -1507,7 +1408,7 @@ export class ClearCase {
   public async createLabelType(doc: Uri, newLabel: string): Promise<void> {
     if (newLabel !== "") {
       if ((await this.existsLabelType(doc, newLabel)) === false) {
-        const args = new CCArgs(["mklbtype", "-nc", newLabel]);
+        const args = new CmdArgs(["mklbtype", "-nc", newLabel]);
         try {
           await this.runCleartoolCommand(
             "createLabelType",
@@ -1528,7 +1429,7 @@ export class ClearCase {
   public async applyLabel(doc: Uri, newLabel: string): Promise<void> {
     if (newLabel !== "") {
       if ((await this.existsLabelType(doc, newLabel)) === true) {
-        const args = new CCArgs(["mklabel", "-replace", newLabel], [doc.fsPath]);
+        const args = new CmdArgs(["mklabel", "-replace", newLabel], [doc.fsPath]);
         try {
           await this.runCleartoolCommand(
             "applyLabel",
@@ -1552,7 +1453,7 @@ export class ClearCase {
     if (file && file.fsPath !== "") {
       await this.runCleartoolCommand(
         "getVersionsOfFile",
-        new CCArgs(["lsvtree", "-short"], [file.fsPath], version.version),
+        new CmdArgs(["lsvtree", "-short"], [file.fsPath], version.version),
         dirname(file.fsPath),
         null,
         (_code: number, output: string) => {
