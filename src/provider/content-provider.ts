@@ -6,18 +6,18 @@ import {
   CancellationToken,
   ProviderResult,
 } from "vscode";
-import { ClearCase } from "./clearcase";
-import { IDisposable } from "./model";
-import { toCcUri, fromCcUri } from "./uri";
-import { CCVersionState, CCVersionType } from "./ccVerstionType";
+import { IDisposable } from "../model";
+import { toCcUri, fromCcUri } from "../uri";
+import { CCVersionState, VersionType } from "../clearcase/verstion-type";
+import { Clearcase } from "../clearcase/clearcase";
 
-export class CCContentProvider implements TextDocumentContentProvider, QuickDiffProvider, IDisposable {
+export class ContentProvider implements TextDocumentContentProvider, QuickDiffProvider, IDisposable {
   private mDisposals: IDisposable[] = [];
   private mOriginalContent = "";
   private mOriginalPath = "";
-  private mOriginalVersion: CCVersionType = new CCVersionType();
+  private mOriginalVersion: VersionType = new VersionType();
 
-  constructor(private mCcHandler: ClearCase | null) {
+  constructor(private mCcHandler: Clearcase | null) {
     if (this.mCcHandler !== null) {
       this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc", this));
       this.mDisposals.push(workspace.registerTextDocumentContentProvider("cc-orig", this));
@@ -71,7 +71,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
     }
     let currentVersion = this.mOriginalVersion;
     if (this.mOriginalPath !== uri.fsPath) {
-      currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? new CCVersionType();
+      currentVersion = (await this.mCcHandler?.getVersionInformation(uri, false)) ?? new VersionType();
       this.mOriginalVersion = currentVersion;
       this.mOriginalPath = uri.fsPath;
     }
@@ -81,7 +81,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
       if (isCheckedOut) {
         const version =
           (await this.mCcHandler?.getFilePredecessorVersion(uri.fsPath)) ??
-          new CCVersionType(currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
+          new VersionType(currentVersion.version.replace(/(CHECKEDOUT)$/i, "LATEST"));
         return toCcUri(uri, version.version);
       }
       if (currentVersion.state === CCVersionState.Hijacked) {
@@ -94,7 +94,7 @@ export class CCContentProvider implements TextDocumentContentProvider, QuickDiff
   public resetCache(): void {
     this.mOriginalPath = "";
     this.mOriginalContent = "";
-    this.mOriginalVersion = new CCVersionType();
+    this.mOriginalVersion = new VersionType();
   }
 
   dispose(): void {
