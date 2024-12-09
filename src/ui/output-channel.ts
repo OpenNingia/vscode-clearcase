@@ -10,7 +10,7 @@ export enum LogLevel {
   None,
 }
 
-export default class CCOutputChannel implements OutputChannel {
+export default class CcOutputChannel implements OutputChannel {
   name: string;
   debug: LogLevel = LogLevel.None;
 

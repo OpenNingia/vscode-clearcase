@@ -1,6 +1,6 @@
 import { MessageItem, window } from "vscode";
 
-export default class CCUIControl {
+export default class UiControl {
   public static async showCreateLabelInput(): Promise<string> {
     return (await window.showInputBox({ ignoreFocusOut: true, title: "Set a label after checkin" })) ?? "";
   }

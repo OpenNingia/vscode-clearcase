@@ -4,13 +4,13 @@ import * as path from "path";
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from "vscode";
-import { CCConfigHandler } from "../../ccConfigHandler";
-import { CCScmProvider } from "../../ccScmProvider";
+import { ClearcaseScmProvider } from "../../provider/clearcase-scm-provider";
 import { chmodSync, mkdirSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
 import { after, before, beforeEach } from "mocha";
 import SuiteOutputChannel from "../mock/SuiteOutputChannel";
-import { CCVersionState } from "../../ccVerstionType";
-import CCOutputChannel, { LogLevel } from "../../ccOutputChannel";
+import { CCVersionState } from "../../clearcase/verstion-type";
+import CcOutputChannel, { LogLevel } from "../../ui/output-channel";
+import { ConfigurationHandler } from "../../configuration/configuration-handler";
 // import * as myExtension from '../../extension';
 
 //const WS_ROOT = process.env["WS_ROOT"] ? process.env["WS_ROOT"] : "";
@@ -28,7 +28,7 @@ suite("Cleartool Commands Test Suite", () => {
   let extensionContext: vscode.ExtensionContext;
   //let outputChannelBase: SuiteOutputChannel;
   //let outputChannel: CCOutputChannel;
-  //let configHandler: CCConfigHandler;
+  //let configHandler: ConfigurationHandler;
   //let provider: CCScmProvider;
   let testDir: string;
 
@@ -72,7 +72,7 @@ suite("Cleartool Commands Test Suite", () => {
     //    outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
     //    outputChannel = new CCOutputChannel(outputChannelBase);
     //
-    //    configHandler = new CCConfigHandler();
+    //    configHandler = new ConfigurationHandler();
     //    configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     //    console.log("init", configHandler.configuration.executable.value);
     //    configHandler.configuration.logLevel.value = LogLevel.Debug;
@@ -86,9 +86,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Cleartool change executable", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -103,13 +103,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Cleartool checkin file", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -117,7 +117,7 @@ suite("Cleartool Commands Test Suite", () => {
     configHandler.configuration.checkinCommand.value = "-nc ${filename}";
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
-    await provider.clearCase?.checkinFile([file]);
+    await provider.clearcase?.checkinFile([file]);
     delayTime(1000);
     assert.strictEqual(outputChannelBase.getLine(0), `ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
@@ -129,13 +129,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Cleartool checkout file (dynamic view)", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -143,7 +143,7 @@ suite("Cleartool Commands Test Suite", () => {
     configHandler.configuration.checkoutCommand.value = "-nc ${filename}";
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
-    await provider.clearCase?.checkoutFile([file]);
+    await provider.clearcase?.checkoutFile([file]);
     delayTime(300);
     assert.strictEqual(outputChannelBase.getLine(0), `co,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
@@ -155,20 +155,20 @@ suite("Cleartool Commands Test Suite", () => {
   test("Cleartool checkout file (snapshot view)", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "SNAPSHOT";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
     configHandler.configuration.useClearDlg.value = false;
     configHandler.configuration.checkoutCommand.value = "-nc ${filename}";
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
-    await provider.clearCase?.checkoutFile([file]);
+    await provider.clearcase?.checkoutFile([file]);
     delayTime(300);
     assert.strictEqual(outputChannelBase.getLine(0), `co,-usehijack,-nc,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
@@ -180,20 +180,20 @@ suite("Cleartool Commands Test Suite", () => {
   test("Cleartool undo checkout file (keep)", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
     configHandler.configuration.useClearDlg.value = false;
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
-    await provider.clearCase?.undoCheckoutFile([file]);
+    await provider.clearcase?.undoCheckoutFile([file]);
     delayTime(300);
     assert.strictEqual(outputChannelBase.getLine(0), `unco,-keep,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
@@ -205,13 +205,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Cleartool undo checkout file (delete)", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -219,7 +219,7 @@ suite("Cleartool Commands Test Suite", () => {
     configHandler.configuration.uncoKeepFile.value = false;
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
-    await provider.clearCase?.undoCheckoutFile([file]);
+    await provider.clearcase?.undoCheckoutFile([file]);
     delayTime(300);
     assert.strictEqual(outputChannelBase.getLine(0), `unco,-rm,${path.join(testDir, "simple01.txt")}\n`);
     assert.strictEqual(
@@ -231,13 +231,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Cleartool checkout file already checked out", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -247,7 +247,7 @@ suite("Cleartool Commands Test Suite", () => {
     const file = path.join(testDir, "simple04.txt");
 
     const fileUri = vscode.Uri.parse(file);
-    await provider.clearCase?.checkoutFile([fileUri]);
+    await provider.clearcase?.checkoutFile([fileUri]);
     delayTime(300);
     assert.strictEqual(outputChannelBase.getLine(0), `co,-nc,${file}\n`);
     assert.strictEqual(
@@ -259,9 +259,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Path names with environment variable", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -274,9 +274,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Path names with multiple environment variables", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -290,9 +290,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Path names with invalid variable 1", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -306,9 +306,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Path names with invalid variable 2", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -322,9 +322,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Path names with invalid variable 3", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -338,9 +338,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Path names with invalid variable 4", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -354,9 +354,9 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Path names with invalid variable 5", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
@@ -370,13 +370,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Version information of hijacked file", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -384,7 +384,7 @@ suite("Cleartool Commands Test Suite", () => {
 
     const info = `${file}@@/main/3 [hijacked]           Rule: element * A_SUPER_LABEL.0.0.1.0.1_3 [-mkbranch my_owndev]`;
 
-    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    const version = provider.clearcase?.getVersionString(`${info}`, true);
     assert.strictEqual(version?.version, "/main/3");
     assert.strictEqual(version?.state, CCVersionState.Hijacked);
   });
@@ -392,13 +392,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Version information of checkedin file", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -406,7 +406,7 @@ suite("Cleartool Commands Test Suite", () => {
 
     const info = `${file}@@/main/testbranch_01/my_owndev/3      Rule: element * A_SUPER_LABEL.0.0.1.0.1_3 [-mkbranch my_owndev]`;
 
-    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    const version = provider.clearcase?.getVersionString(`${info}`, true);
     assert.strictEqual(version?.version, "/main/testbranch_01/my_owndev/3");
     assert.strictEqual(version?.state, CCVersionState.Versioned);
   });
@@ -414,13 +414,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Version information of checkedout file", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -428,7 +428,7 @@ suite("Cleartool Commands Test Suite", () => {
 
     const info = `${file}@@/main/testbranch_01/my_owndev/CHECKEDOUT from /main/testbranch_01/my_owndev/0         Rule: CHECKEDOUT`;
 
-    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    const version = provider.clearcase?.getVersionString(`${info}`, true);
     assert.strictEqual(version?.version, "/main/testbranch_01/my_owndev/CHECKEDOUT");
     assert.strictEqual(version?.state, CCVersionState.Versioned);
   });
@@ -436,13 +436,13 @@ suite("Cleartool Commands Test Suite", () => {
   test("Extension: Version information of view private file", async () => {
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
@@ -450,7 +450,7 @@ suite("Cleartool Commands Test Suite", () => {
 
     const info = `${file}`;
 
-    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    const version = provider.clearcase?.getVersionString(`${info}`, true);
     assert.strictEqual(version?.version, "view private");
     assert.strictEqual(version.state, CCVersionState.Untracked);
   });
@@ -459,17 +459,17 @@ suite("Cleartool Commands Test Suite", () => {
     const info = ``;
     process.env["CLEARCASE_TEST_VIEWTYPE"] = "DYNAMIC";
     const outputChannelBase = new SuiteOutputChannel("Clearcase SCM");
-    const outputChannel = new CCOutputChannel(outputChannelBase);
+    const outputChannel = new CcOutputChannel(outputChannelBase);
 
-    const configHandler = new CCConfigHandler();
+    const configHandler = new ConfigurationHandler();
     configHandler.configuration.executable.value = path.join(__dirname, "../../../src/test/", "bin/cleartool.sh");
     configHandler.configuration.logLevel.value = LogLevel.Debug;
     configHandler.configuration.useLabelAtCheckin.value = false;
-    const provider = new CCScmProvider(extensionContext, outputChannel, configHandler);
+    const provider = new ClearcaseScmProvider(extensionContext, outputChannel, configHandler);
     await provider.init();
     outputChannel.clear();
 
-    const version = provider.clearCase?.getVersionString(`${info}`, true);
+    const version = provider.clearcase?.getVersionString(`${info}`, true);
     assert.strictEqual(version?.version, "not in a VOB");
     assert.strictEqual(version?.state, CCVersionState.Untracked);
   });

@@ -1,17 +1,14 @@
 import { CancellationToken, CodeLens, CodeLensProvider, ProviderResult, Range, TextDocument } from "vscode";
-import { CCAnnotateLens } from "./ccAnnotateLens";
-import { CCConfigHandler } from "./ccConfigHandler";
-import { CCScmProvider } from "./ccScmProvider";
+import { AnnotationLens } from "../annotation/annotation-lens";
+import { ClearcaseScmProvider } from "./clearcase-scm-provider";
+import { ConfigurationHandler } from "../configuration/configuration-handler";
 
-export class CCCodeLensProvider implements CodeLensProvider {
+export class AnnotationLensProvider implements CodeLensProvider {
   static selector = {
     scheme: "file",
   };
 
-  constructor(
-    private mCfg: CCConfigHandler,
-    private mProvider: CCScmProvider
-  ) { }
+  constructor(private mCfg: ConfigurationHandler, private mProvider: ClearcaseScmProvider) {}
 
   provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]> {
     if (!this.mCfg.configuration.showAnnotationCodeLens.value) {
@@ -26,10 +23,10 @@ export class CCCodeLensProvider implements CodeLensProvider {
       return [];
     }
 
-    const isClearcaseObject = (await this.mProvider.clearCase?.isClearcaseObject(document.uri)) ?? false;
+    const isClearcaseObject = (await this.mProvider.clearcase?.isClearcaseObject(document.uri)) ?? false;
 
     if (document !== undefined && isClearcaseObject) {
-      return [new CCAnnotateLens(document, new Range(0, 0, 0, 1))];
+      return [new AnnotationLens(document, new Range(0, 0, 0, 1))];
     }
     return [];
   }
@@ -39,7 +36,7 @@ export class CCCodeLensProvider implements CodeLensProvider {
       return codeLens;
     }
 
-    if (codeLens instanceof CCAnnotateLens) {
+    if (codeLens instanceof AnnotationLens) {
       codeLens.command = {
         title: "Toggle annotations",
         command: "extension.ccAnnotate",

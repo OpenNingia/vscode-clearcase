@@ -368,7 +368,7 @@
         {
           "command": "extension.ccVersionTree",
           "group": "navigation@108",
-          "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         }
       ],
       "editor/context": [
@@ -454,7 +454,7 @@
         },
         {
           "command": "extension.ccOpenResource",
-          "when": "scmProvider == cc && vscode-clearcase:enabled",
+          "when": "scmProvider == cc && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects",
           "group": "cc_file"
         },
         {

@@ -6,17 +6,17 @@ import {
   TextEditorDecorationType,
   window,
 } from "vscode";
-import { CCConfigHandler } from "./ccConfigHandler";
-import { CCConfiguration } from "./ccConfiguration";
-import { IDisposable } from "./model";
+import { IDisposable } from "../model";
+import { Configuration } from "../configuration/configuration";
+import { ConfigurationHandler } from "../configuration/configuration-handler";
 
-export class CCAnnotationController implements IDisposable {
+export class AnnotationController implements IDisposable {
   private mDecorationType: TextEditorDecorationType;
   private mIsActive = false;
-  private mConfiguration: CCConfiguration;
+  private mConfiguration: Configuration;
   private mDisposables: IDisposable[] = [];
 
-  constructor(private editor: TextEditor, private configHandler: CCConfigHandler) {
+  constructor(private editor: TextEditor, private configHandler: ConfigurationHandler) {
     this.mDisposables.push(window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChange(editor)));
     this.mDisposables.push(this.configHandler.onDidChangeConfiguration(() => this.onConfigurationChanged()));
     const ro: DecorationRenderOptions = {
