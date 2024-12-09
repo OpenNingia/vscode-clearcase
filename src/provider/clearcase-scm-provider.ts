@@ -53,8 +53,6 @@ export class ClearcaseScmProvider implements IDisposable {
   private mListLock: Lock | null = null;
   private mDisposables: IDisposable[] = [];
   private mVersion = "0.0.0";
-  private mFirstViewPrivateUpdate = true;
-  private mFirstHijackedUpdate = true;
 
   private mWindowChangedEvent: EventEmitter<boolean> = new EventEmitter<boolean>();
 
@@ -75,13 +73,13 @@ export class ClearcaseScmProvider implements IDisposable {
         this.outputChannel.logLevel = this.configHandler.configuration.logLevel.value;
       }
       if (this.configHandler.configuration.showHijackedFiles.changed) {
-        if (this.mFirstHijackedUpdate === false) {
+        if (this.mHijackedGrp?.firstUpdate === false) {
           this.mHijackedGrp?.updateResourceGroup();
           this.commandUpdateHijackedFilesList();
         }
       }
       if (this.configHandler.configuration.showViewPrivateFiles.changed) {
-        if (this.mFirstViewPrivateUpdate === false) {
+        if (this.mUntrackedGrp?.firstUpdate === false) {
           this.mUntrackedGrp?.updateResourceGroup();
           this.commandUpdateUntrackedList();
         }
@@ -191,19 +189,19 @@ export class ClearcaseScmProvider implements IDisposable {
         this.handleChangeFiles(evArgs);
       });
 
-      this.clearCase?.onViewPrivateFileListChange((files: string[]) => {
-        this.updateViewPrivateListHandler(files);
+      this.clearcase?.onViewPrivateFileListChange((files: string[]) => {
+        this.mUntrackedGrp?.handleUpdateFiles(files);
       });
 
-      this.clearCase?.onViewHijackedFileListChange((files: string[]) => {
-        this.updateHijackedListHandler(files);
+      this.clearcase?.onViewHijackedFileListChange((files: string[]) => {
+        this.mHijackedGrp?.handleUpdateFiles(files);
       });
 
       this.bindScmCommand();
 
       this.mIsUpdatingUntracked = false;
 
-      this.updateCheckedOutList();
+      this.mCheckedoutGrp?.createList();
       //this.createHijackedList();
       // this.createViewPrivateList();
       this.commandUpdateUntrackedList();

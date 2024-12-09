@@ -4,9 +4,14 @@ import GroupIf from "./group-if";
 
 export default class Group implements GroupIf {
   protected mGroup: SourceControlResourceState[] = [];
+  protected mFirstUpdate = true;
 
   constructor(protected mResourceGroup: SourceControlResourceGroup) {
     this.mResourceGroup.hideWhenEmpty = true;
+  }
+
+  handleUpdateFiles(files: string[]): void {
+    throw new Error(`Method not implemented (${files.length}).`);
   }
 
   getFileObjects(): Uri[] {
@@ -36,5 +41,9 @@ export default class Group implements GroupIf {
   }
   updateResourceGroup(): void {
     throw new Error("Method not implemented.");
+  }
+
+  get firstUpdate(): boolean {
+    return this.mFirstUpdate;
   }
 }

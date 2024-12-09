@@ -449,12 +449,12 @@
       "scm/resourceState/context": [
         {
           "command": "extension.ccOpenResource",
-          "when": "scmProvider == cc && vscode-clearcase:enabled",
+          "when": "scmProvider == cc && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects",
           "group": "inline@1"
         },
         {
           "command": "extension.ccOpenResource",
-          "when": "scmProvider == cc && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects",
+          "when": "scmProvider == cc && vscode-clearcase:enabled",
           "group": "cc_file"
         },
         {

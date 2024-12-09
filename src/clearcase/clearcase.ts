@@ -219,6 +219,14 @@ export class Clearcase {
     }
   }
 
+  get onViewPrivateFileListChange(): Event<string[]> {
+    return this.mUpdateViewPrivateListEvent.event;
+  }
+
+  get onViewHijackedFileListChange(): Event<string[]> {
+    return this.mUpdateHijackedListEvent.event;
+  }
+
   async checkoutFile(docs: Uri[]): Promise<boolean> {
     const coArgTmpl = this.configHandler.configuration.checkoutCommand.value;
     const defComment = this.configHandler.configuration.defaultComment.value;

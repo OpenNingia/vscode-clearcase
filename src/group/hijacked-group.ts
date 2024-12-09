@@ -16,21 +16,11 @@ export class HijackedGroup extends Group {
   }
 
   public override async createList(): Promise<void> {
-    let hijacked: ScmResource[] = [];
-
     if (this.mConfighandler.configuration.showHijackedFiles.value) {
       this.mClearcase?.killUpdateFindHijacked();
-      this.mClearcase?.findHijacked().then((files) => {
-        hijacked = files
-          .map((val) => {
-            return new ScmResource(ResourceGroupType.Index, Uri.file(val), ScmStatus.Hijacked);
-          })
-          .sort((val1, val2) => {
-            return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
-          });
-        this.mGroup = [...hijacked];
-        this.updateResourceGroup();
-      });
+      this.mGroup = [];
+      await this.mClearcase?.findHijacked();
+      this.mFirstUpdate = false;
     }
   }
 
@@ -43,7 +33,7 @@ export class HijackedGroup extends Group {
           hijackExists = true;
           return isHijacked;
         }
-        return false;
+        return true;
       }) ?? [];
 
     if (isHijacked && !hijackExists) {
@@ -64,6 +54,18 @@ export class HijackedGroup extends Group {
 
   public override handleDeleteFile(file: Uri): void {
     super.handleDeleteFile(file);
+    this.updateResourceGroup();
+  }
+
+  public override handleUpdateFiles(files: string[]): void {
+    const hijacked = files
+      .map((val) => {
+        return new ScmResource(ResourceGroupType.Index, Uri.file(val), ScmStatus.Hijacked);
+      })
+      .sort((val1, val2) => {
+        return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
+      });
+    this.mGroup = [...this.mGroup, ...hijacked];
     this.updateResourceGroup();
   }
 }
