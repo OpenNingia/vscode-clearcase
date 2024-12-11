@@ -37,7 +37,7 @@ export class ViewPrivateGroup extends Group {
       }) ?? [];
 
     if (isViewPrivate && !viewPrivateExists) {
-      filtered?.push(new ScmResource(ResourceGroupType.Index, file, ScmStatus.Hijacked));
+      filtered?.push(new ScmResource(ResourceGroupType.Index, file, ScmStatus.Untracked));
     }
     this.mGroup = [...filtered];
     this.updateResourceGroup();

@@ -807,7 +807,7 @@ export class ClearcaseScmProvider implements IDisposable {
     if (editor && this.clearcase && editor?.document.uri.scheme !== "output") {
       const version = await this.clearcase?.getVersionInformation(editor?.document.uri, true);
       this.mHijackedGrp?.handleChangedFile(editor?.document.uri, version);
-      this.mUntrackedGrp?.handleChangedFile(editor.document.uri, version);
+      this.mUntrackedGrp?.handleChangedFile(editor?.document.uri, version);
     }
     if (editor?.document.uri.scheme !== "output") {
       this.mWindowChangedEvent.fire(editor !== undefined);
