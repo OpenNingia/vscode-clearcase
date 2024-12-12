@@ -1,7 +1,7 @@
 import { exec, ChildProcess, spawn, ChildProcessWithoutNullStreams } from "child_process";
 import * as fs from "fs";
 import { type } from "os";
-import { dirname, isAbsolute, join } from "path";
+import * as path from "path";
 
 import * as tmp from "tmp";
 import {
@@ -174,7 +174,7 @@ export class Clearcase {
     await this.runCleartoolCommand(
       "execOnScmFile",
       new CmdArgs(["ls"], [docs[0]?.fsPath]),
-      dirname(docs[0]?.fsPath),
+      path.dirname(docs[0]?.fsPath),
       null,
       (code: number, _output: string, error: string) => {
         if (code !== 0 || error.length > 0) {
@@ -280,7 +280,7 @@ export class Clearcase {
     }
 
     try {
-      await this.runCleartoolCommand("checkoutFile", cmd, dirname(docs[0]?.fsPath), null, () =>
+      await this.runCleartoolCommand("checkoutFile", cmd, path.dirname(docs[0]?.fsPath), null, () =>
         this.mUpdateEvent.fire(docs)
       );
     } catch (error) {
@@ -369,7 +369,7 @@ export class Clearcase {
     await this.runCleartoolCommand(
       "undoCheckoutFile",
       new CmdArgs(["unco", rm], files),
-      dirname(docs[0]?.fsPath),
+      path.dirname(docs[0]?.fsPath),
       null,
       () => this.mUpdateEvent.fire(docs)
     );
@@ -383,7 +383,7 @@ export class Clearcase {
       await this.runCleartoolCommand(
         "createVersionedObject",
         new CmdArgs(["mkelem", "-mkp", "-nc"], files),
-        dirname(docs[0]?.fsPath),
+        path.dirname(docs[0]?.fsPath),
         null,
         () => this.mUpdateEvent.fire(docs)
       );
@@ -409,7 +409,7 @@ export class Clearcase {
         await this.runCleartoolCommand(
           "cancelHijacked",
           new CmdArgs(["update", "-overwrite"], [d.fsPath]),
-          dirname(d.fsPath),
+          path.dirname(d.fsPath),
           null,
           () => this.mUpdateEvent.fire([d])
         );
@@ -509,7 +509,7 @@ export class Clearcase {
   }
 
   private async doCheckinFiles(args: CmdArgs, docs: Uri[]) {
-    await this.runCleartoolCommand("checkinFiles", args, dirname(docs[0]?.fsPath), null, () =>
+    await this.runCleartoolCommand("checkinFiles", args, path.dirname(docs[0]?.fsPath), null, () =>
       this.mUpdateEvent.fire(docs)
     );
     if (this.configHandler.configuration.useLabelAtCheckin.value) {
@@ -528,7 +528,7 @@ export class Clearcase {
       this.runCleartoolCommand(
         "versionTree",
         new CmdArgs(["lsvtree", "-graphical"], [doc.fsPath]),
-        dirname(doc.fsPath),
+        path.dirname(doc.fsPath),
         null
       );
     }
@@ -539,7 +539,7 @@ export class Clearcase {
       this.runCleartoolCommand(
         "diffWithPrevious",
         new CmdArgs(["diff", "-graph", "-pred"], [doc.fsPath]),
-        dirname(doc.fsPath),
+        path.dirname(doc.fsPath),
         null
       );
     }
@@ -634,8 +634,8 @@ export class Clearcase {
           const results: string[] = output.trim().split(/\r\n|\r|\n/);
           resNew = results.map((f) => {
             let filename = f;
-            if (f.startsWith(".") || !isAbsolute(f)) {
-              filename = join(cwd, f);
+            if (f.startsWith(".") || !path.isAbsolute(f)) {
+              filename = path.join(cwd, f);
             }
             return filename;
           });
@@ -693,8 +693,8 @@ export class Clearcase {
               })
               .map((f) => {
                 let filename = f;
-                if (f.startsWith(".") || !isAbsolute(f)) {
-                  filename = join(wsf, f);
+                if (f.startsWith(".") || !path.isAbsolute(f)) {
+                  filename = path.join(wsf, f);
                 }
                 return filename;
               })
@@ -727,8 +727,8 @@ export class Clearcase {
             })
             .map((f) => {
               let filename = f;
-              if (f.startsWith(".") || !isAbsolute(f)) {
-                filename = join(wsf, f);
+              if (f.startsWith(".") || !path.isAbsolute(f)) {
+                filename = path.join(wsf, f);
               }
               return filename;
             })
@@ -838,7 +838,7 @@ export class Clearcase {
   async getVersionInformation(iUri: Uri, normalize = true): Promise<VersionType> {
     let fileVers = new VersionType();
     if (iUri !== undefined && this.isView === true) {
-      const cwd = dirname(iUri.fsPath);
+      const cwd = path.dirname(iUri.fsPath);
       await this.runCleartoolCommand(
         "getVersionInformation",
         new CmdArgs(["ls"], [iUri.fsPath]),
@@ -917,7 +917,7 @@ export class Clearcase {
         updateFsObj = p;
         cwd = p;
       } else if (stat.isFile()) {
-        cwd = updateFsObj = dirname(p);
+        cwd = updateFsObj = path.dirname(p);
         if (updateType === 1) {
           updateFsObj = p;
         }
@@ -1105,7 +1105,7 @@ export class Clearcase {
       await this.runCleartoolCommand(
         "getFilePredecessorVersion",
         new CmdArgs(["describe", "-fmt", "%[version_predecessor]p", fsPath]),
-        dirname(fsPath),
+        path.dirname(fsPath),
         null,
         (_code: number, output: string) => {
           //  Only log stdout contents here; stderr is logged by runCleartoolCommand if non-empty
@@ -1397,7 +1397,7 @@ export class Clearcase {
         await this.runCleartoolCommand(
           "existsLabelType",
           args,
-          dirname(doc.fsPath),
+          path.dirname(doc.fsPath),
           null,
           (_code: number, output: string, _error: string) => {
             if (_error.length > 0) {
@@ -1421,7 +1421,7 @@ export class Clearcase {
           await this.runCleartoolCommand(
             "createLabelType",
             args,
-            dirname(doc.fsPath),
+            path.dirname(doc.fsPath),
             null,
             (_code: number, output: string) => {
               this.outputChannel.appendLine(output);
@@ -1442,7 +1442,7 @@ export class Clearcase {
           await this.runCleartoolCommand(
             "applyLabel",
             args,
-            dirname(doc.fsPath),
+            path.dirname(doc.fsPath),
             null,
             (_code: number, output: string) => {
               this.outputChannel.appendLine(output);
@@ -1462,7 +1462,7 @@ export class Clearcase {
       await this.runCleartoolCommand(
         "getVersionsOfFile",
         new CmdArgs(["lsvtree", "-short"], [file.fsPath], version.version),
-        dirname(file.fsPath),
+        path.dirname(file.fsPath),
         null,
         (_code: number, output: string) => {
           if (_code === 0 && output !== "") {

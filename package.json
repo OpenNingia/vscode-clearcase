@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.2.0-beta.4",
+  "version": "5.2.0-beta.6",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -879,6 +879,7 @@
     "eslint": "^8.23.0",
     "eslint-plugin-mdx": "^3.1.5",
     "glob": "^8.0.3",
+    "ignore": "^6.0.2",
     "ignore-walk": "^7.0.0",
     "mocha": "^10.0.0",
     "ts-loader": "^9.3.1",
@@ -890,7 +891,6 @@
   },
   "dependencies": {
     "@types/ignore-walk": "^4.0.3",
-    "ignore": "^5.0.5",
     "tmp": "^0.2.1",
     "vscode-nls": "^5.2.0"
   }

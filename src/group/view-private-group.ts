@@ -20,6 +20,7 @@ export class ViewPrivateGroup extends Group {
       this.mClearcase?.killUpdateFindViewPrivate();
       this.mGroup = [];
       await this.mClearcase?.findViewPrivate();
+      this.updateResourceGroup();
       this.mFirstUpdate = false;
     }
   }
