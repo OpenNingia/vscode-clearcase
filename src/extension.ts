@@ -1,10 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import { Disposable, ExtensionContext, window, workspace } from "vscode";
-import { ClearcaseScmProvider } from "./provider/clearcase-scm-provider";
-import { UiInformation } from "./ui/ui-information";
-import CcOutputChannel from "./ui/output-channel";
 import { ConfigurationHandler } from "./configuration/configuration-handler";
+import { ClearcaseScmProvider } from "./provider/clearcase-scm-provider";
+import CcOutputChannel from "./ui/output-channel";
+import { UiInformation } from "./ui/ui-information";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
