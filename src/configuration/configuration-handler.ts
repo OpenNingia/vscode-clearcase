@@ -96,6 +96,7 @@ export class ConfigurationHandler implements IDisposable {
       this.setChangeConfigDate<boolean>(config, "useLabelAtCheckin", this.mConfiguration.useLabelAtCheckin);
       this.setChangeConfigDate<LogLevel>(config, "logLevel", this.mConfiguration.logLevel);
       this.setChangeConfigDate<number>(config, "chunkSize", this.mConfiguration.chunkSize);
+      this.setChangeConfigDate<boolean>(config, "runsLocal", this.mConfiguration.runsLocal);
 
       return true;
     }

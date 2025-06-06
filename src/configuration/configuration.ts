@@ -38,6 +38,7 @@ export class Configuration {
   private mLogLevel = new ConfigurationProperty<LogLevel>(LogLevel.None);
 
   private mChunkSize = new ConfigurationProperty<number>(100);
+  private mRunsLocal = new ConfigurationProperty<boolean>(false);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -153,5 +154,9 @@ export class Configuration {
 
   get chunkSize(): ConfigurationProperty<number> {
     return this.mChunkSize;
+  }
+
+  get runsLocal(): ConfigurationProperty<boolean> {
+    return this.mRunsLocal;
   }
 }

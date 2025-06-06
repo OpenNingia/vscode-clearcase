@@ -49,7 +49,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
   /* eslint-disable */
   (global as any).testExtensionContext = context;
   /* eslint-enable */
-
   const disposables: Disposable[] = [];
   context.subscriptions.push(new Disposable(() => Disposable.from(...disposables).dispose()));
   if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {

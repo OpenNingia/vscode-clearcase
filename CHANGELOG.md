@@ -1,5 +1,16 @@
 ## Release Notes
 
+### 5.2.0
+
+_Feature_
+
+- Set the execution context of the extension
+
+_Fixes_
+
+- better path handling when using the pathMapping configuration
+- does not create a _${env_ file if default _${env:CLEACASE_AVOBS}_ is not part of the environment
+
 ### 5.1.0
 
 _Feature_

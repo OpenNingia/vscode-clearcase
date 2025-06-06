@@ -16,6 +16,7 @@ import {
   TextDocument,
   MessageItem,
   ProgressLocation,
+  ExtensionKind,
 } from "vscode";
 import { ScmResource } from "../ui/scm-resource";
 import { Clearcase } from "../clearcase/clearcase";
@@ -53,6 +54,7 @@ export class ClearcaseScmProvider implements IDisposable {
   private mListLock: Lock | null = null;
   private mDisposables: IDisposable[] = [];
   private mVersion = "0.0.0";
+  private mRunsLocal = false;
 
   private mWindowChangedEvent: EventEmitter<boolean> = new EventEmitter<boolean>();
 
@@ -68,6 +70,9 @@ export class ClearcaseScmProvider implements IDisposable {
     private outputChannel: CcOutputChannel,
     private configHandler: ConfigurationHandler
   ) {
+    this.mRunsLocal = mContext?.extension?.extensionKind === ExtensionKind.UI;
+    this.configHandler.configuration.runsLocal.value = this.mRunsLocal;
+    outputChannel.appendLine(`Extension runs on UI: ${this.mRunsLocal}`, LogLevel.Trace);
     this.configHandler.onDidChangeConfiguration(async () => {
       if (this.configHandler.configuration.logLevel.changed) {
         this.outputChannel.logLevel = this.configHandler.configuration.logLevel.value;

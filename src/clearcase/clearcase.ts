@@ -243,6 +243,10 @@ export class Clearcase {
             ignoreFocusOut: true,
             prompt: "Checkout comment",
           })) ?? "";
+        if (comment === "") {
+          this.outputChannel.appendLine(`Empty comment. Do nothing.`, LogLevel.Trace);
+          return false;
+        }
       }
       cmdOpts[idx] = comment;
     } else {
@@ -393,11 +397,26 @@ export class Clearcase {
   }
 
   async createHijackedObject(docs: Uri[]): Promise<void> {
+    this.outputChannel.appendLine(`Hijack files (${docs.length})`, LogLevel.Trace);
     if (this.mViewType === ViewType.Snapshot) {
       for (const d of docs) {
-        fs.chmodSync(d.fsPath, 0o777);
+        let dNormalized = d.fsPath;
+        if (this.configHandler.configuration.runsLocal.value) {
+          dNormalized = this.wslPath(d.fsPath, false);
+        }
+        this.outputChannel.appendLine(`Hijack file ${dNormalized}`, LogLevel.Trace);
+        try {
+          fs.chmodSync(dNormalized, 0o777);
+        } catch (err) {
+          this.outputChannel.appendLine(`Error ${err} while hijack file chmod ${dNormalized}`, LogLevel.Trace);
+        }
         const nowTime = new Date();
-        fs.utimesSync(d.fsPath, nowTime, nowTime);
+        try {
+          fs.utimesSync(dNormalized, nowTime, nowTime);
+        } catch (err) {
+          this.outputChannel.appendLine(`Error ${err} while hijack file utimesSync ${dNormalized}`, LogLevel.Trace);
+        }
+        this.outputChannel.appendLine(`Hijack file ${dNormalized}, set nowTime ${nowTime}`, LogLevel.Trace);
       }
       this.mUpdateEvent.fire(docs);
     }
@@ -789,10 +808,16 @@ export class Clearcase {
    */
   async hasConfigspec(): Promise<boolean> {
     let result = false;
+    this.outputChannel.appendLine(`Check Configspec`, LogLevel.Trace);
     if (workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length > 0) {
       try {
+        this.outputChannel.appendLine(
+          `Check Configspec: Number of Workspace folders: ${workspace.workspaceFolders.length}`,
+          LogLevel.Trace
+        );
         for (const p of workspace.workspaceFolders) {
           const cmd: CmdArgs = new CmdArgs(["catcs"]);
+          this.outputChannel.appendLine(`Check Configspec: Run cleartool in Path: ${p.uri.fsPath}`, LogLevel.Trace);
           await this.runCleartoolCommand(
             "hasConfigspec",
             cmd,
@@ -839,6 +864,7 @@ export class Clearcase {
     let fileVers = new VersionType();
     if (iUri !== undefined && this.isView === true) {
       const cwd = path.dirname(iUri.fsPath);
+      this.outputChannel.appendLine(`Get Version Information in ${cwd} of ${iUri.fsPath}`, LogLevel.Trace);
       await this.runCleartoolCommand(
         "getVersionInformation",
         new CmdArgs(["ls"], [iUri.fsPath]),
@@ -985,11 +1011,14 @@ export class Clearcase {
 
   // returns true if the given document is read-only
   isReadOnly(doc: TextDocument): boolean {
-    const filePath = doc.fileName;
+    this.outputChannel.appendLine(`Check if read only file ${doc.fileName}`, LogLevel.Trace);
+    const filePath = this.wslPath(doc.fileName, false);
     try {
       fs.accessSync(filePath, fs.constants.W_OK);
+      this.outputChannel.appendLine(`Can write file ${doc.fileName}`, LogLevel.Trace);
       return false;
     } catch {
+      this.outputChannel.appendLine(`Cannot write file ${doc.fileName}`, LogLevel.Trace);
       return true;
     }
   }
@@ -1158,6 +1187,11 @@ export class Clearcase {
     onFinished?: (code: number, output: string, error: string) => void
   ): Promise<string | undefined> {
     const executable: string = this.mExecCmd.executable();
+    this.outputChannel.appendLine(`Run executable ${executable} in cwd ${cwd}`, LogLevel.Trace);
+    if (this.configHandler.configuration.runsLocal.value) {
+      cwd = this.wslPath(cwd, false);
+      this.outputChannel.appendLine(`Run executable in ${cwd}`, LogLevel.Trace);
+    }
     try {
       fs.accessSync(cwd, fs.constants.F_OK);
     } catch {
@@ -1331,7 +1365,11 @@ export class Clearcase {
 
   public wslPath(path: string, toLinux = true): string {
     const newPath = this.getMappedPath(path, toLinux);
-    if (this.isRunningInWsl()) {
+    this.outputChannel.appendLine(
+      `Modify Path ${path} to Linux: ${toLinux}. Get the mapped Path: ${newPath}`,
+      LogLevel.Trace
+    );
+    if (type() === "Windows_NT" && (this.isRunningInWsl() || this.configHandler.configuration.runsLocal.value)) {
       if (toLinux === true) {
         return newPath.replace(/\\/g, "/");
       } else {
@@ -1342,9 +1380,14 @@ export class Clearcase {
   }
 
   public getMappedPath(path: string, toLinux: boolean): string {
-    if (this.isRunningInWsl()) {
+    if (this.isRunningInWsl() || this.configHandler.configuration.runsLocal.value) {
+      this.outputChannel.appendLine(
+        `Mapped paths configured: ${this.configHandler.configuration.pathMapping.value.length}`,
+        LogLevel.Trace
+      );
       if (this.configHandler.configuration.pathMapping.value.length > 0) {
         for (const p of this.configHandler.configuration.pathMapping.value) {
+          this.outputChannel.appendLine(`Check mapped path: ${p.host} ${p.wsl}`, LogLevel.Trace);
           if (toLinux === false) {
             if (path.startsWith(p.wsl)) {
               return path.replace(p.wsl, p.host);
@@ -1356,10 +1399,12 @@ export class Clearcase {
           }
         }
       } else {
-        if (toLinux === true) {
-          return path.replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
-        } else {
-          return path.replace(/^\/mnt\/([A-Za-z])/, `$1:`);
+        if (type() === "Windows_NT" || this.isRunningInWsl()) {
+          if (toLinux === true) {
+            return path.replace(/^([A-Za-z]):/, (s: string, g1: string) => `/mnt/${g1.toLowerCase()}`);
+          } else {
+            return path.replace(/^\/mnt\/([A-Za-z])/, `$1:`);
+          }
         }
       }
     }

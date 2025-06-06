@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.2.0-beta.6",
+  "version": "5.2.0-beta.22",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -738,7 +738,7 @@
         "vscode-clearcase.useLabelAtCheckin": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Show an input to create and use a laber after the current checkin.",
+          "markdownDescription": "Show an input to create and use a label after the current checkin.",
           "order": 51
         },
         "vscode-clearcase.remoteCleartool.enable": {

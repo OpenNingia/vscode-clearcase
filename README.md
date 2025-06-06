@@ -16,6 +16,7 @@ This repository contains the extension for [IBM Rational ClearCase SCM](http://w
 - [View Private Files](#view-private-files)
 - [Hijacked Files](#hijacked-files)
 - [Remote Control Client](#remote-cleartool-client)
+- [Execution Context](#execution-context)
 - [WSL](#wsl)
 - [Logging](#logging)
 - [Requirements](#requirements)
@@ -105,6 +106,24 @@ Here it is also possible to use the $CLEARTOOL_AVOBS environment variable. But f
 ## Remote Cleartool Client
 
 It is possible to use the remote cleartool client with VSCode. To activate, set the configuration `vscode-clearcase.remoteCleartool.enable` to `true`. With that set, insert the username to `vscode-clearcase.remoteCleartool.webviewUsername`. When connecting to the server, the password will be requested. It is stored as long as the VSCode window lives. Alternatively there is a setting for storing the password in the configuration `vscode-clearcase.remoteCleartool.webviewPassword`.
+
+## Execution Context
+
+It is possible to change where the exectension is executed. This can be necessary if the
+devcontainer feature or a remote ssh connection is used. Often there is no way to have a clearcase environment within the container. Combine this feature with the _wsl.pathMapping_.
+
+To activate the alternative mode you have to add a configuration. Either to your local settings or to the workspace.
+
+```language:json
+"remote.extensionKind": {
+    "OpenNingia.vscode-clearcase": [ "ui" ]
+}
+```
+
+This setting has two values:
+
+- **ui** - run the extension in the context of the UI
+- **workspace** - run the extension in the workspace context (default).
 
 ## WSL
 
