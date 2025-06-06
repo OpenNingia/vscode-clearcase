@@ -265,20 +265,14 @@ suite("Cleartool Commands Test Suite", () => {
     await provider.clearcase?.checkoutFile([fileUri]);
     delayTime(300);
 
-    let contain1 = false;
-    let contain2 = false;
-    const cmp1 = `co,-nc,${file}\n`;
-    const cmp2 = `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`;
-    for (let l = 0; l < outputChannelBase.getLineCount(); l++) {
-      if (cmp1 === outputChannelBase.getLine(l)) {
-        contain1 = true;
-      }
-      if (cmp2 === outputChannelBase.getLine(l)) {
-        contain2 = true;
-      }
-    }
-    assert.strictEqual(contain1, true);
-    assert.strictEqual(contain2, true);
+    const cmp1 = outputChannelBase.contentList.includes(`co,-nc,${file}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
+      `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
+    );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
+
   });
 
   test("Extension: Path names with environment variable", async () => {
