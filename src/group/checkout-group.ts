@@ -46,6 +46,10 @@ export class CheckoutGroup extends Group {
     }
   }
 
+  public override updateResourceGroup(): void {
+    this.mResourceGroup.resourceStates = this.mGroup.sort((a, b) => ScmResource.sort(a, b)) || [];
+  }
+
   override handleDeleteFile(file: Uri): void {
     super.handleDeleteFile(file);
   }

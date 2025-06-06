@@ -71,6 +71,7 @@ export class ConfigurationHandler implements IDisposable {
         "cleartool.showViewPrivateFiles",
         this.mConfiguration.showViewPrivateFiles
       );
+      this.setChangeConfigDate<boolean>(config, "cleartool.useCCIgnoreFile", this.mConfiguration.useCCIgnoreFile);
       this.setChangeConfigDate<string>(config, "cleartool.checkinCommandArguments", this.mConfiguration.checkinCommand);
       this.setChangeConfigDate<string>(config, "cleartool.defaultComment", this.mConfiguration.defaultComment);
       this.setChangeConfigDate<string>(config, "viewPrivateFileSuffixes", this.mConfiguration.viewPrivateFileSuffixes);
@@ -94,6 +95,8 @@ export class ConfigurationHandler implements IDisposable {
       this.setChangeConfigDate<string>(config, "diffViewerEncoding", this.mConfiguration.diffViewEncoding);
       this.setChangeConfigDate<boolean>(config, "useLabelAtCheckin", this.mConfiguration.useLabelAtCheckin);
       this.setChangeConfigDate<LogLevel>(config, "logLevel", this.mConfiguration.logLevel);
+      this.setChangeConfigDate<number>(config, "chunkSize", this.mConfiguration.chunkSize);
+      this.setChangeConfigDate<boolean>(config, "runsLocal", this.mConfiguration.runsLocal);
 
       return true;
     }

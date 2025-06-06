@@ -13,6 +13,7 @@ export class Configuration {
   private mAnnotationFormatString = new ConfigurationProperty<string>("%d %12u");
   private mShowAnnotationCodeLens = new ConfigurationProperty<boolean>(true);
   private mUseClearDlg = new ConfigurationProperty<boolean>(true);
+  private mUseCCIgnoreFile = new ConfigurationProperty<boolean>(false);
   private mCheckoutCommand = new ConfigurationProperty<string>("-comment ${comment} ${filename}");
   private mFindCheckoutsCommand = new ConfigurationProperty<string>("-me -cview -short -avobs");
   private mFindViewPrivateCommand = new ConfigurationProperty<string>("ls -rec -view_only ${env:CLEARCASE_AVOBS}");
@@ -35,6 +36,9 @@ export class Configuration {
   private mShowHijackedFiles = new ConfigurationProperty<boolean>(false);
   private mShowViewPrivateFiles = new ConfigurationProperty<boolean>(false);
   private mLogLevel = new ConfigurationProperty<LogLevel>(LogLevel.None);
+
+  private mChunkSize = new ConfigurationProperty<number>(100);
+  private mRunsLocal = new ConfigurationProperty<boolean>(false);
 
   get showStatusbar(): ConfigurationProperty<boolean> {
     return this.mShowStatusbar;
@@ -86,6 +90,10 @@ export class Configuration {
 
   get showViewPrivateFiles(): ConfigurationProperty<boolean> {
     return this.mShowViewPrivateFiles;
+  }
+
+  get useCCIgnoreFile(): ConfigurationProperty<boolean> {
+    return this.mUseCCIgnoreFile;
   }
 
   get uncoKeepFile(): ConfigurationProperty<boolean> {
@@ -142,5 +150,13 @@ export class Configuration {
 
   get logLevel(): ConfigurationProperty<LogLevel> {
     return this.mLogLevel;
+  }
+
+  get chunkSize(): ConfigurationProperty<number> {
+    return this.mChunkSize;
+  }
+
+  get runsLocal(): ConfigurationProperty<boolean> {
+    return this.mRunsLocal;
   }
 }

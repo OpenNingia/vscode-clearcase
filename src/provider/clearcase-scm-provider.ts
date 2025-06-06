@@ -16,6 +16,7 @@ import {
   TextDocument,
   MessageItem,
   ProgressLocation,
+  ExtensionKind,
 } from "vscode";
 import { ScmResource } from "../ui/scm-resource";
 import { Clearcase } from "../clearcase/clearcase";
@@ -53,6 +54,7 @@ export class ClearcaseScmProvider implements IDisposable {
   private mListLock: Lock | null = null;
   private mDisposables: IDisposable[] = [];
   private mVersion = "0.0.0";
+  private mRunsLocal = false;
 
   private mWindowChangedEvent: EventEmitter<boolean> = new EventEmitter<boolean>();
 
@@ -68,17 +70,24 @@ export class ClearcaseScmProvider implements IDisposable {
     private outputChannel: CcOutputChannel,
     private configHandler: ConfigurationHandler
   ) {
+    this.mRunsLocal = mContext?.extension?.extensionKind === ExtensionKind.UI;
+    this.configHandler.configuration.runsLocal.value = this.mRunsLocal;
+    outputChannel.appendLine(`Extension runs on UI: ${this.mRunsLocal}`, LogLevel.Trace);
     this.configHandler.onDidChangeConfiguration(async () => {
       if (this.configHandler.configuration.logLevel.changed) {
         this.outputChannel.logLevel = this.configHandler.configuration.logLevel.value;
       }
       if (this.configHandler.configuration.showHijackedFiles.changed) {
-        this.mHijackedGrp?.updateResourceGroup();
-        await this.mHijackedGrp?.createList();
+        if (this.mHijackedGrp?.firstUpdate === false) {
+          this.mHijackedGrp?.updateResourceGroup();
+          this.commandUpdateHijackedFilesList();
+        }
       }
       if (this.configHandler.configuration.showViewPrivateFiles.changed) {
-        this.mUntrackedGrp?.updateResourceGroup();
-        await this.mUntrackedGrp?.createList();
+        if (this.mUntrackedGrp?.firstUpdate === false) {
+          this.mUntrackedGrp?.updateResourceGroup();
+          this.commandUpdateUntrackedList();
+        }
       }
       this.updateContextResources(window.activeTextEditor !== undefined);
     });
@@ -185,13 +194,23 @@ export class ClearcaseScmProvider implements IDisposable {
         this.handleChangeFiles(evArgs);
       });
 
+      this.clearcase?.onViewPrivateFileListChange((files: string[]) => {
+        this.mUntrackedGrp?.handleUpdateFiles(files);
+      });
+
+      this.clearcase?.onViewHijackedFileListChange((files: string[]) => {
+        this.mHijackedGrp?.handleUpdateFiles(files);
+      });
+
       this.bindScmCommand();
 
       this.mIsUpdatingUntracked = false;
 
       this.mCheckedoutGrp?.createList();
-      this.mUntrackedGrp?.createList();
-      this.mHijackedGrp?.createList();
+      //this.createHijackedList();
+      // this.createViewPrivateList();
+      this.commandUpdateUntrackedList();
+      this.commandUpdateHijackedFilesList();
 
       this.onDidChangeTextEditor(window.activeTextEditor);
 
@@ -307,11 +326,13 @@ export class ClearcaseScmProvider implements IDisposable {
           const lStep = 100;
           await this.mUntrackedGrp?.createList();
 
-          process.report({
-            message: `Searching view private files completed`,
-            increment: lStep,
-          });
           this.mIsUpdatingUntracked = false;
+          if (this.mIsUpdatingHijacked === false) {
+            process.report({
+              message: `Searching view private files completed`,
+              increment: lStep,
+            });
+          }
         }
       );
     }
@@ -330,11 +351,13 @@ export class ClearcaseScmProvider implements IDisposable {
           const lStep = 100;
           await this.mHijackedGrp?.createList();
 
-          process.report({
-            message: `Searching hijacked files completed`,
-            increment: lStep,
-          });
           this.mIsUpdatingHijacked = false;
+          if (this.mIsUpdatingUntracked === false) {
+            process.report({
+              message: `Searching hijacked files completed`,
+              increment: lStep,
+            });
+          }
         }
       );
     }
@@ -789,7 +812,7 @@ export class ClearcaseScmProvider implements IDisposable {
     if (editor && this.clearcase && editor?.document.uri.scheme !== "output") {
       const version = await this.clearcase?.getVersionInformation(editor?.document.uri, true);
       this.mHijackedGrp?.handleChangedFile(editor?.document.uri, version);
-      this.mUntrackedGrp?.handleChangedFile(editor.document.uri, version);
+      this.mUntrackedGrp?.handleChangedFile(editor?.document.uri, version);
     }
     if (editor?.document.uri.scheme !== "output") {
       this.mWindowChangedEvent.fire(editor !== undefined);

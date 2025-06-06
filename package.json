@@ -2,7 +2,7 @@
   "name": "vscode-clearcase",
   "displayName": "Unofficial ClearCase SCM Commands",
   "description": "Unofficial support for IBM Rational ClearCase most common commands",
-  "version": "5.1.0",
+  "version": "5.2.0-beta.22",
   "publisher": "OpenNingia",
   "license": "MIT",
   "repository": {
@@ -449,12 +449,12 @@
       "scm/resourceState/context": [
         {
           "command": "extension.ccOpenResource",
-          "when": "scmProvider == cc && vscode-clearcase:enabled",
+          "when": "scmProvider == cc && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects",
           "group": "inline@1"
         },
         {
           "command": "extension.ccOpenResource",
-          "when": "scmProvider == cc && vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects",
+          "when": "scmProvider == cc && vscode-clearcase:enabled",
           "group": "cc_file"
         },
         {
@@ -643,29 +643,35 @@
           "markdownDescription": "Clearcase lsco arguments.",
           "order": 15
         },
+        "vscode-clearcase.cleartool.useCCIgnoreFile": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Use .ccignore file(s) to filter the view private results",
+          "order": 16
+        },
         "vscode-clearcase.cleartool.showViewPrivateFiles": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Search for view-private files in current view. The configuration is in #vscode-clearcase.cleartool.findViewPrivateCommandArguments.",
-          "order": 16
+          "order": 17
         },
         "vscode-clearcase.cleartool.findViewPrivateCommandArguments": {
           "type": "string",
           "default": "ls -rec -view_only ${env:CLEARCASE_AVOBS}",
           "markdownDescription": "Clearcase command and arguments for searching view private files.",
-          "order": 17
+          "order": 18
         },
         "vscode-clearcase.cleartool.showHijackedFiles": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Search for hijacked files in current view. The configuration is in #vscode-clearcase.cleartool.findHijackedCommandArguments.",
-          "order": 18
+          "order": 19
         },
         "vscode-clearcase.cleartool.findHijackedCommandArguments": {
           "type": "string",
           "default": "ls -rec ${env:CLEARCASE_AVOBS}",
           "markdownDescription": "Clearcase command and arguments for searching hijacked files.",
-          "order": 19
+          "order": 20
         },
         "vscode-clearcase.cleartool.checkinCommandArguments": {
           "type": "string",
@@ -732,7 +738,7 @@
         "vscode-clearcase.useLabelAtCheckin": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Show an input to create and use a laber after the current checkin.",
+          "markdownDescription": "Show an input to create and use a label after the current checkin.",
           "order": 51
         },
         "vscode-clearcase.remoteCleartool.enable": {
@@ -783,6 +789,14 @@
             5,
             6
           ]
+        },
+        "vscode-clearcase.chunkSize": {
+          "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 10000,
+          "markdownDescription": "Maximum arguments given to cleartool",
+          "order": 40
         }
       }
     },
@@ -855,7 +869,7 @@
   "devDependencies": {
     "@types/glob": "^8.0.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^12.20.55",
+    "@types/node": "^22.10.01",
     "@types/tmp": "^0.2.3",
     "@types/vscode": "^1.70.0",
     "@types/webpack": "^5.28.0",
@@ -865,6 +879,8 @@
     "eslint": "^8.23.0",
     "eslint-plugin-mdx": "^3.1.5",
     "glob": "^8.0.3",
+    "ignore": "^6.0.2",
+    "ignore-walk": "^7.0.0",
     "mocha": "^10.0.0",
     "ts-loader": "^9.3.1",
     "ts-node": "^10.9.1",
@@ -874,7 +890,7 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "ignore": "^5.0.5",
+    "@types/ignore-walk": "^4.0.3",
     "tmp": "^0.2.1",
     "vscode-nls": "^5.2.0"
   }

@@ -16,21 +16,12 @@ export class ViewPrivateGroup extends Group {
   }
 
   public override async createList(): Promise<void> {
-    let viewPrivate: ScmResource[] = [];
-
-    if (this.mConfighandler.configuration.showHijackedFiles.value) {
+    if (this.mConfighandler.configuration.showViewPrivateFiles.value) {
       this.mClearcase?.killUpdateFindViewPrivate();
-      this.mClearcase?.findViewPrivate().then((files) => {
-        viewPrivate = files
-          .map((val) => {
-            return new ScmResource(ResourceGroupType.Index, Uri.file(val), ScmStatus.Untracked);
-          })
-          .sort((val1, val2) => {
-            return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
-          });
-        this.mGroup = [...viewPrivate];
-        this.updateResourceGroup();
-      });
+      this.mGroup = [];
+      await this.mClearcase?.findViewPrivate();
+      this.updateResourceGroup();
+      this.mFirstUpdate = false;
     }
   }
 
@@ -43,11 +34,11 @@ export class ViewPrivateGroup extends Group {
           viewPrivateExists = true;
           return isViewPrivate;
         }
-        return false;
+        return true;
       }) ?? [];
 
     if (isViewPrivate && !viewPrivateExists) {
-      filtered?.push(new ScmResource(ResourceGroupType.Index, file, ScmStatus.Hijacked));
+      filtered?.push(new ScmResource(ResourceGroupType.Index, file, ScmStatus.Untracked));
     }
     this.mGroup = [...filtered];
     this.updateResourceGroup();
@@ -64,6 +55,18 @@ export class ViewPrivateGroup extends Group {
 
   public override handleDeleteFile(file: Uri): void {
     super.handleDeleteFile(file);
+    this.updateResourceGroup();
+  }
+
+  public override handleUpdateFiles(files: string[]): void {
+    const viewPrivate = files
+      .map((val) => {
+        return new ScmResource(ResourceGroupType.Index, Uri.file(val), ScmStatus.Untracked);
+      })
+      .sort((val1, val2) => {
+        return val1.resourceUri.fsPath.localeCompare(val2.resourceUri.fsPath);
+      });
+    this.mGroup = [...this.mGroup, ...viewPrivate];
     this.updateResourceGroup();
   }
 }

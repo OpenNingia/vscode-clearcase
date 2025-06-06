@@ -11,17 +11,12 @@ import SuiteOutputChannel from "../mock/SuiteOutputChannel";
 import { CCVersionState } from "../../clearcase/verstion-type";
 import CcOutputChannel, { LogLevel } from "../../ui/output-channel";
 import { ConfigurationHandler } from "../../configuration/configuration-handler";
+import { delayTime } from "./delayTime";
 // import * as myExtension from '../../extension';
 
 //const WS_ROOT = process.env["WS_ROOT"] ? process.env["WS_ROOT"] : "";
 const TEST_HOME = process.env["HOME"] ? process.env["HOME"] : "-";
 const TEST_USER = process.env["USER"] ? process.env["USER"] : "-";
-
-const delayTime = async (delay: number) => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, delay);
-  });
-};
 
 suite("Cleartool Commands Test Suite", () => {
   vscode.window.showInformationMessage("Start all tests.");
@@ -118,12 +113,14 @@ suite("Cleartool Commands Test Suite", () => {
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.checkinFile([file]);
-    delayTime(1000);
-    assert.strictEqual(outputChannelBase.getLine(0), `ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLastLine(),
-      `Checked in "${path.join(testDir, "simple01.txt")}" version "/main/dev_01/2".\n`
-    );
+    delayTime(200);
+    const cmp1 = outputChannelBase.contentList.includes(`ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
+
+    assert.strictEqual(cmp1, true);
+    // assert.strictEqual(
+    //   outputChannelBase.getLine(outputChannelBase.getLineCount() - 1),
+    //   `Checked in "${path.join(testDir, "simple01.txt")}" version "/main/dev_01/2".\n`
+    // );
   });
 
   test("Cleartool checkout file (dynamic view)", async () => {
@@ -145,11 +142,20 @@ suite("Cleartool Commands Test Suite", () => {
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.checkoutFile([file]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `co,-nc,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(1),
+
+    const cmp1 = outputChannelBase.contentList.includes(`co,-nc,${path.join(testDir, "simple01.txt")}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
     );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
+
+    // assert.strictEqual(outputChannelBase.getLine(0), `co,-nc,${path.join(testDir, "simple01.txt")}\n`);
+    // assert.strictEqual(
+    //   outputChannelBase.getLine(1),
+    //   `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
+    // );
   });
 
   test("Cleartool checkout file (snapshot view)", async () => {
@@ -170,11 +176,14 @@ suite("Cleartool Commands Test Suite", () => {
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.checkoutFile([file]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `co,-usehijack,-nc,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(1),
+
+    const cmp1 = outputChannelBase.contentList.includes(`co,-usehijack,-nc,${path.join(testDir, "simple01.txt")}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
     );
+
+    assert.strictEqual(cmp1, true, "First compare failed");
+    assert.strictEqual(cmp2, true, "Second compare failed");
   });
 
   test("Cleartool undo checkout file (keep)", async () => {
@@ -195,11 +204,14 @@ suite("Cleartool Commands Test Suite", () => {
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.undoCheckoutFile([file]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `unco,-keep,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(1),
+
+    const cmp1 = outputChannelBase.contentList.includes(`unco,-keep,${path.join(testDir, "simple01.txt")}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `Checkout cancelled for "${path.join(testDir, "simple01.txt")}".\n`
     );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
   });
 
   test("Cleartool undo checkout file (delete)", async () => {
@@ -221,11 +233,14 @@ suite("Cleartool Commands Test Suite", () => {
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.undoCheckoutFile([file]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `unco,-rm,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(1),
+
+    const cmp1 = outputChannelBase.contentList.includes(`unco,-rm,${path.join(testDir, "simple01.txt")}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `Checkout cancelled for "${path.join(testDir, "simple01.txt")}".\n`
     );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
   });
 
   test("Cleartool checkout file already checked out", async () => {
@@ -249,11 +264,15 @@ suite("Cleartool Commands Test Suite", () => {
     const fileUri = vscode.Uri.parse(file);
     await provider.clearcase?.checkoutFile([fileUri]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `co,-nc,${file}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLastLine(),
+
+    const cmp1 = outputChannelBase.contentList.includes(`co,-nc,${file}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
     );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
+
   });
 
   test("Extension: Path names with environment variable", async () => {

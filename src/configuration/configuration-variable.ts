@@ -15,7 +15,11 @@ export class ConfigurationVariable {
               const v = process.env[subgrp[1]];
               if (v !== undefined) {
                 retVal = retVal.replace(subgrp[0], v);
+              } else {
+                retVal = retVal.replace(subgrp[0], ".");
               }
+            } else {
+              retVal = retVal.replace(subgrp[0], ".");
             }
           }
         }
