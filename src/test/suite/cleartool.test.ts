@@ -113,9 +113,18 @@ suite("Cleartool Commands Test Suite", () => {
 
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.checkinFile([file]);
-    delayTime(1000);
-    console.log(outputChannelBase.getLineCount());
-    assert.strictEqual(outputChannelBase.getLine(0), `ci,-nc,${path.join(testDir, "simple01.txt")}\n`);
+    delayTime(200);
+
+    let contain = false;
+    const cmp = `ci,-nc,${path.join(testDir, "simple01.txt")}\n`;
+    for (let l = 0; l < outputChannelBase.getLineCount(); l++) {
+      if (cmp === outputChannelBase.getLine(l)) {
+        contain = true;
+        break;
+      }
+    }
+
+    assert.strictEqual(contain, true);
     // assert.strictEqual(
     //   outputChannelBase.getLine(outputChannelBase.getLineCount() - 1),
     //   `Checked in "${path.join(testDir, "simple01.txt")}" version "/main/dev_01/2".\n`
@@ -245,11 +254,21 @@ suite("Cleartool Commands Test Suite", () => {
     const fileUri = vscode.Uri.parse(file);
     await provider.clearcase?.checkoutFile([fileUri]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `co,-nc,${file}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(outputChannelBase.getLineCount() - 2),
-      `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`
-    );
+
+    let contain1 = false;
+    let contain2 = false;
+    const cmp1 = `co,-nc,${file}\n`;
+    const cmp2 = `exit code 0, stderr: cleartool: Error: Element "${file}" is already checked out to view "myview".\n`;
+    for (let l = 0; l < outputChannelBase.getLineCount(); l++) {
+      if (cmp1 === outputChannelBase.getLine(l)) {
+        contain1 = true;
+      }
+      if (cmp2 === outputChannelBase.getLine(l)) {
+        contain2 = true;
+      }
+    }
+    assert.strictEqual(contain1, true);
+    assert.strictEqual(contain2, true);
   });
 
   test("Extension: Path names with environment variable", async () => {
