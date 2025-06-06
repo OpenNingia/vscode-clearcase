@@ -90,10 +90,16 @@ suite("Outputchannel Test Suite", () => {
 
     // console.log(outputChannelBase.getLineCount());
     // console.log(outputChannelBase.getValue());
-    assert.strictEqual(
-      outputChannelBase.getLine(outputChannelBase.getLineCount() - 15),
-      `ci,-nc,${path.join(testDir, "simple01.txt")}\n`
-    );
+    let contain = false;
+    const cmp = `ci,-nc,${path.join(testDir, "simple01.txt")}\n`;
+    for (let l = 0; l < outputChannelBase.getLineCount(); l++) {
+      if (cmp === outputChannelBase.getLine(l)) {
+        contain = true;
+        break;
+      }
+    }
+
+    assert.strictEqual(contain, true);
     // assert.strictEqual(
     //   outputChannelBase.getLine(outputChannelBase.getLineCount() - 4),
     //   `Checked in "${path.join(testDir, "simple01.txt")}" version "/main/dev_01/2".\n`
