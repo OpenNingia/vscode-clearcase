@@ -64,4 +64,8 @@ export default class SuiteOutputChannel implements OutputChannel {
   getLineCount(): number {
     return this.content.length;
   }
+
+  get contentList(): string[] {
+    return this.content;
+  }
 }
