@@ -182,8 +182,8 @@ suite("Cleartool Commands Test Suite", () => {
       `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
     );
 
-    assert.strictEqual(cmp1, true);
-    assert.strictEqual(cmp2, true);
+    assert.strictEqual(cmp1, true, "First compare failed");
+    assert.strictEqual(cmp2, true, "Second compare failed");
   });
 
   test("Cleartool undo checkout file (keep)", async () => {
