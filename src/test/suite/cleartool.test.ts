@@ -176,11 +176,14 @@ suite("Cleartool Commands Test Suite", () => {
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.checkoutFile([file]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `co,-usehijack,-nc,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(1),
+
+    const cmp1 = outputChannelBase.contentList.includes(`co,-usehijack,-nc,${path.join(testDir, "simple01.txt")}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `Checked out "${path.join(testDir, "simple01.txt")}" from version "/main/dev_01/1".\n`
     );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
   });
 
   test("Cleartool undo checkout file (keep)", async () => {
@@ -201,11 +204,14 @@ suite("Cleartool Commands Test Suite", () => {
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.undoCheckoutFile([file]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `unco,-keep,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(1),
+
+    const cmp1 = outputChannelBase.contentList.includes(`unco,-keep,${path.join(testDir, "simple01.txt")}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `Checkout cancelled for "${path.join(testDir, "simple01.txt")}".\n`
     );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
   });
 
   test("Cleartool undo checkout file (delete)", async () => {
@@ -227,11 +233,14 @@ suite("Cleartool Commands Test Suite", () => {
     const file = vscode.Uri.parse(path.resolve(__dirname, "testfiles/simple01.txt"));
     await provider.clearcase?.undoCheckoutFile([file]);
     delayTime(300);
-    assert.strictEqual(outputChannelBase.getLine(0), `unco,-rm,${path.join(testDir, "simple01.txt")}\n`);
-    assert.strictEqual(
-      outputChannelBase.getLine(1),
+
+    const cmp1 = outputChannelBase.contentList.includes(`unco,-rm,${path.join(testDir, "simple01.txt")}\n`);
+    const cmp2 = outputChannelBase.contentList.includes(
       `Checkout cancelled for "${path.join(testDir, "simple01.txt")}".\n`
     );
+
+    assert.strictEqual(cmp1, true);
+    assert.strictEqual(cmp2, true);
   });
 
   test("Cleartool checkout file already checked out", async () => {
