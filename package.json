@@ -284,6 +284,11 @@
           "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:ViewPrivateObjects"
         },
         {
+          "command": "extension.ccComparePrevious",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects"
+        },
+        {
           "command": "extension.ccCompareWithVersion",
           "group": "cc@5",
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects"
@@ -331,43 +336,48 @@
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         },
         {
-          "command": "extension.ccCompareWithVersion",
+          "command": "extension.ccComparePrevious",
           "group": "navigation@101",
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         },
         {
-          "command": "extension.ccCheckout",
+          "command": "extension.ccCompareWithVersion",
           "group": "navigation@102",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
+        },
+        {
+          "command": "extension.ccCheckout",
+          "group": "navigation@103",
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         },
         {
           "command": "extension.ccCheckin",
-          "group": "navigation@103",
-          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
-        },
-        {
-          "command": "extension.ccUndoCheckout",
           "group": "navigation@104",
           "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         },
         {
-          "command": "extension.ccHijack",
+          "command": "extension.ccUndoCheckout",
           "group": "navigation@105",
+          "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
+        },
+        {
+          "command": "extension.ccHijack",
+          "group": "navigation@106",
           "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:HijackedObjects && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         },
         {
           "command": "extension.ccUndoHijack",
-          "group": "navigation@106",
+          "group": "navigation@107",
           "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects && vscode-clearcase:editor == true"
         },
         {
           "command": "extension.ccMkElement",
-          "group": "navigation@107",
+          "group": "navigation@108",
           "when": "vscode-clearcase:enabled && resourcePath in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         },
         {
           "command": "extension.ccVersionTree",
-          "group": "navigation@108",
+          "group": "navigation@109",
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         }
       ],
@@ -402,6 +412,11 @@
           "command": "extension.ccUndoHijack",
           "group": "cc@5",
           "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
+        },
+        {
+          "command": "extension.ccComparePrevious",
+          "group": "cc@5",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects"
         },
         {
           "command": "extension.ccCompareWithVersion",
@@ -486,6 +501,11 @@
           "command": "extension.ccMkElement",
           "when": "scmProvider == cc && scmResourceGroup == cc_untracked && vscode-clearcase:enabled",
           "group": "cc_file"
+        },
+        {
+          "command": "extension.ccComparePrevious",
+          "group": "cc_file",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects"
         },
         {
           "command": "extension.ccCompareWithVersion",

@@ -415,7 +415,7 @@ export class ClearcaseScmProvider implements IDisposable {
       this.registerCommand("extension.ccCheckin", (fileObj) => this.clearcase?.checkinFileAction(fileObj));
       this.registerCommand("extension.ccUndoCheckout", (fileObj) => this.clearcase?.undoCheckoutFileAction(fileObj));
       this.registerCommand("extension.ccVersionTree", (fileObj) => this.clearcase?.versionTree(fileObj));
-      this.registerCommand("extension.ccComparePrevious", (fileObj) => this.clearcase?.diffWithPrevious(fileObj));
+      this.registerCommand("extension.ccComparePrevious", (fileObj) => this.selectPrevVersionAndCompare(fileObj));
       this.registerCommand("extension.ccItemProperties", (fileObj) => this.clearcase?.itemProperties(fileObj));
       this.registerCommand("extension.ccMkElement", (fileObj) => this.clearcase?.createVersionedObject(fileObj));
       this.registerCommand("extension.ccHijack", (fileObj) => this.clearcase?.createHijackedObject(fileObj));
@@ -824,6 +824,15 @@ export class ClearcaseScmProvider implements IDisposable {
       const selVersion = await UiControl.showVersionSelectQuickpick(this.clearcase.getVersionsOfFile(file[0]));
       if (selVersion !== undefined && selVersion !== "") {
         this.embeddedDiff(file[0], selVersion);
+      }
+    }
+  }
+
+  private async selectPrevVersionAndCompare(file: Uri[]) {
+    if (this.clearcase && file.length > 0) {
+      const prevVersion = await this.clearcase.getFilePredecessorVersion(file[0].fsPath);
+      if (prevVersion !== undefined) {
+        this.embeddedDiff(file[0], prevVersion.version);
       }
     }
   }
