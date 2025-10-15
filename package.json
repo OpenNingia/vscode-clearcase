@@ -341,11 +341,6 @@
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
         },
         {
-          "command": "extension.ccCompareWithVersion",
-          "group": "navigation@102",
-          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
-        },
-        {
           "command": "extension.ccCheckout",
           "group": "navigation@103",
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath not in vscode-clearcase:ViewPrivateObjects && vscode-clearcase:editor == true"
