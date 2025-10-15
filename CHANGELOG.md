@@ -1,5 +1,13 @@
 ## Release Notes
 
+### 5.2.1
+
+_Feature_
+
+- Compare with predecessor now uses vscode internal diff viewer (#203)
+- Compare with predecessor is now default command in editor title
+- Clearcase History command now available in context menu and command palette (#205)
+
 ### 5.2.0
 
 _Feature_
