@@ -165,6 +165,12 @@
         "icon": "$(comment)"
       },
       {
+        "command": "extension.ccFileHistory",
+        "title": "History",
+        "category": "Clearcase",
+        "icon": "$(comment)"
+      },
+      {
         "command": "extension.ccSelectActv",
         "title": "Change current activity",
         "category": "Clearcase"
@@ -258,6 +264,10 @@
           "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects && resourcePath not in vscode-clearcase:HijackedObjects && resourcePath not in vscode-clearcase:CheckedoutObjects"
         },
         {
+          "command": "extension.ccFileHistory",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects"
+        },
+        {
           "command": "extension.ccSelectActv",
           "when": "vscode-clearcase:enabled"
         },
@@ -327,6 +337,11 @@
           "command": "extension.ccUndoHijack",
           "group": "cc@5",
           "when": "vscode-clearcase:enabled && !vscode-clearcase:DynView && resourcePath not in vscode-clearcase:CheckedoutObjects && resourcePath in vscode-clearcase:HijackedObjects"
+        },
+        {
+          "command": "extension.ccFileHistory",
+          "group": "cc@6",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects"
         }
       ],
       "editor/title": [
@@ -422,6 +437,11 @@
           "command": "extension.ccVersionTree",
           "group": "cc@6",
           "when": "editorTextFocus && !inOutput && vscode-clearcase:enabled"
+        },
+        {
+          "command": "extension.ccFileHistory",
+          "group": "cc@7",
+          "when": "vscode-clearcase:enabled && resourcePath not in vscode-clearcase:ViewPrivateObjects"
         },
         {
           "command": "extension.ccItemProperties",

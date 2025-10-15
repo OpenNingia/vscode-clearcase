@@ -553,6 +553,17 @@ export class Clearcase {
     }
   }
 
+  fileHistory(docs: Uri[]): void {
+    for (const doc of docs) {
+      this.runCleartoolCommand(
+        "fileHistory",
+        new CmdArgs(["lshistory", "-graphical"], [doc.fsPath]),
+        path.dirname(doc.fsPath),
+        null
+      );
+    }
+  }
+
   diffWithPrevious(docs: Uri[]): void {
     for (const doc of docs) {
       this.runCleartoolCommand(
