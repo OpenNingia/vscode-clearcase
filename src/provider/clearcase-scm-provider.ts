@@ -415,6 +415,7 @@ export class ClearcaseScmProvider implements IDisposable {
       this.registerCommand("extension.ccCheckin", (fileObj) => this.clearcase?.checkinFileAction(fileObj));
       this.registerCommand("extension.ccUndoCheckout", (fileObj) => this.clearcase?.undoCheckoutFileAction(fileObj));
       this.registerCommand("extension.ccVersionTree", (fileObj) => this.clearcase?.versionTree(fileObj));
+      this.registerCommand("extension.ccFileHistory", (fileObj) => this.clearcase?.fileHistory(fileObj));
       this.registerCommand("extension.ccComparePrevious", (fileObj) => this.selectPrevVersionAndCompare(fileObj));
       this.registerCommand("extension.ccItemProperties", (fileObj) => this.clearcase?.itemProperties(fileObj));
       this.registerCommand("extension.ccMkElement", (fileObj) => this.clearcase?.createVersionedObject(fileObj));
