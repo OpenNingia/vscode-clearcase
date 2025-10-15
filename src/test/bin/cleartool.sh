@@ -72,6 +72,10 @@ lsview() {
   echo "View owner: server.local/user"
 }
 
+describe() {
+  echo "Version \"$theFile\" version \"/main/dev_01/2\"."
+}
+
 error() {
   local state=$1
   if [ $state -eq 1 ]; then # file not found
@@ -120,6 +124,9 @@ while true; do
   lsview)
     doListView=1
     ;;
+  describe)
+    doDescribe=1
+    ;;
   -nc)
     doNoComment=1
     ;;
@@ -159,4 +166,6 @@ elif [ $doConfigspec -eq 1 ]; then
   catcs
 elif [ $doListView -eq 1 ]; then
   lsview
+elif [ $doDescribe -eq 1 ]; then
+  describe
 fi
