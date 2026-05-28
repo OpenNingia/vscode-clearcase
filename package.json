@@ -926,7 +926,7 @@
   },
   "dependencies": {
     "@types/ignore-walk": "^4.0.3",
-    "tmp": "^0.2.4",
+    "tmp": "^0.2.7",
     "vscode-nls": "^5.2.0"
   }
 }
