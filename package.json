@@ -916,7 +916,7 @@
     "glob": "^8.0.3",
     "ignore": "^6.0.2",
     "ignore-walk": "^7.0.0",
-    "mocha": "^10.0.0",
+    "mocha": "^12.0.3",
     "ts-loader": "^9.3.1",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.2",
